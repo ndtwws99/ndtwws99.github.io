@@ -1,9 +1,12 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import { getAnalytics, isSupported as isAnalyticsSupported } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-analytics.js";
 import {
   getAuth,
   onAuthStateChanged,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
+  GoogleAuthProvider,
+  signInWithPopup,
   signOut,
   updateProfile
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
@@ -35,16 +38,33 @@ import {
 } from "./config.js";
 
 let app = null;
+let analytics = null;
 let auth = null;
 let db = null;
+const googleProvider = new GoogleAuthProvider();
+googleProvider.setCustomParameters({ prompt: "select_account" });
 
 if (isFirebaseConfigured()) {
   app = initializeApp(firebaseConfig);
   auth = getAuth(app);
   db = getFirestore(app);
+  isAnalyticsSupported()
+    .then((supported) => {
+      if (supported) analytics = getAnalytics(app);
+    })
+    .catch(() => {});
+}
+
+export async function signInWithGoogle() {
+  if (!auth) throw new Error("Chưa cấu hình Firebase trong assets/js/config.js");
+  const cred = await signInWithPopup(auth, googleProvider);
+  await ensureUserDoc(cred.user);
+  return cred.user;
 }
 
 export {
+  app,
+  analytics,
   auth,
   db,
   isFirebaseConfigured,
@@ -163,3 +183,4 @@ export async function pushNotification(toUid, payload) {
 export function getChatId(uid1, uid2) {
   return [uid1, uid2].sort().join("_");
 }
+```[cite: 32]
