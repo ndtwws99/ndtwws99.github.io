@@ -27,7 +27,8 @@ import {
   onSnapshot,
   serverTimestamp,
   arrayUnion,
-  arrayRemove
+  arrayRemove,
+  deleteField
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
 import {
@@ -87,11 +88,41 @@ export {
   onSnapshot,
   serverTimestamp,
   arrayUnion,
-  arrayRemove
+  arrayRemove,
+  deleteField
 };
 
 export const DEFAULT_AVATAR =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 80'%3E%3Crect width='80' height='80' fill='%23dbeafe'/%3E%3Ccircle cx='40' cy='30' r='14' fill='%232563eb'/%3E%3Cpath d='M16 72c2-17 14-23 24-23s22 6 24 23' fill='%232563eb'/%3E%3C/svg%3E";
+
+export function friendlyError(err) {
+  const code = (err && err.code) || "";
+  const map = {
+    "auth/invalid-credential": "Email hoặc mật khẩu không đúng.",
+    "auth/wrong-password": "Email hoặc mật khẩu không đúng.",
+    "auth/user-not-found": "Email hoặc mật khẩu không đúng.",
+    "auth/invalid-email": "Email không hợp lệ.",
+    "auth/email-already-in-use": "Email này đã được đăng ký.",
+    "auth/weak-password": "Mật khẩu quá yếu (tối thiểu 6 ký tự).",
+    "auth/too-many-requests": "Thử quá nhiều lần. Vui lòng đợi một lát rồi thử lại.",
+    "auth/network-request-failed": "Lỗi mạng. Kiểm tra kết nối Internet.",
+    "auth/popup-closed-by-user": "Bạn đã đóng cửa sổ đăng nhập.",
+    "auth/cancelled-popup-request": "Bạn đã đóng cửa sổ đăng nhập.",
+    "auth/popup-blocked": "Trình duyệt đã chặn cửa sổ đăng nhập. Hãy cho phép popup rồi thử lại.",
+    "auth/unauthorized-domain": "Tên miền này chưa được thêm vào Firebase (Authentication → Settings → Authorized domains).",
+    "permission-denied": "Bạn không có quyền thực hiện thao tác này (kiểm tra Firestore Rules).",
+    "unavailable": "Không kết nối được máy chủ. Vui lòng thử lại."
+  };
+  const key = code.replace(/^firestore\//, "");
+  return map[code] || map[key] || (err && err.message) || "Đã xảy ra lỗi. Vui lòng thử lại.";
+}
+
+/** Chỉ cho phép liên kết nội bộ (chống javascript: / URL lạ trong thông báo). */
+export function safeLink(link, fallback = "./index.html") {
+  const s = String(link || "").trim();
+  if (/^\.\/[A-Za-z0-9_\-]+\.html([?#][^\s"'<>]*)?$/.test(s)) return s;
+  return fallback;
+}
 
 export function showToast(message) {
   let container = document.getElementById("twin-toast-container");
@@ -139,15 +170,28 @@ export async function uploadToCloudinary(file) {
   if (!isCloudinaryConfigured()) {
     throw new Error("Chưa cấu hình Cloudinary trong assets/js/config.js");
   }
+  if (!file.type || !file.type.startsWith("image/")) {
+    throw new Error("Chỉ hỗ trợ tệp hình ảnh.");
+  }
+  if (file.size > 10 * 1024 * 1024) {
+    throw new Error("Ảnh quá lớn (tối đa 10MB).");
+  }
   const url = `https://api.cloudinary.com/v1_1/${cloudinaryConfig.cloudName}/image/upload`;
   const formData = new FormData();
   formData.append("file", file);
   formData.append("upload_preset", cloudinaryConfig.uploadPreset);
   formData.append("folder", "twin_uploads");
 
-  const res = await fetch(url, { method: "POST", body: formData });
+  let res;
+  try {
+    res = await fetch(url, { method: "POST", body: formData });
+  } catch {
+    throw new Error("Không kết nối được Cloudinary. Kiểm tra mạng.");
+  }
   if (!res.ok) {
-    throw new Error("Tải ảnh lên Cloudinary thất bại. Kiểm tra lại Upload Preset (Unsigned).");
+    let detail = "";
+    try { detail = (await res.json())?.error?.message || ""; } catch {}
+    throw new Error("Tải ảnh lên Cloudinary thất bại" + (detail ? `: ${detail}` : ". Kiểm tra lại Upload Preset (Unsigned)."));
   }
   const data = await res.json();
   return data.secure_url;
@@ -161,7 +205,6 @@ export async function ensureUserDoc(user, extra = {}) {
     const profile = {
       uid: user.uid,
       name: extra.name || user.displayName || user.email?.split("@")[0] || "Thành viên Twin",
-      email: user.email || "",
       avatar: user.photoURL || DEFAULT_AVATAR,
       cover: "",
       bio: "Xin chào, mình đang dùng Twin!",
@@ -181,10 +224,10 @@ export async function pushNotification(toUid, payload) {
   await addDoc(collection(db, "notifications"), {
     toUid,
     fromUid: payload.fromUid,
-    fromName: payload.fromName,
+    fromName: payload.fromName || "Ai đó",
     fromAvatar: payload.fromAvatar || DEFAULT_AVATAR,
     text: payload.text,
-    link: payload.link || "./index.html",
+    link: safeLink(payload.link),
     read: false,
     createdAt: serverTimestamp()
   });

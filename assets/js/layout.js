@@ -18,7 +18,10 @@ import {
   escapeHtml,
   formatTime,
   toMillis,
-  getChatId
+  getChatId,
+  safeLink,
+  friendlyError,
+  showToast
 } from "./firebase-service.js";
 
 export const ICONS = {
@@ -37,6 +40,8 @@ export const ICONS = {
 
 let currentUserData = null;
 let unsubNotifs = null;
+let unsubUser = null;
+let globalListenersBound = false;
 const openChats = new Map();
 
 export function applySavedTheme() {
@@ -56,16 +61,10 @@ export function toggleTheme() {
 }
 
 function getCurrentPageKey() {
-  const path = window.location.pathname.toLowerCase();
-  if (path.endsWith("friends.html")) return "friends";
-  if (path.endsWith("groups.html")) return "groups";
-  if (path.endsWith("pages.html")) return "pages";
-  if (path.endsWith("messages.html")) return "messages";
-  if (path.endsWith("profile.html")) return "profile";
-  if (path.endsWith("saved.html")) return "saved";
-  if (path.endsWith("login.html")) return "login";
-  if (path.endsWith("404.html")) return "404";
-  return "home";
+  const path = window.location.pathname.toLowerCase().replace(/\/+$/, "").replace(/\.html$/, "");
+  const name = path.split("/").pop();
+  const known = ["friends", "groups", "pages", "messages", "profile", "saved", "login", "404"];
+  return known.includes(name) ? name : "home";
 }
 
 export function renderAppChrome() {
@@ -98,6 +97,16 @@ export function renderAppChrome() {
         <a href="./login.html" class="twin-btn twin-btn-primary twin-btn-sm">Đăng nhập</a>
       </div>
     `;
+  }
+
+  // Ô tìm kiếm ở các trang khác: nhấn Enter để chuyển về bảng tin và lọc bài viết
+  const searchInput = document.getElementById("twin-global-search");
+  if (searchInput && page !== "home") {
+    searchInput.placeholder = "Tìm bài viết (nhấn Enter)...";
+    searchInput.addEventListener("keydown", (e) => {
+      const v = searchInput.value.trim();
+      if (e.key === "Enter" && v) window.location.href = `./index.html?q=${encodeURIComponent(v)}`;
+    });
   }
 
   // Mobile bottom navigation bar (app-like)
@@ -144,7 +153,7 @@ function renderLoggedInHeaderRight(user) {
       <a href="./profile.html" class="twin-dropdown-item">
         <img class="twin-avatar" src="${escapeHtml(user.avatar || DEFAULT_AVATAR)}" alt="" />
         <div>
-          <div style="font-weight:700">${escapeHtml(user.name)}</div>
+          <div id="twin-account-name" style="font-weight:700">${escapeHtml(user.name)}</div>
           <div class="twin-post-meta">Xem trang cá nhân</div>
         </div>
       </a>
@@ -170,15 +179,31 @@ function renderLoggedInHeaderRight(user) {
     notifDrop.classList.remove("open");
     accDrop.classList.toggle("open");
   };
-  document.addEventListener("click", () => {
-    notifDrop.classList.remove("open");
-    accDrop.classList.remove("open");
-  });
+  if (!globalListenersBound) {
+    globalListenersBound = true;
+    document.addEventListener("click", () => {
+      document.getElementById("twin-notif-dropdown")?.classList.remove("open");
+      document.getElementById("twin-account-dropdown")?.classList.remove("open");
+    });
+    // Bấm nền tối hoặc nhấn Esc để đóng cửa sổ (modal)
+    document.addEventListener("click", (e) => {
+      if (e.target.classList && e.target.classList.contains("twin-modal-backdrop")) e.target.classList.remove("open");
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") document.querySelectorAll(".twin-modal-backdrop.open").forEach((m) => m.classList.remove("open"));
+    });
+  }
+  // Chạm vào trong hộp thông báo không làm đóng hộp
+  notifDrop.addEventListener("click", (e) => e.stopPropagation());
 
   document.getElementById("twin-theme-btn").onclick = toggleTheme;
   document.getElementById("twin-menu-theme").onclick = toggleTheme;
   document.getElementById("twin-logout-btn").onclick = async () => {
-    await signOut(auth);
+    try {
+      await signOut(auth);
+    } catch (err) {
+      console.error(err);
+    }
     window.location.href = "./login.html";
   };
 }
@@ -212,7 +237,7 @@ function subscribeNotifications(uid) {
       .slice(0, 15)
       .map(
         (n) => `
-      <a href="${escapeHtml(n.link || "./index.html")}" data-nid="${n.id}" class="twin-dropdown-item ${n.read ? "" : "twin-notif-unread"}">
+      <a href="${escapeHtml(safeLink(n.link))}" data-nid="${n.id}" class="twin-dropdown-item ${n.read ? "" : "twin-notif-unread"}">
         <img class="twin-avatar twin-avatar-sm" src="${escapeHtml(n.fromAvatar || DEFAULT_AVATAR)}" alt="" />
         <div>
           <div style="font-size:13.5px;line-height:1.35;"><strong>${escapeHtml(n.fromName)}</strong> ${escapeHtml(n.text)}</div>
@@ -227,7 +252,7 @@ function subscribeNotifications(uid) {
         updateDoc(doc(db, "notifications", a.dataset.nid), { read: true }).catch(() => {});
       });
     });
-  }, () => {});
+  }, (err) => console.warn("Notifications:", err));
 }
 
 export function openTwinChat(peer) {
@@ -289,6 +314,9 @@ export function openTwinChat(peer) {
       msgWrap.appendChild(div);
     });
     msgWrap.scrollTop = msgWrap.scrollHeight;
+  }, (err) => {
+    console.warn("Chat:", err);
+    msgWrap.textContent = friendlyError(err);
   });
 
   box.querySelector(".twin-chat-form").onsubmit = async (e) => {
@@ -297,11 +325,17 @@ export function openTwinChat(peer) {
     const text = input.value.trim();
     if (!text) return;
     input.value = "";
-    await addDoc(collection(db, "messages", chatId, "items"), {
-      senderUid: currentUserData.uid,
-      text,
-      createdAt: serverTimestamp()
-    });
+    try {
+      await addDoc(collection(db, "messages", chatId, "items"), {
+        senderUid: currentUserData.uid,
+        text,
+        createdAt: serverTimestamp()
+      });
+    } catch (err) {
+      console.error(err);
+      input.value = text;
+      showToast(friendlyError(err));
+    }
   };
 
   box.querySelector(".chat-close").onclick = () => {
@@ -313,7 +347,7 @@ export function openTwinChat(peer) {
   openChats.set(peer.uid, { box, unsub });
 }
 
-export function initTwinPage({ requireAuth = true, chrome = true, onReady = null } = {}) {
+export function initTwinPage({ requireAuth = true, chrome = true, ensureProfile = true, onReady = null } = {}) {
   applySavedTheme();
   if (chrome) renderAppChrome();
 
@@ -325,6 +359,8 @@ export function initTwinPage({ requireAuth = true, chrome = true, onReady = null
   onAuthStateChanged(auth, async (fbUser) => {
     if (!fbUser) {
       currentUserData = null;
+      if (unsubUser) { unsubUser(); unsubUser = null; }
+      if (unsubNotifs) { unsubNotifs(); unsubNotifs = null; }
       if (requireAuth) {
         window.location.href = "./login.html";
         return;
@@ -333,16 +369,42 @@ export function initTwinPage({ requireAuth = true, chrome = true, onReady = null
       return;
     }
 
-    const profile = await ensureUserDoc(fbUser);
+    // Trang đăng nhập không cần tạo/đọc hồ sơ (tránh tranh chấp khi đang đăng ký)
+    if (!ensureProfile) {
+      if (onReady) onReady({ uid: fbUser.uid });
+      return;
+    }
+
+    let profile;
+    try {
+      profile = await ensureUserDoc(fbUser);
+    } catch (err) {
+      console.error(err);
+      showToast(friendlyError(err));
+      if (onReady) onReady(null);
+      return;
+    }
     currentUserData = profile;
     if (chrome) {
       renderLoggedInHeaderRight(profile);
       subscribeNotifications(fbUser.uid);
     }
 
-    onSnapshot(doc(db, "users", fbUser.uid), (snap) => {
-      if (snap.exists()) currentUserData = snap.data();
-    });
+    // Giữ cho đối tượng `profile` (chính là `me` ở các trang) luôn là dữ liệu mới nhất
+    if (unsubUser) unsubUser();
+    unsubUser = onSnapshot(doc(db, "users", fbUser.uid), (snap) => {
+      if (!snap.exists()) return;
+      Object.assign(profile, snap.data());
+      currentUserData = profile;
+      if (chrome) {
+        document.querySelectorAll("#twin-account-btn img, #twin-account-dropdown img").forEach((img) => {
+          const next = profile.avatar || DEFAULT_AVATAR;
+          if (img.getAttribute("src") !== next) img.src = next;
+        });
+        const nameEl = document.getElementById("twin-account-name");
+        if (nameEl && nameEl.textContent !== profile.name) nameEl.textContent = profile.name;
+      }
+    }, (err) => console.warn("User doc:", err));
 
     if (onReady) onReady(profile);
   });

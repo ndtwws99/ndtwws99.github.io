@@ -5,11 +5,14 @@ import {
   deleteDoc,
   arrayUnion,
   arrayRemove,
+  deleteField,
   pushNotification,
   DEFAULT_AVATAR,
   escapeHtml,
   formatTime,
-  showToast
+  toMillis,
+  showToast,
+  friendlyError
 } from "./firebase-service.js";
 
 export const REACTIONS = [
@@ -29,16 +32,39 @@ const SVG = {
   trash: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>`
 };
 
+async function safe(fn) {
+  try {
+    await fn();
+  } catch (err) {
+    console.error(err);
+    showToast(friendlyError(err));
+  }
+}
+
+// Đóng bảng cảm xúc (mobile) khi chạm ra ngoài — đăng ký 1 lần duy nhất
+let pickerCloserBound = false;
+function bindPickerCloser() {
+  if (pickerCloserBound) return;
+  pickerCloserBound = true;
+  document.addEventListener("click", (e) => {
+    document.querySelectorAll(".twin-react-wrap.open").forEach((w) => {
+      if (!w.contains(e.target)) w.classList.remove("open");
+    });
+  });
+}
+
 export function renderPostCard(post, currentUser) {
+  bindPickerCloser();
   const card = document.createElement("article");
   card.className = "twin-card";
+  card.id = `post-${post.id}`;
   const reactions = post.reactions || {};
   const reactionValues = Object.values(reactions);
   const myReactionKey = currentUser ? reactions[currentUser.uid] : null;
   const myReactionObj = REACTIONS.find((r) => r.key === myReactionKey);
   const comments = post.comments || [];
   const isOwner = currentUser && currentUser.uid === post.authorUid;
-  const isSaved = currentUser && (currentUser.savedPosts || []).includes(post.id);
+  let isSaved = !!(currentUser && (currentUser.savedPosts || []).includes(post.id));
 
   const uniqueEmojis = [...new Set(reactionValues)]
     .slice(0, 3)
@@ -100,39 +126,66 @@ export function renderPostCard(post, currentUser) {
           .join("")}
       </div>
       <form class="twin-comment-form">
-        <input class="twin-input" type="text" placeholder="Viết bình luận..." required style="border-radius:999px;padding:8px 14px;" />
+        <input class="twin-input" type="text" placeholder="Viết bình luận..." required maxlength="1000" style="border-radius:999px;padding:8px 14px;" />
         <button class="twin-btn twin-btn-primary twin-btn-sm" type="submit" style="border-radius:999px;">Gửi</button>
       </form>
     </div>
   `;
 
+  const postLink = `./index.html#post-${post.id}`;
+
+  // ---- Cảm xúc ----
+  // Dùng đường dẫn trường (reactions.<uid>) để 2 người bấm cùng lúc không ghi đè nhau
   async function setReaction(key) {
     if (!currentUser) return showToast("Vui lòng đăng nhập để tương tác.");
-    const nextReactions = { ...reactions };
-    if (nextReactions[currentUser.uid] === key) {
-      delete nextReactions[currentUser.uid];
+    const ref = doc(db, "posts", post.id);
+    if (reactions[currentUser.uid] === key) {
+      await safe(() => updateDoc(ref, { [`reactions.${currentUser.uid}`]: deleteField() }));
     } else {
-      nextReactions[currentUser.uid] = key;
-      pushNotification(post.authorUid, {
-        fromUid: currentUser.uid,
-        fromName: currentUser.name,
-        fromAvatar: currentUser.avatar,
-        text: "đã bày tỏ cảm xúc về bài viết của bạn.",
-        link: "./index.html"
-      }).catch(() => {});
+      await safe(async () => {
+        await updateDoc(ref, { [`reactions.${currentUser.uid}`]: key });
+        pushNotification(post.authorUid, {
+          fromUid: currentUser.uid,
+          fromName: currentUser.name,
+          fromAvatar: currentUser.avatar,
+          text: "đã bày tỏ cảm xúc về bài viết của bạn.",
+          link: postLink
+        }).catch(() => {});
+      });
     }
-    await updateDoc(doc(db, "posts", post.id), { reactions: nextReactions });
   }
 
-  card.querySelector(".btn-main-react").onclick = () => setReaction(myReactionKey || "like");
+  const wrap = card.querySelector(".twin-react-wrap");
+  const mainBtn = card.querySelector(".btn-main-react");
+  let pressTimer = null;
+  let longPressed = false;
+  mainBtn.addEventListener("touchstart", () => {
+    longPressed = false;
+    pressTimer = setTimeout(() => {
+      longPressed = true;
+      wrap.classList.add("open");
+    }, 450);
+  }, { passive: true });
+  ["touchend", "touchmove", "touchcancel"].forEach((ev) =>
+    mainBtn.addEventListener(ev, () => clearTimeout(pressTimer), { passive: true })
+  );
+  mainBtn.addEventListener("contextmenu", (e) => { if (longPressed) e.preventDefault(); });
+  mainBtn.onclick = () => {
+    if (longPressed) { longPressed = false; return; }
+    setReaction(myReactionKey || "like");
+  };
   card.querySelectorAll(".twin-react-emoji").forEach((btn) => {
-    btn.onclick = () => setReaction(btn.dataset.react);
+    btn.onclick = () => {
+      wrap.classList.remove("open");
+      setReaction(btn.dataset.react);
+    };
   });
 
+  // ---- Bình luận ----
   card.querySelector(".btn-toggle-cmt").onclick = () => {
     const box = card.querySelector(".twin-comments");
     box.style.display = box.style.display === "none" ? "block" : "none";
-    box.querySelector("input")?.focus();
+    if (box.style.display !== "none") box.querySelector("input")?.focus();
   };
 
   card.querySelector(".twin-comment-form").onsubmit = async (e) => {
@@ -150,46 +203,153 @@ export function renderPostCard(post, currentUser) {
       text,
       createdAt: Date.now()
     };
-    await updateDoc(doc(db, "posts", post.id), { comments: arrayUnion(newCmt) });
+    try {
+      await updateDoc(doc(db, "posts", post.id), { comments: arrayUnion(newCmt) });
+    } catch (err) {
+      console.error(err);
+      input.value = text; // không mất nội dung khi gửi lỗi
+      showToast(friendlyError(err));
+      return;
+    }
     pushNotification(post.authorUid, {
       fromUid: currentUser.uid,
       fromName: currentUser.name,
       fromAvatar: currentUser.avatar,
       text: `đã bình luận: "${text.slice(0, 40)}"`,
-      link: "./index.html"
+      link: postLink
     }).catch(() => {});
   };
 
+  // ---- Chia sẻ: luôn trỏ về index.html (nơi có bảng tin) ----
   card.querySelector(".btn-share-post").onclick = async () => {
-    const url = `${window.location.origin}${window.location.pathname}#post-${post.id}`;
+    const base = new URL("./index.html", window.location.href);
+    base.search = "";
+    base.hash = `post-${post.id}`;
     try {
-      await navigator.clipboard.writeText(url);
+      await navigator.clipboard.writeText(base.href);
       showToast("Đã sao chép liên kết bài viết!");
     } catch {
-      showToast("Đã sao chép liên kết!");
+      window.prompt("Sao chép liên kết bài viết:", base.href);
     }
   };
 
-  card.querySelector(".btn-save-post").onclick = async () => {
+  // ---- Lưu bài: cập nhật giao diện ngay (optimistic) ----
+  const saveBtn = card.querySelector(".btn-save-post");
+  saveBtn.onclick = async () => {
     if (!currentUser) return showToast("Vui lòng đăng nhập.");
-    const userRef = doc(db, "users", currentUser.uid);
-    if (isSaved) {
-      await updateDoc(userRef, { savedPosts: arrayRemove(post.id) });
-      showToast("Đã bỏ lưu bài viết.");
-    } else {
-      await updateDoc(userRef, { savedPosts: arrayUnion(post.id) });
-      showToast("Đã lưu bài viết!");
+    const wasSaved = isSaved;
+    const paint = () => {
+      saveBtn.classList.toggle("reacted", isSaved);
+      saveBtn.querySelector("span").textContent = isSaved ? "Đã lưu" : "Lưu";
+    };
+    isSaved = !wasSaved;
+    paint();
+    const list = Array.isArray(currentUser.savedPosts) ? currentUser.savedPosts : (currentUser.savedPosts = []);
+    try {
+      await updateDoc(doc(db, "users", currentUser.uid), {
+        savedPosts: wasSaved ? arrayRemove(post.id) : arrayUnion(post.id)
+      });
+      if (wasSaved) {
+        const i = list.indexOf(post.id);
+        if (i >= 0) list.splice(i, 1);
+      } else if (!list.includes(post.id)) {
+        list.push(post.id);
+      }
+      showToast(wasSaved ? "Đã bỏ lưu bài viết." : "Đã lưu bài viết!");
+    } catch (err) {
+      console.error(err);
+      isSaved = wasSaved;
+      paint();
+      showToast(friendlyError(err));
     }
   };
 
+  // ---- Xóa bài ----
   const delBtn = card.querySelector(".btn-del-post");
   if (delBtn) {
     delBtn.onclick = async () => {
       if (!confirm("Xóa bài viết này?")) return;
-      await deleteDoc(doc(db, "posts", post.id));
-      showToast("Đã xóa bài viết.");
+      await safe(async () => {
+        await deleteDoc(doc(db, "posts", post.id));
+        showToast("Đã xóa bài viết.");
+      });
     };
   }
 
   return card;
+}
+
+// ==========================================================================
+// Danh sách bài viết có "so khớp" (keyed): chỉ vẽ lại bài nào thật sự thay đổi,
+// nên đang gõ bình luận / mở hộp bình luận sẽ không bị mất khi có người khác tương tác.
+// ==========================================================================
+const listCache = new WeakMap();
+let hashHandled = false;
+
+function postSignature(p, currentUser) {
+  const saved = !!(currentUser && (currentUser.savedPosts || []).includes(p.id));
+  return JSON.stringify([
+    p.content, p.imageUrl, p.feeling, p.groupName, p.authorName, p.authorAvatar,
+    p.reactions || {}, (p.comments || []).map((c) => c.id), toMillis(p.createdAt), saved
+  ]);
+}
+
+export function renderPostList(container, posts, currentUser, emptyHtml = "") {
+  let map = listCache.get(container);
+  if (!map) {
+    map = new Map();
+    listCache.set(container, map);
+  }
+  if (!posts.length) {
+    container.innerHTML = emptyHtml;
+    map.clear();
+    return;
+  }
+  [...container.children].forEach((ch) => { if (!ch.dataset.postId) ch.remove(); });
+
+  const seen = new Set();
+  let prev = null;
+  posts.forEach((p) => {
+    const sig = postSignature(p, currentUser);
+    let entry = map.get(p.id);
+    if (!entry || entry.sig !== sig) {
+      const card = renderPostCard(p, currentUser);
+      card.dataset.postId = p.id;
+      if (entry) {
+        // giữ lại trạng thái hộp bình luận + nội dung đang gõ
+        const oldBox = entry.card.querySelector(".twin-comments");
+        const oldInput = entry.card.querySelector(".twin-comment-form input");
+        const newBox = card.querySelector(".twin-comments");
+        const newInput = card.querySelector(".twin-comment-form input");
+        if (oldBox && newBox && oldBox.style.display !== "none") newBox.style.display = "block";
+        if (oldInput && newInput && oldInput.value) newInput.value = oldInput.value;
+        const hadFocus = oldInput && document.activeElement === oldInput;
+        if (entry.card.parentNode === container) container.replaceChild(card, entry.card);
+        if (hadFocus && newInput) newInput.focus();
+      }
+      entry = { card, sig };
+      map.set(p.id, entry);
+    }
+    seen.add(p.id);
+    const want = prev ? prev.nextSibling : container.firstChild;
+    if (entry.card !== want) container.insertBefore(entry.card, want);
+    prev = entry.card;
+  });
+  for (const [id, e] of map) {
+    if (!seen.has(id)) {
+      e.card.remove();
+      map.delete(id);
+    }
+  }
+
+  // Mở liên kết chia sẻ (#post-<id>): cuộn tới bài và nhấp nháy nhẹ
+  if (!hashHandled && window.location.hash.startsWith("#post-")) {
+    const target = document.getElementById(decodeURIComponent(window.location.hash.slice(1)));
+    if (target) {
+      hashHandled = true;
+      target.scrollIntoView({ behavior: "smooth", block: "center" });
+      target.classList.add("twin-highlight");
+      setTimeout(() => target.classList.remove("twin-highlight"), 2400);
+    }
+  }
 }
