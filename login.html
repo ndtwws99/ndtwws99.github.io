@@ -66,7 +66,8 @@
       signInWithGoogle,
       updateProfile,
       ensureUserDoc,
-      showToast
+      showToast,
+      friendlyError
     } from "./assets/js/firebase-service.js";
 
     const tabLogin = document.getElementById("tab-login");
@@ -87,16 +88,25 @@
       tabLogin.classList.remove("active");
     };
 
+    // `busy` ngăn trang tự chuyển hướng giữa chừng khi đang đăng ký / đăng nhập,
+    // tránh việc hồ sơ bị tạo trước khi kịp lưu tên hiển thị.
+    let busy = false;
+
     initTwinPage({
       requireAuth: false,
       chrome: false,
+      ensureProfile: false,
       onReady: (user) => {
-        if (user) window.location.href = "./index.html";
+        if (user && !busy) window.location.href = "./index.html";
       }
     });
 
     loginForm.onsubmit = async (e) => {
       e.preventDefault();
+      if (busy) return;
+      busy = true;
+      const submitBtn = loginForm.querySelector('button[type="submit"]');
+      submitBtn.disabled = true;
       try {
         await signInWithEmailAndPassword(
           auth,
@@ -105,34 +115,49 @@
         );
         window.location.href = "./index.html";
       } catch (err) {
-        showToast("Đăng nhập thất bại: " + err.message);
+        showToast("Đăng nhập thất bại: " + friendlyError(err));
+        busy = false;
+        submitBtn.disabled = false;
       }
     };
 
     regForm.onsubmit = async (e) => {
       e.preventDefault();
+      if (busy) return;
+      busy = true;
+      const submitBtn = regForm.querySelector('button[type="submit"]');
+      submitBtn.disabled = true;
       try {
         const name = document.getElementById("reg-name").value.trim();
         const email = document.getElementById("reg-email").value.trim();
         const pass = document.getElementById("reg-pass").value;
         const cred = await createUserWithEmailAndPassword(auth, email, pass);
-        await updateProfile(cred.user, { displayName: name });
-        await ensureUserDoc(cred.user, { name });
+        try {
+          await updateProfile(cred.user, { displayName: name });
+          await ensureUserDoc(cred.user, { name });
+        } catch (err) {
+          // Tài khoản đã tạo xong; trang chủ sẽ tự tạo lại hồ sơ nếu bước này lỗi
+          console.error(err);
+        }
         window.location.href = "./index.html";
       } catch (err) {
-        showToast("Đăng ký thất bại: " + err.message);
+        showToast("Đăng ký thất bại: " + friendlyError(err));
+        busy = false;
+        submitBtn.disabled = false;
       }
     };
 
     document.getElementById("btn-google-login").onclick = async () => {
+      if (busy) return;
+      busy = true;
       const btn = document.getElementById("btn-google-login");
       btn.disabled = true;
       try {
         await signInWithGoogle();
         window.location.href = "./index.html";
       } catch (err) {
-        showToast("Đăng nhập Google thất bại: " + err.message);
-      } finally {
+        showToast("Đăng nhập Google thất bại: " + friendlyError(err));
+        busy = false;
         btn.disabled = false;
       }
     };

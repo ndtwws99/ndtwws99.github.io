@@ -21,8 +21,8 @@
 
   <script type="module">
     import { initTwinPage } from "./assets/js/layout.js";
-    import { renderPostCard } from "./assets/js/post-ui.js";
-    import { db, doc, collection, onSnapshot } from "./assets/js/firebase-service.js";
+    import { renderPostList } from "./assets/js/post-ui.js";
+    import { db, doc, collection, onSnapshot, showToast, friendlyError, toMillis } from "./assets/js/firebase-service.js";
 
     initTwinPage({
       requireAuth: true,
@@ -30,29 +30,36 @@
         if (!me) return;
         let savedIds = me.savedPosts || [];
         let postsMap = [];
+        let userLoaded = false;
+        let postsLoaded = false;
 
         const draw = () => {
+          if (!userLoaded || !postsLoaded) return; // chờ cả 2 nguồn dữ liệu, tránh nháy "chưa lưu"
           const box = document.getElementById("saved-posts-list");
-          box.innerHTML = "";
-          const list = postsMap.filter((p) => savedIds.includes(p.id));
-          if (!list.length) {
-            box.innerHTML = '<div class="twin-card" style="color:var(--text-3);text-align:center;padding:32px;">Bạn chưa lưu bài viết nào.</div>';
-            return;
-          }
-          list.forEach((p) => box.appendChild(renderPostCard(p, { ...me, savedPosts: savedIds })));
+          // giữ đúng thứ tự mới lưu gần nhất lên đầu
+          const order = new Map(savedIds.map((id, i) => [id, i]));
+          const list = postsMap
+            .filter((p) => order.has(p.id))
+            .sort((a, b) => order.get(b.id) - order.get(a.id));
+          renderPostList(
+            box,
+            list,
+            { ...me, savedPosts: savedIds },
+            '<div class="twin-card" style="color:var(--text-3);text-align:center;padding:32px;">Bạn chưa lưu bài viết nào.</div>'
+          );
         };
 
         onSnapshot(doc(db, "users", me.uid), (snap) => {
-          if (snap.exists()) {
-            savedIds = snap.data().savedPosts || [];
-            draw();
-          }
-        });
+          if (snap.exists()) savedIds = snap.data().savedPosts || [];
+          userLoaded = true;
+          draw();
+        }, (err) => showToast(friendlyError(err)));
         onSnapshot(collection(db, "posts"), (snap) => {
           postsMap = [];
           snap.forEach((d) => postsMap.push({ id: d.id, ...d.data() }));
+          postsLoaded = true;
           draw();
-        });
+        }, (err) => showToast(friendlyError(err)));
       }
     });
   </script>

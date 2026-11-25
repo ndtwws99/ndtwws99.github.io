@@ -72,7 +72,8 @@
       DEFAULT_AVATAR,
       escapeHtml,
       formatTime,
-      showToast
+      showToast,
+      friendlyError
     } from "./assets/js/firebase-service.js";
 
     let me = null;
@@ -114,6 +115,7 @@
     }
 
     function selectPeer(peer) {
+      const same = activePeer && activePeer.uid === peer.uid;
       activePeer = peer;
       shell.classList.add("chat-open");
       topbar.style.display = "flex";
@@ -123,6 +125,7 @@
       document.getElementById("msg-peer-profile").href = `./profile.html?uid=${encodeURIComponent(peer.uid)}`;
       renderUsers(document.getElementById("msg-search-user").value);
 
+      if (same && unsubChat) return; // đã đang mở đúng cuộc trò chuyện này
       if (unsubChat) unsubChat();
       const chatId = getChatId(me.uid, peer.uid);
       const q = query(collection(db, "messages", chatId, "items"), orderBy("createdAt", "asc"));
@@ -156,6 +159,12 @@
           feedEl.appendChild(div);
         });
         feedEl.scrollTop = feedEl.scrollHeight;
+      }, (err) => {
+        feedEl.innerHTML = "";
+        const box = document.createElement("div");
+        box.className = "twin-messenger-empty";
+        box.textContent = friendlyError(err);
+        feedEl.appendChild(box);
       });
     }
 
@@ -179,7 +188,7 @@
             const found = allUsers.find((u) => u.uid === preselectUid);
             if (found) selectPeer(found);
           }
-        });
+        }, (err) => showToast(friendlyError(err)));
 
         sendForm.onsubmit = async (e) => {
           e.preventDefault();
@@ -188,11 +197,16 @@
           if (!text) return;
           textInput.value = "";
           const chatId = getChatId(me.uid, activePeer.uid);
-          await addDoc(collection(db, "messages", chatId, "items"), {
-            senderUid: me.uid,
-            text,
-            createdAt: serverTimestamp()
-          });
+          try {
+            await addDoc(collection(db, "messages", chatId, "items"), {
+              senderUid: me.uid,
+              text,
+              createdAt: serverTimestamp()
+            });
+          } catch (err) {
+            textInput.value = text; // không mất tin nhắn khi gửi lỗi
+            showToast(friendlyError(err));
+          }
         };
 
         imgInput.onchange = async () => {
@@ -209,7 +223,7 @@
               createdAt: serverTimestamp()
             });
           } catch (err) {
-            showToast(err.message);
+            showToast(friendlyError(err));
           } finally {
             imgInput.value = "";
           }

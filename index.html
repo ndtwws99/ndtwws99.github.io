@@ -18,7 +18,7 @@
     <div class="twin-grid-3">
       <aside class="twin-sidebar twin-left-col">
         <a href="./profile.html" class="twin-side-item">
-          <img class="twin-avatar twin-avatar-sm" id="side-me-avatar" src="" alt="" />
+          <img class="twin-avatar twin-avatar-sm" id="side-me-avatar" alt="" />
           <span id="side-me-name">Trang cá nhân</span>
         </a>
         <a href="./friends.html" class="twin-side-item">
@@ -49,7 +49,7 @@
 
         <div class="twin-card">
           <div class="twin-composer-top">
-            <img class="twin-avatar" id="composer-avatar" src="" alt="" />
+            <img class="twin-avatar" id="composer-avatar" alt="" />
             <textarea id="post-content" class="twin-textarea" placeholder="Bạn đang nghĩ gì?"></textarea>
           </div>
           <div id="post-preview-wrap" style="margin-top:10px;display:none;position:relative;">
@@ -106,7 +106,7 @@
 
   <script type="module">
     import { initTwinPage, openTwinChat } from "./assets/js/layout.js";
-    import { renderPostCard } from "./assets/js/post-ui.js";
+    import { renderPostList } from "./assets/js/post-ui.js";
     import {
       db,
       collection,
@@ -119,7 +119,9 @@
       uploadToCloudinary,
       DEFAULT_AVATAR,
       escapeHtml,
-      showToast
+      showToast,
+      friendlyError,
+      toMillis
     } from "./assets/js/firebase-service.js";
 
     let me = null;
@@ -150,16 +152,14 @@
 
     function renderFeedList(filterText = "") {
       const feed = document.getElementById("twin-feed");
-      feed.innerHTML = "";
       const q = filterText.trim().toLowerCase();
       const filtered = allPosts.filter((p) =>
         !q || (p.content || "").toLowerCase().includes(q) || (p.authorName || "").toLowerCase().includes(q)
       );
-      if (!filtered.length) {
-        feed.innerHTML = '<div class="twin-card" style="text-align:center;color:var(--text-3);padding:32px;">Chưa có bài viết nào. Hãy chia sẻ điều đầu tiên trên Twin!</div>';
-        return;
-      }
-      filtered.forEach((p) => feed.appendChild(renderPostCard(p, me)));
+      const empty = q
+        ? '<div class="twin-card" style="text-align:center;color:var(--text-3);padding:32px;">Không tìm thấy bài viết phù hợp.</div>'
+        : '<div class="twin-card" style="text-align:center;color:var(--text-3);padding:32px;">Chưa có bài viết nào. Hãy chia sẻ điều đầu tiên trên Twin!</div>';
+      renderPostList(feed, filtered, me, empty);
     }
 
     initTwinPage({
@@ -172,7 +172,10 @@
         document.getElementById("side-me-avatar").src = me.avatar || DEFAULT_AVATAR;
         document.getElementById("composer-avatar").src = me.avatar || DEFAULT_AVATAR;
 
-        document.getElementById("twin-global-search")?.addEventListener("input", (e) => {
+        const searchEl = document.getElementById("twin-global-search");
+        const initialQ = new URLSearchParams(window.location.search).get("q");
+        if (searchEl && initialQ) searchEl.value = initialQ;
+        searchEl?.addEventListener("input", (e) => {
           renderFeedList(e.target.value);
         });
 
@@ -204,7 +207,7 @@
             previewWrap.style.display = "none";
             showToast("Đã đăng bài!");
           } catch (err) {
-            showToast(err.message || "Lỗi khi đăng bài.");
+            showToast(friendlyError(err));
           } finally {
             btn.disabled = false;
             btn.textContent = "Đăng bài";
@@ -229,7 +232,7 @@
             });
             showToast("Đã đăng tin!");
           } catch (err) {
-            showToast(err.message);
+            showToast(friendlyError(err));
           } finally {
             storyFile.value = "";
           }
@@ -248,8 +251,12 @@
           `;
           document.getElementById("btn-add-story").onclick = () => storyFile.click();
 
+          const dayAgo = Date.now() - 24 * 60 * 60 * 1000;
           snap.forEach((d) => {
             const s = d.data();
+            // Tin chỉ hiển thị trong 24 giờ (bài vừa đăng chưa có timestamp thì vẫn hiện)
+            if (s.createdAt && toMillis(s.createdAt) < dayAgo) return;
+            if (!s.imageUrl) return;
             const card = document.createElement("div");
             card.className = "twin-story-card";
             card.innerHTML = `
@@ -267,15 +274,15 @@
             };
             row.appendChild(card);
           });
-        });
+        }, (err) => showToast(friendlyError(err)));
 
         onSnapshot(query(collection(db, "posts"), orderBy("createdAt", "desc"), limit(40)), (snap) => {
           allPosts = [];
           snap.forEach((d) => allPosts.push({ id: d.id, ...d.data() }));
           renderFeedList(document.getElementById("twin-global-search")?.value || "");
-        });
+        }, (err) => showToast(friendlyError(err)));
 
-        onSnapshot(collection(db, "users"), (snap) => {
+        onSnapshot(query(collection(db, "users"), limit(100)), (snap) => {
           const contactsEl = document.getElementById("twin-contacts");
           contactsEl.innerHTML = "";
           snap.forEach((d) => {
@@ -290,7 +297,7 @@
             btn.onclick = () => openTwinChat(u);
             contactsEl.appendChild(btn);
           });
-        });
+        }, (err) => console.warn("Contacts:", err));
       }
     });
   </script>

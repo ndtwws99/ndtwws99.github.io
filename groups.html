@@ -60,7 +60,7 @@
 
   <script type="module">
     import { initTwinPage } from "./assets/js/layout.js";
-    import { renderPostCard } from "./assets/js/post-ui.js";
+    import { renderPostList } from "./assets/js/post-ui.js";
     import {
       db,
       collection,
@@ -78,12 +78,14 @@
       DEFAULT_AVATAR,
       escapeHtml,
       toMillis,
-      showToast
+      showToast,
+      friendlyError
     } from "./assets/js/firebase-service.js";
 
     let me = null;
     let activeGroup = null;
     let unsubGroupPosts = null;
+    const groupsById = new Map(); // dữ liệu nhóm mới nhất từ Firestore
 
     const modal = document.getElementById("group-modal");
     document.getElementById("btn-open-create-group").onclick = () => modal.classList.add("open");
@@ -94,28 +96,33 @@
       activeGroup = null;
     };
 
+    function paintGroupHeader(g) {
+      document.getElementById("gd-name").textContent = g.name;
+      document.getElementById("gd-desc").textContent = `${(g.members || []).length} thành viên${g.description ? " · " + g.description : ""}`;
+    }
+
     function openGroupDetail(g) {
       activeGroup = g;
       const sec = document.getElementById("group-detail-section");
       sec.style.display = "block";
-      document.getElementById("gd-name").textContent = g.name;
-      document.getElementById("gd-desc").textContent = `${(g.members || []).length} thành viên · ${g.description || ""}`;
+      paintGroupHeader(g);
       sec.scrollIntoView({ behavior: "smooth" });
 
       if (unsubGroupPosts) unsubGroupPosts();
+      const list = document.getElementById("gd-posts");
+      list.innerHTML = "";
       const q = query(collection(db, "posts"), where("groupId", "==", g.id));
       unsubGroupPosts = onSnapshot(q, (snap) => {
-        const list = document.getElementById("gd-posts");
-        list.innerHTML = "";
         const items = [];
         snap.forEach((d) => items.push({ id: d.id, ...d.data() }));
         items.sort((a, b) => toMillis(b.createdAt) - toMillis(a.createdAt));
-        if (!items.length) {
-          list.innerHTML = '<div class="twin-card" style="color:var(--text-3);text-align:center;">Chưa có bài viết nào trong nhóm này.</div>';
-          return;
-        }
-        items.forEach((p) => list.appendChild(renderPostCard(p, me)));
-      });
+        renderPostList(
+          list,
+          items,
+          me,
+          '<div class="twin-card" style="color:var(--text-3);text-align:center;">Chưa có bài viết nào trong nhóm này.</div>'
+        );
+      }, (err) => showToast(friendlyError(err)));
     }
 
     initTwinPage({
@@ -129,6 +136,9 @@
           const name = document.getElementById("cg-name").value.trim();
           const description = document.getElementById("cg-desc").value.trim();
           const coverFile = document.getElementById("cg-cover").files[0];
+          const submitBtn = e.target.querySelector('button[type="submit"]');
+          if (submitBtn.disabled) return;
+          submitBtn.disabled = true;
           try {
             let coverUrl = "";
             if (coverFile) coverUrl = await uploadToCloudinary(coverFile);
@@ -144,33 +154,57 @@
             modal.classList.remove("open");
             showToast("Đã tạo nhóm mới!");
           } catch (err) {
-            showToast(err.message);
+            showToast(friendlyError(err));
+          } finally {
+            submitBtn.disabled = false;
           }
         };
 
-        document.getElementById("gd-post-btn").onclick = async () => {
+        const publishGroupPost = async () => {
           if (!activeGroup) return;
+          const latest = groupsById.get(activeGroup.id) || activeGroup;
+          if (!(latest.members || []).includes(me.uid)) {
+            return showToast("Hãy tham gia nhóm trước khi đăng bài.");
+          }
           const input = document.getElementById("gd-post-input");
           const content = input.value.trim();
           if (!content) return;
           input.value = "";
-          await addDoc(collection(db, "posts"), {
-            authorUid: me.uid,
-            authorName: me.name,
-            authorAvatar: me.avatar || DEFAULT_AVATAR,
-            groupId: activeGroup.id,
-            groupName: activeGroup.name,
-            content,
-            reactions: {},
-            comments: [],
-            createdAt: serverTimestamp()
-          });
-          showToast("Đã đăng bài trong nhóm!");
+          try {
+            await addDoc(collection(db, "posts"), {
+              authorUid: me.uid,
+              authorName: me.name,
+              authorAvatar: me.avatar || DEFAULT_AVATAR,
+              groupId: latest.id,
+              groupName: latest.name,
+              content,
+              reactions: {},
+              comments: [],
+              createdAt: serverTimestamp()
+            });
+            showToast("Đã đăng bài trong nhóm!");
+          } catch (err) {
+            input.value = content;
+            showToast(friendlyError(err));
+          }
         };
+        document.getElementById("gd-post-btn").onclick = publishGroupPost;
+        document.getElementById("gd-post-input").addEventListener("keydown", (e) => {
+          if (e.key === "Enter" && !e.isComposing) {
+            e.preventDefault();
+            publishGroupPost();
+          }
+        });
 
         onSnapshot(query(collection(db, "groups"), orderBy("createdAt", "desc")), (snap) => {
           const grid = document.getElementById("groups-grid");
           grid.innerHTML = "";
+          groupsById.clear();
+          snap.forEach((d) => groupsById.set(d.id, { id: d.id, ...d.data() }));
+          if (activeGroup && groupsById.has(activeGroup.id)) {
+            activeGroup = groupsById.get(activeGroup.id);
+            paintGroupHeader(activeGroup);
+          }
           if (snap.empty) {
             grid.innerHTML = '<div class="twin-card" style="color:var(--text-3);">Chưa có nhóm nào. Hãy tạo nhóm đầu tiên!</div>';
             return;
@@ -193,12 +227,16 @@
               </div>
             `;
             card.querySelector(".btn-join").onclick = async () => {
-              await updateDoc(doc(db, "groups", g.id), { members: joined ? arrayRemove(me.uid) : arrayUnion(me.uid) });
+              try {
+                await updateDoc(doc(db, "groups", g.id), { members: joined ? arrayRemove(me.uid) : arrayUnion(me.uid) });
+              } catch (err) {
+                showToast(friendlyError(err));
+              }
             };
             card.querySelector(".btn-view").onclick = () => openGroupDetail(g);
             grid.appendChild(card);
           });
-        });
+        }, (err) => showToast(friendlyError(err)));
       }
     });
   </script>

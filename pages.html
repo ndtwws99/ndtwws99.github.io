@@ -31,7 +31,7 @@
         <input id="cp-cat" class="twin-input" placeholder="Danh mục (VD: Công nghệ, Giải trí...)" required />
         <textarea id="cp-desc" class="twin-textarea" placeholder="Mô tả Trang..."></textarea>
         <label class="twin-btn twin-btn-secondary twin-btn-sm" style="cursor:pointer;">
-          Ảnh đại diện Trang (tùy chọn)
+          <span id="cp-cover-label">Ảnh đại diện Trang (tùy chọn)</span>
           <input id="cp-cover" type="file" accept="image/*" hidden />
         </label>
         <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:4px;">
@@ -58,12 +58,18 @@
       serverTimestamp,
       uploadToCloudinary,
       escapeHtml,
-      showToast
+      showToast,
+      friendlyError
     } from "./assets/js/firebase-service.js";
 
     const modal = document.getElementById("page-modal");
     document.getElementById("btn-open-create-page").onclick = () => modal.classList.add("open");
     document.getElementById("cp-cancel").onclick = () => modal.classList.remove("open");
+    document.getElementById("cp-cover").onchange = (e) => {
+      document.getElementById("cp-cover-label").textContent = e.target.files[0]
+        ? "Đã chọn: " + e.target.files[0].name
+        : "Ảnh đại diện Trang (tùy chọn)";
+    };
 
     initTwinPage({
       requireAuth: true,
@@ -76,6 +82,9 @@
           const category = document.getElementById("cp-cat").value.trim();
           const description = document.getElementById("cp-desc").value.trim();
           const coverFile = document.getElementById("cp-cover").files[0];
+          const submitBtn = e.target.querySelector('button[type="submit"]');
+          if (submitBtn.disabled) return;
+          submitBtn.disabled = true;
           try {
             let coverUrl = "";
             if (coverFile) coverUrl = await uploadToCloudinary(coverFile);
@@ -89,10 +98,13 @@
               createdAt: serverTimestamp()
             });
             e.target.reset();
+            document.getElementById("cp-cover-label").textContent = "Ảnh đại diện Trang (tùy chọn)";
             modal.classList.remove("open");
             showToast("Đã tạo Trang mới!");
           } catch (err) {
-            showToast(err.message);
+            showToast(friendlyError(err));
+          } finally {
+            submitBtn.disabled = false;
           }
         };
 
@@ -120,11 +132,15 @@
               </div>
             `;
             card.querySelector(".btn-follow").onclick = async () => {
-              await updateDoc(doc(db, "pages", p.id), { followers: following ? arrayRemove(me.uid) : arrayUnion(me.uid) });
+              try {
+                await updateDoc(doc(db, "pages", p.id), { followers: following ? arrayRemove(me.uid) : arrayUnion(me.uid) });
+              } catch (err) {
+                showToast(friendlyError(err));
+              }
             };
             grid.appendChild(card);
           });
-        });
+        }, (err) => showToast(friendlyError(err)));
       }
     });
   </script>

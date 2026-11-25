@@ -26,7 +26,7 @@
       <div class="twin-profile-bar">
         <div class="twin-profile-id">
           <div style="position:relative;">
-            <img id="pf-avatar" class="twin-avatar twin-avatar-xl" src="" alt="Avatar" />
+            <img id="pf-avatar" class="twin-avatar twin-avatar-xl" alt="Avatar" />
             <label id="pf-avatar-btn" class="twin-icon-btn" style="position:absolute;right:4px;bottom:4px;display:none;cursor:pointer;box-shadow:var(--shadow-sm);" title="Đổi ảnh đại diện">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
               <input id="pf-avatar-input" type="file" accept="image/*" hidden />
@@ -46,7 +46,7 @@
         <h3 style="margin-bottom:10px;font-size:16px;">Giới thiệu</h3>
         <p id="pf-bio-box" style="font-size:14px;color:var(--text-2);margin-bottom:12px;"></p>
         <div id="pf-edit-bio-wrap" style="display:none;">
-          <textarea id="pf-bio-input" class="twin-textarea" placeholder="Cập nhật tiểu sử..."></textarea>
+          <textarea id="pf-bio-input" class="twin-textarea" maxlength="300" placeholder="Cập nhật tiểu sử..."></textarea>
           <button id="pf-save-bio" class="twin-btn twin-btn-primary twin-btn-sm" style="margin-top:8px;width:100%;">Lưu tiểu sử</button>
         </div>
       </aside>
@@ -59,7 +59,7 @@
 
   <script type="module">
     import { initTwinPage } from "./assets/js/layout.js";
-    import { renderPostCard } from "./assets/js/post-ui.js";
+    import { renderPostList } from "./assets/js/post-ui.js";
     import {
       db,
       doc,
@@ -70,11 +70,13 @@
       where,
       onSnapshot,
       arrayUnion,
+      arrayRemove,
       uploadToCloudinary,
       pushNotification,
       DEFAULT_AVATAR,
       toMillis,
-      showToast
+      showToast,
+      friendlyError
     } from "./assets/js/firebase-service.js";
 
     initTwinPage({
@@ -109,11 +111,15 @@
           document.getElementById("pf-bio-input").value = profile.bio || "";
 
           document.getElementById("pf-save-bio").onclick = async () => {
-            const bio = document.getElementById("pf-bio-input").value.trim();
-            await updateDoc(doc(db, "users", me.uid), { bio });
-            document.getElementById("pf-bio").textContent = bio;
-            document.getElementById("pf-bio-box").textContent = bio || "Chưa có tiểu sử.";
-            showToast("Đã lưu tiểu sử!");
+            const bio = document.getElementById("pf-bio-input").value.trim().slice(0, 300);
+            try {
+              await updateDoc(doc(db, "users", me.uid), { bio });
+              document.getElementById("pf-bio").textContent = bio;
+              document.getElementById("pf-bio-box").textContent = bio || "Chưa có tiểu sử.";
+              showToast("Đã lưu tiểu sử!");
+            } catch (err) {
+              showToast(friendlyError(err));
+            }
           };
 
           document.getElementById("pf-avatar-input").onchange = async (e) => {
@@ -126,7 +132,9 @@
               document.getElementById("pf-avatar").src = url;
               showToast("Đã cập nhật ảnh đại diện!");
             } catch (err) {
-              showToast(err.message);
+              showToast(friendlyError(err));
+            } finally {
+              e.target.value = "";
             }
           };
 
@@ -142,45 +150,94 @@
               c.style.display = "block";
               showToast("Đã cập nhật ảnh bìa!");
             } catch (err) {
-              showToast(err.message);
+              showToast(friendlyError(err));
+            } finally {
+              e.target.value = "";
             }
           };
         } else {
           const actions = document.getElementById("pf-actions");
-          const isFriend = (me.friends || []).includes(targetUid);
+          // Trạng thái: friend | incoming (họ đã gửi cho mình) | sent (mình đã gửi) | none
+          let state = (me.friends || []).includes(targetUid)
+            ? "friend"
+            : (me.friendRequests || []).includes(targetUid)
+              ? "incoming"
+              : (profile.friendRequests || []).includes(me.uid)
+                ? "sent"
+                : "none";
+
+          const labels = {
+            friend: ["Bạn bè", "twin-btn-secondary"],
+            incoming: ["Chấp nhận lời mời", "twin-btn-primary"],
+            sent: ["Hủy lời mời", "twin-btn-secondary"],
+            none: ["Thêm bạn bè", "twin-btn-primary"]
+          };
+
           actions.innerHTML = `
-            <button id="btn-add-fr" class="twin-btn ${isFriend ? "twin-btn-secondary" : "twin-btn-primary"}">${isFriend ? "Bạn bè" : "Thêm bạn bè"}</button>
+            <button id="btn-add-fr" class="twin-btn"></button>
             <a href="./messages.html?uid=${encodeURIComponent(targetUid)}" class="twin-btn twin-btn-secondary">Nhắn tin</a>
           `;
-          if (!isFriend) {
-            document.getElementById("btn-add-fr").onclick = async () => {
-              await updateDoc(doc(db, "users", targetUid), { friendRequests: arrayUnion(me.uid) });
-              await pushNotification(targetUid, {
-                fromUid: me.uid,
-                fromName: me.name,
-                fromAvatar: me.avatar,
-                text: "đã gửi lời mời kết bạn.",
-                link: "./friends.html"
-              });
-              showToast("Đã gửi lời mời kết bạn!");
-            };
-          }
+          const frBtn = document.getElementById("btn-add-fr");
+          const paintFr = () => {
+            frBtn.textContent = labels[state][0];
+            frBtn.className = `twin-btn ${labels[state][1]}`;
+            frBtn.disabled = state === "friend";
+          };
+          paintFr();
+
+          frBtn.onclick = async () => {
+            frBtn.disabled = true;
+            try {
+              if (state === "none") {
+                await updateDoc(doc(db, "users", targetUid), { friendRequests: arrayUnion(me.uid) });
+                state = "sent";
+                showToast("Đã gửi lời mời kết bạn!");
+                pushNotification(targetUid, {
+                  fromUid: me.uid,
+                  fromName: me.name,
+                  fromAvatar: me.avatar,
+                  text: "đã gửi lời mời kết bạn.",
+                  link: "./friends.html"
+                }).catch(() => {});
+              } else if (state === "sent") {
+                await updateDoc(doc(db, "users", targetUid), { friendRequests: arrayRemove(me.uid) });
+                state = "none";
+                showToast("Đã hủy lời mời.");
+              } else if (state === "incoming") {
+                await updateDoc(doc(db, "users", me.uid), { friendRequests: arrayRemove(targetUid), friends: arrayUnion(targetUid) });
+                await updateDoc(doc(db, "users", targetUid), { friends: arrayUnion(me.uid), friendRequests: arrayRemove(me.uid) });
+                state = "friend";
+                showToast(`Bạn và ${profile.name} đã là bạn bè!`);
+                pushNotification(targetUid, {
+                  fromUid: me.uid,
+                  fromName: me.name,
+                  fromAvatar: me.avatar,
+                  text: "đã chấp nhận lời mời kết bạn.",
+                  link: `./profile.html?uid=${encodeURIComponent(me.uid)}`
+                }).catch(() => {});
+              }
+            } catch (err) {
+              showToast(friendlyError(err));
+            } finally {
+              paintFr();
+            }
+          };
         }
 
         // Client-side sort to prevent Firestore composite index errors
         const q = query(collection(db, "posts"), where("authorUid", "==", targetUid));
         onSnapshot(q, (snap) => {
           const box = document.getElementById("pf-posts");
-          box.innerHTML = "";
           const items = [];
           snap.forEach((d) => items.push({ id: d.id, ...d.data() }));
           items.sort((a, b) => toMillis(b.createdAt) - toMillis(a.createdAt));
-          if (!items.length) {
-            box.innerHTML = '<div class="twin-card" style="color:var(--text-3);text-align:center;padding:28px;">Chưa có bài viết nào.</div>';
-            return;
-          }
-          items.forEach((p) => box.appendChild(renderPostCard(p, me)));
-        });
+          renderPostList(
+            box,
+            items,
+            me,
+            '<div class="twin-card" style="color:var(--text-3);text-align:center;padding:28px;">Chưa có bài viết nào.</div>'
+          );
+        }, (err) => showToast(friendlyError(err)));
       }
     });
   </script>
