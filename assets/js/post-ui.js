@@ -1,3 +1,6 @@
+/* ==========================================================================
+   Twin Liquid Glass — Post Card & Edit Modal UI
+========================================================================== */
 import {
   db,
   doc,
@@ -8,6 +11,7 @@ import {
   deleteField,
   pushNotification,
   uploadToCloudinary,
+  sanitizeHtml,
   DEFAULT_AVATAR,
   escapeHtml,
   formatTime,
@@ -56,11 +60,12 @@ function bindPickerCloser() {
 }
 
 // ==========================================================================
-// Modal sửa bài viết dùng chung (hỗ trợ sửa chữ, cảm xúc, thay/xóa ảnh)
+// Modal chỉnh sửa bài viết (hỗ trợ cả Văn bản & Mã HTML + xem trước)
 // ==========================================================================
 let editingPost = null;
 let editNewFile = null;
 let editRemoveImage = false;
+let editIsHtml = false;
 
 function ensureEditModal() {
   let backdrop = document.getElementById("twin-edit-post-modal");
@@ -76,11 +81,26 @@ function ensureEditModal() {
         <button type="button" id="ep-close-btn" class="twin-icon-btn" style="width:32px;height:32px;">✕</button>
       </div>
       <form id="ep-form" style="display:flex;flex-direction:column;gap:12px;">
-        <textarea id="ep-content" class="twin-textarea" placeholder="Nội dung bài viết..." rows="4"></textarea>
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
+          <div class="twin-seg-tabs">
+            <button type="button" id="ep-mode-text" class="twin-seg-tab active">Văn bản</button>
+            <button type="button" id="ep-mode-html" class="twin-seg-tab">&lt;/&gt; HTML</button>
+          </div>
+          <button type="button" id="ep-toggle-preview" class="twin-btn twin-btn-secondary twin-btn-sm" style="display:none;">Xem trước HTML</button>
+        </div>
+
+        <textarea id="ep-content" class="twin-textarea" placeholder="Nội dung bài viết..." rows="5"></textarea>
+
+        <div id="ep-html-preview-box" class="twin-html-preview" style="display:none;margin-top:0;">
+          <div class="twin-html-preview-label">Xem trước HTML</div>
+          <div id="ep-html-preview-body" class="twin-post-body twin-post-html" style="margin-bottom:0;"></div>
+        </div>
+
         <div id="ep-img-box" style="display:none;position:relative;">
-          <img id="ep-img-preview" class="twin-post-image" style="max-height:260px;margin-bottom:0;" alt="Ảnh bài viết" />
+          <img id="ep-img-preview" class="twin-post-image" style="max-height:240px;margin-bottom:0;" alt="Ảnh bài viết" />
           <button type="button" id="ep-img-remove" class="twin-icon-btn" style="position:absolute;top:8px;right:8px;width:30px;height:30px;" title="Gỡ ảnh">✕</button>
         </div>
+
         <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:space-between;">
           <label class="twin-btn twin-btn-secondary twin-btn-sm" style="cursor:pointer;">
             <span>Đổi / Thêm ảnh</span>
@@ -113,6 +133,37 @@ function ensureEditModal() {
   backdrop.querySelector("#ep-close-btn").onclick = close;
   backdrop.querySelector("#ep-cancel-btn").onclick = close;
 
+  const contentEl = backdrop.querySelector("#ep-content");
+  const modeTextBtn = backdrop.querySelector("#ep-mode-text");
+  const modeHtmlBtn = backdrop.querySelector("#ep-mode-html");
+  const prevToggleBtn = backdrop.querySelector("#ep-toggle-preview");
+  const prevBox = backdrop.querySelector("#ep-html-preview-box");
+  const prevBody = backdrop.querySelector("#ep-html-preview-body");
+
+  const syncModeUi = () => {
+    modeTextBtn.classList.toggle("active", !editIsHtml);
+    modeHtmlBtn.classList.toggle("active", editIsHtml);
+    contentEl.classList.toggle("code-mode", editIsHtml);
+    contentEl.placeholder = editIsHtml
+      ? "Nhập mã HTML (VD: <h3>Tiêu đề</h3><p>Nội dung <b>in đậm</b>...</p>)"
+      : "Nội dung bài viết...";
+    prevToggleBtn.style.display = editIsHtml ? "inline-flex" : "none";
+    if (!editIsHtml) prevBox.style.display = "none";
+  };
+
+  modeTextBtn.onclick = () => { editIsHtml = false; syncModeUi(); };
+  modeHtmlBtn.onclick = () => { editIsHtml = true; syncModeUi(); };
+  prevToggleBtn.onclick = () => {
+    const show = prevBox.style.display === "none";
+    prevBox.style.display = show ? "block" : "none";
+    if (show) prevBody.innerHTML = sanitizeHtml(contentEl.value);
+  };
+  contentEl.addEventListener("input", () => {
+    if (editIsHtml && prevBox.style.display !== "none") {
+      prevBody.innerHTML = sanitizeHtml(contentEl.value);
+    }
+  });
+
   const fileInput = backdrop.querySelector("#ep-file-input");
   const imgBox = backdrop.querySelector("#ep-img-box");
   const imgPrev = backdrop.querySelector("#ep-img-preview");
@@ -137,7 +188,7 @@ function ensureEditModal() {
   backdrop.querySelector("#ep-form").onsubmit = async (e) => {
     e.preventDefault();
     if (!editingPost) return;
-    const content = backdrop.querySelector("#ep-content").value.trim();
+    const content = contentEl.value.trim();
     const feeling = backdrop.querySelector("#ep-feeling").value;
     const hasImageAfter = Boolean(editNewFile || (!editRemoveImage && editingPost.imageUrl));
     if (!content && !hasImageAfter) {
@@ -157,6 +208,7 @@ function ensureEditModal() {
 
       await updateDoc(doc(db, "posts", editingPost.id), {
         content,
+        isHtml: editIsHtml,
         feeling,
         imageUrl: nextImageUrl,
         editedAt: Date.now()
@@ -171,6 +223,7 @@ function ensureEditModal() {
     }
   };
 
+  backdrop._syncModeUi = syncModeUi;
   return backdrop;
 }
 
@@ -179,10 +232,13 @@ export function openEditPostModal(post) {
   editingPost = post;
   editNewFile = null;
   editRemoveImage = false;
+  editIsHtml = Boolean(post.isHtml);
 
   backdrop.querySelector("#ep-content").value = post.content || "";
   backdrop.querySelector("#ep-feeling").value = post.feeling || "";
   backdrop.querySelector("#ep-file-input").value = "";
+  backdrop.querySelector("#ep-html-preview-box").style.display = "none";
+  backdrop._syncModeUi();
 
   const imgBox = backdrop.querySelector("#ep-img-box");
   const imgPrev = backdrop.querySelector("#ep-img-preview");
@@ -221,6 +277,12 @@ export function renderPostCard(post, currentUser) {
   const displayName = post.pageName ? post.pageName : post.authorName;
   const displayAvatar = post.pageAvatar || post.authorAvatar || DEFAULT_AVATAR;
 
+  const bodyHtml = post.content
+    ? post.isHtml
+      ? `<div class="twin-post-body twin-post-html">${sanitizeHtml(post.content)}</div>`
+      : `<div class="twin-post-body">${escapeHtml(post.content)}</div>`
+    : "";
+
   card.innerHTML = `
     ${isPinned ? `<div class="twin-pin-banner">${SVG.pin}<span>Bài viết đã ghim</span></div>` : ""}
 
@@ -231,6 +293,7 @@ export function renderPostCard(post, currentUser) {
           <div class="twin-post-author-name">
             ${escapeHtml(displayName)}
             ${post.pageName ? `<span class="twin-pill-tag" style="margin-left:4px;">Trang</span>` : ""}
+            ${post.isHtml ? `<span class="twin-pill-tag" style="margin-left:4px;font-family:monospace;">HTML</span>` : ""}
             ${post.feeling ? `<span style="font-weight:400;color:var(--text-3)"> đang cảm thấy ${escapeHtml(post.feeling)}</span>` : ""}
             ${post.groupName ? `<span style="font-weight:400;color:var(--text-3)"> trong <strong>${escapeHtml(post.groupName)}</strong></span>` : ""}
           </div>
@@ -250,7 +313,7 @@ export function renderPostCard(post, currentUser) {
       }
     </div>
 
-    ${post.content ? `<div class="twin-post-body">${escapeHtml(post.content)}</div>` : ""}
+    ${bodyHtml}
     ${post.imageUrl ? `<img class="twin-post-image" src="${escapeHtml(post.imageUrl)}" alt="Ảnh bài viết" loading="lazy" />` : ""}
 
     <div class="twin-post-stats">
@@ -422,7 +485,6 @@ export function renderPostCard(post, currentUser) {
     }
   };
 
-  // ---- Ghim / Bỏ ghim bài viết ----
   const pinBtn = card.querySelector(".btn-pin-post");
   if (pinBtn) {
     pinBtn.onclick = async () => {
@@ -437,13 +499,11 @@ export function renderPostCard(post, currentUser) {
     };
   }
 
-  // ---- Chỉnh sửa bài viết ----
   const editBtn = card.querySelector(".btn-edit-post");
   if (editBtn) {
     editBtn.onclick = () => openEditPostModal(post);
   }
 
-  // ---- Xóa bài ----
   const delBtn = card.querySelector(".btn-del-post");
   if (delBtn) {
     delBtn.onclick = async () => {
@@ -464,7 +524,7 @@ let hashHandled = false;
 function postSignature(p, currentUser) {
   const saved = !!(currentUser && (currentUser.savedPosts || []).includes(p.id));
   return JSON.stringify([
-    p.content, p.imageUrl, p.feeling, p.groupName, p.pageName, p.authorName, p.authorAvatar,
+    p.content, Boolean(p.isHtml), p.imageUrl, p.feeling, p.groupName, p.pageName, p.authorName, p.authorAvatar,
     Boolean(p.pinned), p.pinnedAt || 0, p.editedAt || 0,
     p.reactions || {}, (p.comments || []).map((c) => c.id), toMillis(p.createdAt), saved
   ]);
