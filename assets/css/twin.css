@@ -1,5 +1,5 @@
 /* ==========================================================================
-   TWIN SOCIAL NETWORK — iOS 27 LIQUID GLASS UI SYSTEM
+   TWIN SOCIAL NETWORK — Twin Liquid Glass UI System
    Translucent Refractive Glass, Specular Rim Highlights, Ambient Mesh Glow
 ========================================================================== */
 :root {
@@ -9,17 +9,17 @@
   --accent: #38bdf8;
   --violet: #8b5cf6;
 
-  --bg: #eef2f8;
+  --bg: #edf2f9;
   --surface: rgba(255, 255, 255, 0.72);
   --surface-2: rgba(255, 255, 255, 0.48);
-  --surface-hover: rgba(255, 255, 255, 0.88);
+  --surface-hover: rgba(255, 255, 255, 0.9);
   --glass-bg: rgba(255, 255, 255, 0.62);
-  --glass-bg-strong: rgba(255, 255, 255, 0.82);
-  --glass-bg-subtle: rgba(255, 255, 255, 0.44);
-  --glass-hover: rgba(255, 255, 255, 0.88);
-  --border: rgba(255, 255, 255, 0.75);
+  --glass-bg-strong: rgba(255, 255, 255, 0.84);
+  --glass-bg-subtle: rgba(255, 255, 255, 0.45);
+  --glass-hover: rgba(255, 255, 255, 0.9);
+  --border: rgba(255, 255, 255, 0.78);
   --border-subtle: rgba(15, 23, 42, 0.08);
-  --glass-rim: inset 0 1px 0 rgba(255, 255, 255, 0.92), inset 0 -1px 0 rgba(255, 255, 255, 0.25);
+  --glass-rim: inset 0 1px 0.5px rgba(255, 255, 255, 0.94), inset 0 -1px 0 rgba(255, 255, 255, 0.25);
 
   --text: #0b1220;
   --text-2: #334155;
@@ -31,9 +31,9 @@
   --blur: blur(26px) saturate(185%);
   --blur-heavy: blur(36px) saturate(200%);
   --shadow-xs: 0 2px 6px rgba(15, 23, 42, 0.05), var(--glass-rim);
-  --shadow-sm: 0 8px 24px -6px rgba(15, 23, 42, 0.08), var(--glass-rim);
-  --shadow-md: 0 16px 36px -8px rgba(15, 23, 42, 0.14), var(--glass-rim);
-  --shadow-lg: 0 22px 48px -10px rgba(15, 23, 42, 0.2), var(--glass-rim);
+  --shadow-sm: 0 10px 28px -8px rgba(15, 23, 42, 0.09), var(--glass-rim);
+  --shadow-md: 0 16px 38px -8px rgba(15, 23, 42, 0.14), var(--glass-rim);
+  --shadow-lg: 0 24px 52px -12px rgba(15, 23, 42, 0.22), var(--glass-rim);
 
   --radius-sm: 12px;
   --radius: 20px;
@@ -45,18 +45,18 @@
 [data-theme="dark"] {
   --primary: #3b9eff;
   --primary-hover: #2589f5;
-  --primary-soft: rgba(59, 158, 255, 0.2);
+  --primary-soft: rgba(59, 158, 255, 0.22);
   --accent: #22d3ee;
   --violet: #a78bfa;
 
-  --bg: #090c14;
-  --surface: rgba(24, 28, 40, 0.72);
-  --surface-2: rgba(20, 24, 36, 0.5);
-  --surface-hover: rgba(42, 48, 68, 0.85);
-  --glass-bg: rgba(24, 28, 40, 0.62);
-  --glass-bg-strong: rgba(28, 33, 48, 0.84);
-  --glass-bg-subtle: rgba(20, 24, 36, 0.46);
-  --glass-hover: rgba(42, 48, 68, 0.85);
+  --bg: #080b13;
+  --surface: rgba(22, 27, 40, 0.74);
+  --surface-2: rgba(18, 22, 34, 0.52);
+  --surface-hover: rgba(42, 49, 70, 0.88);
+  --glass-bg: rgba(22, 27, 40, 0.64);
+  --glass-bg-strong: rgba(26, 32, 48, 0.86);
+  --glass-bg-subtle: rgba(18, 22, 34, 0.48);
+  --glass-hover: rgba(42, 49, 70, 0.88);
   --border: rgba(255, 255, 255, 0.14);
   --border-subtle: rgba(255, 255, 255, 0.08);
   --glass-rim: inset 0 1px 0 rgba(255, 255, 255, 0.18), inset 0 -1px 0 rgba(0, 0, 0, 0.35);
@@ -69,9 +69,9 @@
   --warning: #fbbf24;
 
   --shadow-xs: 0 2px 8px rgba(0, 0, 0, 0.35), var(--glass-rim);
-  --shadow-sm: 0 10px 28px -6px rgba(0, 0, 0, 0.45), var(--glass-rim);
-  --shadow-md: 0 18px 40px -8px rgba(0, 0, 0, 0.6), var(--glass-rim);
-  --shadow-lg: 0 24px 52px -10px rgba(0, 0, 0, 0.72), var(--glass-rim);
+  --shadow-sm: 0 12px 30px -6px rgba(0, 0, 0, 0.48), var(--glass-rim);
+  --shadow-md: 0 18px 42px -8px rgba(0, 0, 0, 0.62), var(--glass-rim);
+  --shadow-lg: 0 26px 56px -10px rgba(0, 0, 0, 0.75), var(--glass-rim);
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -80,9 +80,9 @@ html, body {
   font-family: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
   background-color: var(--bg);
   background-image:
-    radial-gradient(circle at 10% 8%, rgba(10, 132, 255, 0.18), transparent 36%),
-    radial-gradient(circle at 90% 15%, rgba(56, 189, 248, 0.16), transparent 38%),
-    radial-gradient(circle at 50% 92%, rgba(139, 92, 246, 0.13), transparent 42%);
+    radial-gradient(circle at 10% 8%, rgba(10, 132, 255, 0.2), transparent 36%),
+    radial-gradient(circle at 90% 14%, rgba(56, 189, 248, 0.18), transparent 38%),
+    radial-gradient(circle at 50% 92%, rgba(139, 92, 246, 0.14), transparent 42%);
   background-attachment: fixed;
   color: var(--text);
   min-height: 100dvh;
@@ -101,7 +101,7 @@ svg { display: block; flex-shrink: 0; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(100, 116, 139, 0.48); }
 
 /* =====================================================
-   ROUND CIRCLE 'T' LIQUID GLASS LOGO
+   ROUND CIRCLE 'T' LOGO
 ===================================================== */
 .twin-logo {
   display: inline-flex;
@@ -124,7 +124,7 @@ svg { display: block; flex-shrink: 0; }
   font-weight: 800;
   line-height: 1;
   box-shadow:
-    0 6px 16px rgba(10, 132, 255, 0.35),
+    0 6px 16px rgba(10, 132, 255, 0.36),
     inset 0 1.5px 1px rgba(255, 255, 255, 0.65);
   flex-shrink: 0;
   transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -133,7 +133,7 @@ svg { display: block; flex-shrink: 0; }
 .twin-logo-circle.lg { width: 56px; height: 56px; font-size: 28px; }
 
 /* =====================================================
-   LIQUID GLASS TOP NAVBAR & GLOBAL SEARCH POPOVER
+   TOP NAVBAR & GLOBAL SEARCH
 ===================================================== */
 .twin-header {
   position: sticky;
@@ -186,7 +186,6 @@ svg { display: block; flex-shrink: 0; }
 }
 .twin-search-box input::placeholder { color: var(--text-3); }
 
-/* Global Search Results Dropdown */
 .twin-search-dropdown {
   position: absolute;
   top: calc(100% + 10px);
@@ -305,7 +304,7 @@ svg { display: block; flex-shrink: 0; }
   box-shadow: var(--shadow-lg);
 }
 
-/* Mobile Bottom Tab Bar */
+/* Mobile Floating Bottom Dock */
 .twin-mobile-bar {
   display: none;
   position: fixed;
@@ -342,7 +341,7 @@ svg { display: block; flex-shrink: 0; }
   background: var(--primary-soft);
 }
 
-/* Glass Dropdowns */
+/* Dropdowns */
 .twin-dropdown {
   position: absolute;
   top: calc(100% + 10px);
@@ -461,7 +460,7 @@ svg { display: block; flex-shrink: 0; }
 }
 
 /* =====================================================
-   LIQUID GLASS CARDS, BUTTONS & CONTROLS
+   GLASS CARDS, BUTTONS, SEGMENTED CONTROLS & INPUTS
 ===================================================== */
 .twin-card {
   background: var(--glass-bg);
@@ -480,9 +479,8 @@ svg { display: block; flex-shrink: 0; }
   box-shadow: 0 10px 30px -6px rgba(10, 132, 255, 0.16), var(--glass-rim);
 }
 
-.twin-highlight {
-  animation: pulseHighlight 2.2s ease-out;
-}
+.twin-card[id^="post-"] { scroll-margin-top: calc(var(--header-h) + 16px); }
+.twin-highlight { animation: pulseHighlight 2.2s ease-out; }
 @keyframes pulseHighlight {
   0% { box-shadow: 0 0 0 4px rgba(10, 132, 255, 0.45), var(--shadow-md); }
   100% { box-shadow: var(--shadow-sm); }
@@ -517,6 +515,29 @@ svg { display: block; flex-shrink: 0; }
   color: var(--warning);
 }
 
+.twin-seg-tabs {
+  display: inline-flex;
+  gap: 4px;
+  padding: 3px;
+  border-radius: 999px;
+  background: var(--glass-bg-subtle);
+  border: 1px solid var(--border);
+  box-shadow: var(--glass-rim);
+}
+.twin-seg-tab {
+  padding: 5px 13px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-2);
+  transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+}
+.twin-seg-tab.active {
+  background: var(--glass-bg-strong);
+  color: var(--primary);
+  box-shadow: 0 2px 8px rgba(10, 132, 255, 0.14), var(--glass-rim);
+}
+
 .twin-btn {
   display: inline-flex;
   align-items: center;
@@ -543,6 +564,8 @@ svg { display: block; flex-shrink: 0; }
   color: var(--text);
 }
 .twin-btn-secondary:hover { background: var(--glass-hover); }
+.twin-btn-ghost { background: transparent; color: var(--text-2); }
+.twin-btn-ghost:hover { background: var(--glass-hover); color: var(--text); }
 .twin-btn-danger {
   background: var(--danger);
   color: #fff;
@@ -577,10 +600,15 @@ svg { display: block; flex-shrink: 0; }
   border-color: var(--primary);
   background: var(--glass-bg-strong);
 }
-.twin-textarea { resize: vertical; min-height: 80px; }
+.twin-textarea { resize: vertical; min-height: 82px; }
+.twin-textarea.code-mode {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 13px;
+  line-height: 1.55;
+}
 
 /* =====================================================
-   STORIES
+   STORIES (IMAGE + COLORED TEXT STORIES)
 ===================================================== */
 .twin-stories-row {
   display: flex;
@@ -594,8 +622,8 @@ svg { display: block; flex-shrink: 0; }
 
 .twin-story-card {
   position: relative;
-  width: 110px;
-  height: 186px;
+  width: 114px;
+  height: 192px;
   border-radius: var(--radius);
   overflow: hidden;
   flex-shrink: 0;
@@ -603,7 +631,9 @@ svg { display: block; flex-shrink: 0; }
   border: 1px solid var(--border);
   box-shadow: var(--shadow-sm);
   cursor: pointer;
+  transition: transform 0.2s ease;
 }
+.twin-story-card:hover { transform: translateY(-2px); }
 .twin-story-card img.story-bg {
   width: 100%;
   height: 100%;
@@ -614,12 +644,28 @@ svg { display: block; flex-shrink: 0; }
 .twin-story-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(to top, rgba(9, 12, 20, 0.75) 0%, transparent 55%);
+  background: linear-gradient(to top, rgba(9, 12, 20, 0.72) 0%, transparent 55%);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   padding: 10px;
   color: #fff;
+}
+.twin-story-text-thumb {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 44px 10px 34px;
+  text-align: center;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.3;
+  word-break: break-word;
+  overflow: hidden;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.28);
 }
 .twin-story-avatar {
   width: 34px;
@@ -627,6 +673,7 @@ svg { display: block; flex-shrink: 0; }
   border-radius: 50%;
   border: 2.5px solid var(--primary);
   object-fit: cover;
+  background: #fff;
 }
 .twin-story-plus {
   width: 34px;
@@ -638,12 +685,70 @@ svg { display: block; flex-shrink: 0; }
   place-items: center;
   border: 2px solid rgba(255, 255, 255, 0.85);
 }
-.twin-story-name { font-size: 12px; font-weight: 600; line-height: 1.25; }
+.twin-story-name {
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.25;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+}
+
+/* Story Creator & Full Story Viewer */
+.twin-story-stage {
+  width: 100%;
+  min-height: 320px;
+  max-height: 62vh;
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 36px 24px;
+  text-align: center;
+  color: #fff;
+  font-size: 24px;
+  font-weight: 800;
+  line-height: 1.35;
+  word-break: break-word;
+  white-space: pre-wrap;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  overflow-y: auto;
+}
+.twin-story-stage.font-bold { font-weight: 800; letter-spacing: -0.4px; }
+.twin-story-stage.font-italic { font-style: italic; font-weight: 600; }
+.twin-story-stage.font-mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 20px; font-weight: 700; }
+
+.twin-swatch-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+.twin-swatch {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2.5px solid rgba(255, 255, 255, 0.7);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.16);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.twin-swatch:hover { transform: scale(1.1); }
+.twin-swatch.active {
+  transform: scale(1.14);
+  box-shadow: 0 0 0 2.5px var(--primary), 0 4px 10px rgba(10, 132, 255, 0.35);
+}
 
 /* =====================================================
-   COMPOSER & POST CARDS
+   COMPOSER, HTML POSTS & POST CARDS
 ===================================================== */
 .twin-composer-top { display: flex; gap: 10px; align-items: flex-start; }
+.twin-composer-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
 .twin-composer-actions {
   display: flex;
   flex-wrap: wrap;
@@ -653,6 +758,22 @@ svg { display: block; flex-shrink: 0; }
   margin-top: 12px;
   padding-top: 12px;
   border-top: 1px solid var(--border);
+}
+
+.twin-html-preview {
+  margin-top: 10px;
+  padding: 14px;
+  border-radius: var(--radius-sm);
+  border: 1px dashed var(--primary);
+  background: var(--glass-bg-subtle);
+}
+.twin-html-preview-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--primary);
+  margin-bottom: 8px;
 }
 
 .twin-post-header {
@@ -674,6 +795,70 @@ svg { display: block; flex-shrink: 0; }
   word-break: break-word;
   line-height: 1.55;
 }
+.twin-post-body.twin-post-html {
+  white-space: normal;
+}
+.twin-post-html h1, .twin-post-html h2, .twin-post-html h3, .twin-post-html h4 {
+  margin: 8px 0 6px;
+  line-height: 1.3;
+  font-weight: 800;
+}
+.twin-post-html h1 { font-size: 22px; }
+.twin-post-html h2 { font-size: 19px; }
+.twin-post-html h3 { font-size: 16.5px; }
+.twin-post-html p { margin-bottom: 8px; }
+.twin-post-html p:last-child { margin-bottom: 0; }
+.twin-post-html ul, .twin-post-html ol { padding-left: 22px; margin: 6px 0 10px; }
+.twin-post-html li { margin-bottom: 4px; }
+.twin-post-html a { color: var(--primary); text-decoration: underline; }
+.twin-post-html blockquote {
+  border-left: 3px solid var(--primary);
+  padding: 6px 12px;
+  margin: 8px 0;
+  background: var(--glass-bg-subtle);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  color: var(--text-2);
+}
+.twin-post-html pre {
+  background: rgba(15, 23, 42, 0.88);
+  color: #f8fafc;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  overflow-x: auto;
+  font-size: 13px;
+  margin: 8px 0;
+}
+.twin-post-html code {
+  background: var(--primary-soft);
+  color: var(--primary);
+  padding: 1px 6px;
+  border-radius: 6px;
+  font-size: 13px;
+}
+.twin-post-html pre code { background: transparent; color: inherit; padding: 0; }
+.twin-post-html img {
+  border-radius: var(--radius-sm);
+  margin: 8px 0;
+  max-height: 480px;
+  object-fit: cover;
+}
+.twin-post-html table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 8px 0;
+  font-size: 13.5px;
+}
+.twin-post-html th, .twin-post-html td {
+  border: 1px solid var(--border-subtle);
+  padding: 7px 10px;
+  text-align: left;
+}
+.twin-post-html hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 10px 0;
+}
+
 .twin-post-image {
   width: 100%;
   max-height: 540px;
@@ -712,7 +897,7 @@ svg { display: block; flex-shrink: 0; }
 .twin-action-btn:hover { background: var(--glass-hover); color: var(--text); }
 .twin-action-btn.reacted { color: var(--primary); background: var(--primary-soft); }
 
-/* Reaction Picker */
+/* Reaction Picker with invisible hover bridge */
 .twin-react-wrap { position: relative; }
 .twin-react-picker {
   position: absolute;
@@ -728,8 +913,18 @@ svg { display: block; flex-shrink: 0; }
   gap: 8px;
   z-index: 30;
 }
-.twin-react-wrap:hover .twin-react-picker,
+.twin-react-picker::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  height: 12px;
+}
 .twin-react-wrap.open .twin-react-picker { display: flex; }
+@media (hover: hover) {
+  .twin-react-wrap:hover .twin-react-picker { display: flex; }
+}
 .twin-react-emoji { font-size: 22px; transition: transform 0.15s; }
 .twin-react-emoji:hover { transform: scale(1.35) translateY(-2px); }
 
@@ -1042,7 +1237,8 @@ body.page-messages {
   position: fixed;
   inset: 0;
   background: rgba(9, 12, 20, 0.45);
-  backdrop-filter: blur(8px);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   display: none;
   place-items: center;
   z-index: 1300;
@@ -1057,6 +1253,8 @@ body.page-messages {
   border-radius: var(--radius-lg);
   width: 100%;
   max-width: 500px;
+  max-height: 90dvh;
+  overflow-y: auto;
   padding: 22px;
   box-shadow: var(--shadow-lg);
   animation: glassPop 0.16s cubic-bezier(0.22, 1, 0.36, 1);
