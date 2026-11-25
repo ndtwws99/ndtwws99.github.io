@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Bảng tin — Twin</title>
-  <meta name="description" content="Twin — Mạng xã hội Liquid Glass kết nối bạn bè, chia sẻ khoảnh khắc, nhóm, trang và nhắn tin thời gian thực." />
+  <meta name="description" content="Twin — Mạng xã hội kết nối bạn bè, chia sẻ khoảnh khắc, nhóm, trang và nhắn tin thời gian thực." />
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%232563eb'/%3E%3Cstop offset='100%25' stop-color='%2306b6d4'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='32' cy='32' r='32' fill='url(%23g)'/%3E%3Cpath d='M17 20h30v7.5H36V48h-8V27.5H17z' fill='%23fff'/%3E%3C/svg%3E" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -18,7 +18,7 @@
     <div class="twin-grid-3">
       <aside class="twin-sidebar twin-left-col">
         <a href="./profile.html" class="twin-side-item">
-          <img class="twin-avatar twin-avatar-sm" id="side-me-avatar" alt="" />
+          <img class="twin-avatar twin-avatar-sm" id="side-me-avatar" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 80'%3E%3Crect width='80' height='80' fill='%23dbeafe'/%3E%3C/svg%3E" alt="" />
           <span id="side-me-name">Trang cá nhân</span>
         </a>
         <a href="./friends.html" class="twin-side-item">
@@ -41,21 +41,38 @@
           <span class="twin-side-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg></span>
           <span>Đã lưu</span>
         </a>
-        <div class="twin-side-legal">Twin Liquid Glass · 2026</div>
+        <div class="twin-side-legal">Twin © 2026</div>
       </aside>
 
       <section>
+        <!-- Thanh Stories (Tin văn bản màu + Tin ảnh) -->
         <div class="twin-stories-row" id="twin-stories"></div>
 
+        <!-- Khung đăng bài (Văn bản & HTML) -->
         <div class="twin-card">
+          <div class="twin-composer-bar">
+            <div class="twin-seg-tabs">
+              <button type="button" id="comp-mode-text" class="twin-seg-tab active">Văn bản</button>
+              <button type="button" id="comp-mode-html" class="twin-seg-tab">&lt;/&gt; HTML</button>
+            </div>
+            <button type="button" id="comp-html-preview-btn" class="twin-btn twin-btn-secondary twin-btn-sm" style="display:none;">Xem trước HTML</button>
+          </div>
+
           <div class="twin-composer-top">
-            <img class="twin-avatar" id="composer-avatar" alt="" />
+            <img class="twin-avatar" id="composer-avatar" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 80'%3E%3Crect width='80' height='80' fill='%23dbeafe'/%3E%3C/svg%3E" alt="" />
             <textarea id="post-content" class="twin-textarea" placeholder="Bạn đang nghĩ gì?"></textarea>
           </div>
+
+          <div id="comp-html-preview" class="twin-html-preview" style="display:none;">
+            <div class="twin-html-preview-label">Xem trước bài viết HTML</div>
+            <div id="comp-html-preview-body" class="twin-post-body twin-post-html" style="margin-bottom:0;"></div>
+          </div>
+
           <div id="post-preview-wrap" style="margin-top:10px;display:none;position:relative;">
             <img id="post-preview-img" class="twin-post-image" alt="Xem trước" />
             <button id="post-preview-remove" type="button" class="twin-icon-btn" style="position:absolute;top:8px;right:8px;width:30px;height:30px;">✕</button>
           </div>
+
           <div class="twin-composer-actions">
             <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
               <label class="twin-btn twin-btn-secondary twin-btn-sm" style="cursor:pointer;">
@@ -108,20 +125,84 @@
     </div>
   </main>
 
-  <div class="twin-modal-backdrop" id="story-modal">
-    <div class="twin-modal" style="max-width:400px;padding:0;overflow:hidden;">
-      <div style="position:relative;">
-        <img id="story-modal-img" style="width:100%;max-height:72vh;object-fit:cover;" alt="Story" />
-        <div style="position:absolute;top:12px;left:12px;right:12px;display:flex;justify-content:space-between;align-items:center;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,0.8);">
-          <strong id="story-modal-author"></strong>
-          <button id="story-modal-close" class="twin-icon-btn" style="width:32px;height:32px;">✕</button>
+  <!-- Modal Tạo Tin (Tin văn bản nhiều màu nền + Tin ảnh) -->
+  <div class="twin-modal-backdrop" id="create-story-modal">
+    <div class="twin-modal" style="max-width:460px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+        <h2 style="font-size:19px;font-weight:800;">Tạo tin mới</h2>
+        <button type="button" id="cs-close-btn" class="twin-icon-btn" style="width:32px;height:32px;">✕</button>
+      </div>
+
+      <div class="twin-seg-tabs" style="margin-bottom:14px;width:100%;display:grid;grid-template-columns:1fr 1fr;">
+        <button type="button" id="cs-tab-text" class="twin-seg-tab active">Tin văn bản</button>
+        <button type="button" id="cs-tab-image" class="twin-seg-tab">Tin ảnh</button>
+      </div>
+
+      <!-- Panel Tin văn bản -->
+      <div id="cs-panel-text">
+        <div id="cs-text-stage" class="twin-story-stage font-bold" style="min-height:220px;margin-bottom:12px;">
+          Bắt đầu nhập nội dung tin...
+        </div>
+        <textarea id="cs-text-input" class="twin-textarea" maxlength="280" placeholder="Nhập nội dung tin của bạn..." style="min-height:74px;"></textarea>
+
+        <div style="margin-top:10px;">
+          <div class="twin-post-meta" style="font-weight:600;margin-bottom:4px;">Màu nền</div>
+          <div id="cs-swatch-row" class="twin-swatch-row"></div>
+        </div>
+
+        <div style="margin-top:12px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
+          <select id="cs-font-select" class="twin-select" style="width:auto;padding:6px 12px;border-radius:999px;font-size:13px;">
+            <option value="font-bold">Kiểu chữ: Đậm hiện đại</option>
+            <option value="">Kiểu chữ: Cơ bản</option>
+            <option value="font-italic">Kiểu chữ: Nghiêng</option>
+            <option value="font-mono">Kiểu chữ: Đơn cách (Mono)</option>
+          </select>
+          <button type="button" id="cs-publish-text" class="twin-btn twin-btn-primary">Đăng tin</button>
         </div>
       </div>
-      <div id="story-modal-caption" style="padding:14px;font-size:14px;"></div>
+
+      <!-- Panel Tin ảnh -->
+      <div id="cs-panel-image" style="display:none;">
+        <div id="cs-img-preview-box" style="display:none;margin-bottom:10px;position:relative;">
+          <img id="cs-img-preview" class="twin-post-image" style="max-height:280px;margin-bottom:0;" alt="Xem trước tin ảnh" />
+        </div>
+        <label class="twin-btn twin-btn-secondary" style="width:100%;cursor:pointer;margin-bottom:10px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          <span id="cs-img-label">Chọn ảnh từ thiết bị</span>
+          <input id="cs-img-input" type="file" accept="image/*" hidden />
+        </label>
+        <input id="cs-img-caption" class="twin-input" type="text" maxlength="160" placeholder="Chú thích ngắn (tùy chọn)..." />
+        <div style="display:flex;justify-content:flex-end;margin-top:12px;">
+          <button type="button" id="cs-publish-img" class="twin-btn twin-btn-primary">Đăng tin ảnh</button>
+        </div>
+      </div>
     </div>
   </div>
 
-  <input id="story-file-input" type="file" accept="image/*" hidden />
+  <!-- Modal Xem Tin (Hỗ trợ cả Tin văn bản & Tin ảnh + Xóa tin của mình) -->
+  <div class="twin-modal-backdrop" id="story-modal">
+    <div class="twin-modal" style="max-width:420px;padding:0;overflow:hidden;">
+      <div style="position:relative;">
+        <img id="story-modal-img" style="width:100%;max-height:70vh;object-fit:cover;display:none;" alt="Story" />
+        <div id="story-modal-text-stage" class="twin-story-stage" style="display:none;border-radius:0;min-height:380px;"></div>
+
+        <div style="position:absolute;top:12px;left:12px;right:12px;display:flex;justify-content:space-between;align-items:center;color:#fff;text-shadow:0 1px 6px rgba(0,0,0,0.75);">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <img id="story-modal-avatar" class="twin-avatar twin-avatar-sm" alt="" />
+            <div>
+              <strong id="story-modal-author" style="display:block;line-height:1.2;"></strong>
+              <span id="story-modal-time" style="font-size:11.5px;opacity:0.9;"></span>
+            </div>
+          </div>
+          <div style="display:flex;gap:6px;">
+            <button id="story-modal-del" class="twin-icon-btn" style="width:32px;height:32px;display:none;color:var(--danger);" title="Xóa tin">🗑</button>
+            <button id="story-modal-close" class="twin-icon-btn" style="width:32px;height:32px;">✕</button>
+          </div>
+        </div>
+      </div>
+      <div id="story-modal-caption" style="padding:14px;font-size:14px;display:none;"></div>
+    </div>
+  </div>
 
   <script type="module">
     import { initTwinPage, openTwinChat } from "./assets/js/layout.js";
@@ -129,15 +210,21 @@
     import {
       db,
       collection,
+      doc,
       addDoc,
+      deleteDoc,
       query,
       orderBy,
       limit,
       onSnapshot,
       serverTimestamp,
       uploadToCloudinary,
+      sanitizeHtml,
+      STORY_BACKGROUNDS,
+      getStoryBgCss,
       DEFAULT_AVATAR,
       escapeHtml,
+      formatTime,
       showToast,
       friendlyError,
       toMillis
@@ -147,7 +234,41 @@
     let allPosts = [];
     let activeFilter = "all";
     let selectedFile = null;
+    let composerIsHtml = false;
+    let viewingStory = null;
 
+    // ---- HTML Post Composer toggle ----
+    const postContentEl = document.getElementById("post-content");
+    const modeTextBtn = document.getElementById("comp-mode-text");
+    const modeHtmlBtn = document.getElementById("comp-mode-html");
+    const htmlPrevBtn = document.getElementById("comp-html-preview-btn");
+    const htmlPrevWrap = document.getElementById("comp-html-preview");
+    const htmlPrevBody = document.getElementById("comp-html-preview-body");
+
+    function syncComposerMode() {
+      modeTextBtn.classList.toggle("active", !composerIsHtml);
+      modeHtmlBtn.classList.toggle("active", composerIsHtml);
+      postContentEl.classList.toggle("code-mode", composerIsHtml);
+      postContentEl.placeholder = composerIsHtml
+        ? "Nhập mã HTML (VD: <h3>Chào Twin!</h3><p>Nội dung <b>in đậm</b>, <mark>nổi bật</mark>...</p>)"
+        : "Bạn đang nghĩ gì?";
+      htmlPrevBtn.style.display = composerIsHtml ? "inline-flex" : "none";
+      if (!composerIsHtml) htmlPrevWrap.style.display = "none";
+    }
+    modeTextBtn.onclick = () => { composerIsHtml = false; syncComposerMode(); };
+    modeHtmlBtn.onclick = () => { composerIsHtml = true; syncComposerMode(); };
+    htmlPrevBtn.onclick = () => {
+      const show = htmlPrevWrap.style.display === "none";
+      htmlPrevWrap.style.display = show ? "block" : "none";
+      if (show) htmlPrevBody.innerHTML = sanitizeHtml(postContentEl.value);
+    };
+    postContentEl.addEventListener("input", () => {
+      if (composerIsHtml && htmlPrevWrap.style.display !== "none") {
+        htmlPrevBody.innerHTML = sanitizeHtml(postContentEl.value);
+      }
+    });
+
+    // ---- Post image preview ----
     const previewWrap = document.getElementById("post-preview-wrap");
     const previewImg = document.getElementById("post-preview-img");
     const fileInput = document.getElementById("post-image-file");
@@ -166,10 +287,127 @@
       fileInput.value = "";
       previewWrap.style.display = "none";
     };
-    document.getElementById("story-modal-close").onclick = () => {
-      document.getElementById("story-modal").classList.remove("open");
+
+    // ---- Story Creator Modal (Text & Image) ----
+    const createStoryModal = document.getElementById("create-story-modal");
+    const csTabText = document.getElementById("cs-tab-text");
+    const csTabImage = document.getElementById("cs-tab-image");
+    const csPanelText = document.getElementById("cs-panel-text");
+    const csPanelImage = document.getElementById("cs-panel-image");
+    const csTextStage = document.getElementById("cs-text-stage");
+    const csTextInput = document.getElementById("cs-text-input");
+    const csFontSelect = document.getElementById("cs-font-select");
+    const csSwatchRow = document.getElementById("cs-swatch-row");
+    const csImgInput = document.getElementById("cs-img-input");
+    const csImgPreviewBox = document.getElementById("cs-img-preview-box");
+    const csImgPreview = document.getElementById("cs-img-preview");
+    const csImgLabel = document.getElementById("cs-img-label");
+    const csImgCaption = document.getElementById("cs-img-caption");
+
+    let selectedStoryBg = STORY_BACKGROUNDS[0].id;
+    let selectedStoryFile = null;
+
+    function renderSwatches() {
+      csSwatchRow.innerHTML = "";
+      STORY_BACKGROUNDS.forEach((bg) => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = `twin-swatch ${bg.id === selectedStoryBg ? "active" : ""}`;
+        b.style.background = bg.css;
+        b.title = bg.label;
+        b.onclick = () => {
+          selectedStoryBg = bg.id;
+          csTextStage.style.background = bg.css;
+          renderSwatches();
+        };
+        csSwatchRow.appendChild(b);
+      });
+    }
+    csTextStage.style.background = STORY_BACKGROUNDS[0].css;
+    renderSwatches();
+
+    csTextInput.addEventListener("input", () => {
+      csTextStage.textContent = csTextInput.value.trim() || "Bắt đầu nhập nội dung tin...";
+    });
+    csFontSelect.addEventListener("change", () => {
+      csTextStage.className = `twin-story-stage ${csFontSelect.value}`;
+    });
+
+    csTabText.onclick = () => {
+      csTabText.classList.add("active");
+      csTabImage.classList.remove("active");
+      csPanelText.style.display = "block";
+      csPanelImage.style.display = "none";
+    };
+    csTabImage.onclick = () => {
+      csTabImage.classList.add("active");
+      csTabText.classList.remove("active");
+      csPanelImage.style.display = "block";
+      csPanelText.style.display = "none";
+    };
+    document.getElementById("cs-close-btn").onclick = () => createStoryModal.classList.remove("open");
+
+    csImgInput.onchange = () => {
+      selectedStoryFile = csImgInput.files[0] || null;
+      if (selectedStoryFile) {
+        csImgPreview.src = URL.createObjectURL(selectedStoryFile);
+        csImgPreviewBox.style.display = "block";
+        csImgLabel.textContent = "Đổi ảnh: " + selectedStoryFile.name;
+      } else {
+        csImgPreviewBox.style.display = "none";
+        csImgLabel.textContent = "Chọn ảnh từ thiết bị";
+      }
     };
 
+    // ---- Story Viewer Modal ----
+    const storyModal = document.getElementById("story-modal");
+    document.getElementById("story-modal-close").onclick = () => storyModal.classList.remove("open");
+    document.getElementById("story-modal-del").onclick = async () => {
+      if (!viewingStory || !me || viewingStory.authorUid !== me.uid) return;
+      if (!confirm("Xóa tin này?")) return;
+      try {
+        await deleteDoc(doc(db, "stories", viewingStory.id));
+        storyModal.classList.remove("open");
+        showToast("Đã xóa tin.");
+      } catch (err) {
+        showToast(friendlyError(err));
+      }
+    };
+
+    function openStoryViewer(s) {
+      viewingStory = s;
+      const imgEl = document.getElementById("story-modal-img");
+      const stageEl = document.getElementById("story-modal-text-stage");
+      const capEl = document.getElementById("story-modal-caption");
+      const delBtn = document.getElementById("story-modal-del");
+
+      document.getElementById("story-modal-avatar").src = s.authorAvatar || DEFAULT_AVATAR;
+      document.getElementById("story-modal-author").textContent = s.authorName || "Thành viên";
+      document.getElementById("story-modal-time").textContent = formatTime(s.createdAt);
+      delBtn.style.display = me && s.authorUid === me.uid ? "grid" : "none";
+
+      if (s.type === "text" || (!s.imageUrl && s.text)) {
+        imgEl.style.display = "none";
+        stageEl.style.display = "flex";
+        stageEl.style.background = getStoryBgCss(s.bgId || s.bgCss);
+        stageEl.className = `twin-story-stage ${s.fontClass || "font-bold"}`;
+        stageEl.textContent = s.text || "";
+        capEl.style.display = "none";
+      } else {
+        stageEl.style.display = "none";
+        imgEl.style.display = "block";
+        imgEl.src = s.imageUrl;
+        if (s.caption) {
+          capEl.textContent = s.caption;
+          capEl.style.display = "block";
+        } else {
+          capEl.style.display = "none";
+        }
+      }
+      storyModal.classList.add("open");
+    }
+
+    // ---- Feed Filters ----
     document.querySelectorAll(".feed-filter").forEach((btn) => {
       btn.onclick = () => {
         activeFilter = btn.dataset.filter;
@@ -228,13 +466,12 @@
         const searchEl = document.getElementById("twin-global-search");
         const initialQ = new URLSearchParams(window.location.search).get("q");
         if (searchEl && initialQ) searchEl.value = initialQ;
-        searchEl?.addEventListener("input", (e) => {
-          renderFeedList(e.target.value);
-        });
+        searchEl?.addEventListener("input", (e) => renderFeedList(e.target.value));
 
+        // Publish Post (Text or HTML)
         document.getElementById("btn-publish-post").onclick = async () => {
           const btn = document.getElementById("btn-publish-post");
-          const content = document.getElementById("post-content").value.trim();
+          const content = postContentEl.value.trim();
           const feeling = document.getElementById("post-feeling").value;
           if (!content && !selectedFile) return showToast("Hãy nhập nội dung hoặc chọn ảnh.");
           btn.disabled = true;
@@ -247,6 +484,7 @@
               authorName: me.name,
               authorAvatar: me.avatar || DEFAULT_AVATAR,
               content,
+              isHtml: composerIsHtml,
               feeling,
               imageUrl,
               pinned: false,
@@ -254,8 +492,9 @@
               comments: [],
               createdAt: serverTimestamp()
             });
-            document.getElementById("post-content").value = "";
+            postContentEl.value = "";
             document.getElementById("post-feeling").value = "";
+            htmlPrevWrap.style.display = "none";
             selectedFile = null;
             fileInput.value = "";
             previewWrap.style.display = "none";
@@ -268,31 +507,72 @@
           }
         };
 
-        const storyFile = document.getElementById("story-file-input");
-        storyFile.onchange = async () => {
-          const f = storyFile.files[0];
-          if (!f) return;
-          const caption = prompt("Chú thích ngắn cho tin (tùy chọn):", "") || "";
-          showToast("Đang tải tin lên...");
+        // Publish Text Story
+        document.getElementById("cs-publish-text").onclick = async () => {
+          const text = csTextInput.value.trim();
+          if (!text) return showToast("Hãy nhập nội dung cho tin văn bản.");
+          const btn = document.getElementById("cs-publish-text");
+          btn.disabled = true;
+          btn.textContent = "Đang đăng...";
           try {
-            const imageUrl = await uploadToCloudinary(f);
             await addDoc(collection(db, "stories"), {
+              type: "text",
+              authorUid: me.uid,
+              authorName: me.name,
+              authorAvatar: me.avatar || DEFAULT_AVATAR,
+              text,
+              bgId: selectedStoryBg,
+              fontClass: csFontSelect.value,
+              imageUrl: "",
+              caption: "",
+              createdAt: serverTimestamp()
+            });
+            csTextInput.value = "";
+            csTextStage.textContent = "Bắt đầu nhập nội dung tin...";
+            createStoryModal.classList.remove("open");
+            showToast("Đã đăng tin văn bản!");
+          } catch (err) {
+            showToast(friendlyError(err));
+          } finally {
+            btn.disabled = false;
+            btn.textContent = "Đăng tin";
+          }
+        };
+
+        // Publish Image Story
+        document.getElementById("cs-publish-img").onclick = async () => {
+          if (!selectedStoryFile) return showToast("Hãy chọn một tấm ảnh.");
+          const btn = document.getElementById("cs-publish-img");
+          btn.disabled = true;
+          btn.textContent = "Đang tải ảnh...";
+          try {
+            const imageUrl = await uploadToCloudinary(selectedStoryFile);
+            await addDoc(collection(db, "stories"), {
+              type: "image",
               authorUid: me.uid,
               authorName: me.name,
               authorAvatar: me.avatar || DEFAULT_AVATAR,
               imageUrl,
-              caption,
+              caption: csImgCaption.value.trim(),
               createdAt: serverTimestamp()
             });
-            showToast("Đã đăng tin!");
+            selectedStoryFile = null;
+            csImgInput.value = "";
+            csImgCaption.value = "";
+            csImgPreviewBox.style.display = "none";
+            csImgLabel.textContent = "Chọn ảnh từ thiết bị";
+            createStoryModal.classList.remove("open");
+            showToast("Đã đăng tin ảnh!");
           } catch (err) {
             showToast(friendlyError(err));
           } finally {
-            storyFile.value = "";
+            btn.disabled = false;
+            btn.textContent = "Đăng tin ảnh";
           }
         };
 
-        onSnapshot(query(collection(db, "stories"), orderBy("createdAt", "desc"), limit(15)), (snap) => {
+        // Stories realtime
+        onSnapshot(query(collection(db, "stories"), orderBy("createdAt", "desc"), limit(20)), (snap) => {
           const row = document.getElementById("twin-stories");
           row.innerHTML = `
             <div class="twin-story-card" id="btn-add-story">
@@ -303,28 +583,38 @@
               </div>
             </div>
           `;
-          document.getElementById("btn-add-story").onclick = () => storyFile.click();
+          document.getElementById("btn-add-story").onclick = () => {
+            createStoryModal.classList.add("open");
+          };
 
           const dayAgo = Date.now() - 24 * 60 * 60 * 1000;
           snap.forEach((d) => {
-            const s = d.data();
+            const s = { id: d.id, ...d.data() };
             if (s.createdAt && toMillis(s.createdAt) < dayAgo) return;
-            if (!s.imageUrl) return;
+            const isTextStory = s.type === "text" || (!s.imageUrl && s.text);
+            if (!isTextStory && !s.imageUrl) return;
+
             const card = document.createElement("div");
             card.className = "twin-story-card";
-            card.innerHTML = `
-              <img class="story-bg" src="${escapeHtml(s.imageUrl)}" alt="" />
-              <div class="twin-story-overlay">
-                <img class="twin-story-avatar" src="${escapeHtml(s.authorAvatar || DEFAULT_AVATAR)}" alt="" />
-                <div class="twin-story-name">${escapeHtml(s.authorName)}</div>
-              </div>
-            `;
-            card.onclick = () => {
-              document.getElementById("story-modal-img").src = s.imageUrl;
-              document.getElementById("story-modal-author").textContent = s.authorName;
-              document.getElementById("story-modal-caption").textContent = s.caption || "";
-              document.getElementById("story-modal").classList.add("open");
-            };
+            if (isTextStory) {
+              card.style.background = getStoryBgCss(s.bgId || s.bgCss);
+              card.innerHTML = `
+                <div class="twin-story-text-thumb ${escapeHtml(s.fontClass || "")}">${escapeHtml((s.text || "").slice(0, 75))}</div>
+                <div class="twin-story-overlay">
+                  <img class="twin-story-avatar" src="${escapeHtml(s.authorAvatar || DEFAULT_AVATAR)}" alt="" />
+                  <div class="twin-story-name">${escapeHtml(s.authorName)}</div>
+                </div>
+              `;
+            } else {
+              card.innerHTML = `
+                <img class="story-bg" src="${escapeHtml(s.imageUrl)}" alt="" />
+                <div class="twin-story-overlay">
+                  <img class="twin-story-avatar" src="${escapeHtml(s.authorAvatar || DEFAULT_AVATAR)}" alt="" />
+                  <div class="twin-story-name">${escapeHtml(s.authorName)}</div>
+                </div>
+              `;
+            }
+            card.onclick = () => openStoryViewer(s);
             row.appendChild(card);
           });
         }, (err) => showToast(friendlyError(err)));

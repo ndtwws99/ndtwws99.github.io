@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Trang — Twin</title>
-  <meta name="description" content="Twin — Mạng xã hội Liquid Glass kết nối bạn bè, chia sẻ khoảnh khắc, nhóm, trang và nhắn tin thời gian thực." />
+  <meta name="description" content="Twin — Mạng xã hội kết nối bạn bè, chia sẻ khoảnh khắc, nhóm, trang và nhắn tin thời gian thực." />
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%232563eb'/%3E%3Cstop offset='100%25' stop-color='%2306b6d4'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='32' cy='32' r='32' fill='url(%23g)'/%3E%3Cpath d='M17 20h30v7.5H36V48h-8V27.5H17z' fill='%23fff'/%3E%3C/svg%3E" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -39,7 +39,18 @@
         </div>
 
         <div id="pf-page-composer" style="display:none;border-top:1px solid var(--border);padding-top:12px;">
+          <div class="twin-composer-bar">
+            <div class="twin-seg-tabs">
+              <button type="button" id="pg-mode-text" class="twin-seg-tab active">Văn bản</button>
+              <button type="button" id="pg-mode-html" class="twin-seg-tab">&lt;/&gt; HTML</button>
+            </div>
+            <button type="button" id="pg-prev-btn" class="twin-btn twin-btn-secondary twin-btn-sm" style="display:none;">Xem trước HTML</button>
+          </div>
           <textarea id="page-post-content" class="twin-textarea" placeholder="Đăng tin mới từ Trang này..."></textarea>
+          <div id="pg-html-preview" class="twin-html-preview" style="display:none;">
+            <div class="twin-html-preview-label">Xem trước tin Trang (HTML)</div>
+            <div id="pg-html-preview-body" class="twin-post-body twin-post-html" style="margin-bottom:0;"></div>
+          </div>
           <div id="page-post-preview-wrap" style="margin-top:10px;display:none;position:relative;">
             <img id="page-post-preview-img" class="twin-post-image" alt="Xem trước" />
             <button id="page-post-preview-remove" type="button" class="twin-icon-btn" style="position:absolute;top:8px;right:8px;width:30px;height:30px;">✕</button>
@@ -94,6 +105,7 @@
       arrayRemove,
       serverTimestamp,
       uploadToCloudinary,
+      sanitizeHtml,
       DEFAULT_AVATAR,
       escapeHtml,
       toMillis,
@@ -105,6 +117,7 @@
     let activePage = null;
     let unsubPagePosts = null;
     let selectedPageFile = null;
+    let pagePostIsHtml = false;
     let initialOpened = false;
 
     const modal = document.getElementById("page-modal");
@@ -115,6 +128,31 @@
         ? "Đã chọn: " + e.target.files[0].name
         : "Ảnh đại diện Trang (tùy chọn)";
     };
+
+    const pgContentEl = document.getElementById("page-post-content");
+    const pgModeText = document.getElementById("pg-mode-text");
+    const pgModeHtml = document.getElementById("pg-mode-html");
+    const pgPrevBtn = document.getElementById("pg-prev-btn");
+    const pgPrevBox = document.getElementById("pg-html-preview");
+    const pgPrevBody = document.getElementById("pg-html-preview-body");
+    const syncPgMode = () => {
+      pgModeText.classList.toggle("active", !pagePostIsHtml);
+      pgModeHtml.classList.toggle("active", pagePostIsHtml);
+      pgContentEl.classList.toggle("code-mode", pagePostIsHtml);
+      pgContentEl.placeholder = pagePostIsHtml ? "Nhập mã HTML cho tin Trang..." : "Đăng tin mới từ Trang này...";
+      pgPrevBtn.style.display = pagePostIsHtml ? "inline-flex" : "none";
+      if (!pagePostIsHtml) pgPrevBox.style.display = "none";
+    };
+    pgModeText.onclick = () => { pagePostIsHtml = false; syncPgMode(); };
+    pgModeHtml.onclick = () => { pagePostIsHtml = true; syncPgMode(); };
+    pgPrevBtn.onclick = () => {
+      const show = pgPrevBox.style.display === "none";
+      pgPrevBox.style.display = show ? "block" : "none";
+      if (show) pgPrevBody.innerHTML = sanitizeHtml(pgContentEl.value);
+    };
+    pgContentEl.addEventListener("input", () => {
+      if (pagePostIsHtml && pgPrevBox.style.display !== "none") pgPrevBody.innerHTML = sanitizeHtml(pgContentEl.value);
+    });
 
     const fileInput = document.getElementById("page-post-file");
     const previewWrap = document.getElementById("page-post-preview-wrap");
@@ -226,6 +264,7 @@
               pageName: activePage.name,
               pageAvatar: activePage.coverUrl || DEFAULT_AVATAR,
               content,
+              isHtml: pagePostIsHtml,
               imageUrl,
               pinned: false,
               reactions: {},
@@ -233,6 +272,7 @@
               createdAt: serverTimestamp()
             });
             document.getElementById("page-post-content").value = "";
+            pgPrevBox.style.display = "none";
             selectedPageFile = null;
             fileInput.value = "";
             previewWrap.style.display = "none";
