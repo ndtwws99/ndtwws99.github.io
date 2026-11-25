@@ -230,7 +230,7 @@
           const box = document.getElementById("pf-posts");
           const items = [];
           snap.forEach((d) => items.push({ id: d.id, ...d.data() }));
-          items.sort((a, b) => toMillis(b.createdAt) - toMillis(a.createdAt));
+          items.sort((a, b) => ((b.pinned ? 1 : 0) - (a.pinned ? 1 : 0)) || ((b.pinned && a.pinned) ? ((b.pinnedAt || 0) - (a.pinnedAt || 0)) : 0) || (toMillis(b.createdAt) - toMillis(a.createdAt)));
           renderPostList(
             box,
             items,
