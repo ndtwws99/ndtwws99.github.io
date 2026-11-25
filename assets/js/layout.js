@@ -19,6 +19,7 @@ import {
   writeBatch,
   serverTimestamp,
   ensureUserDoc,
+  pushNotification,
   DEFAULT_AVATAR,
   escapeHtml,
   formatTime,
@@ -30,17 +31,17 @@ import {
 } from "./firebase-service.js";
 
 export const ICONS = {
-  home: `<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5"/></svg>`,
-  friends: `<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
-  groups: `<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><circle cx="9" cy="10" r="1" fill="currentColor"/><circle cx="15" cy="10" r="1" fill="currentColor"/></svg>`,
-  pages: `<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>`,
-  chat: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>`,
-  bell: `<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>`,
-  search: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>`,
-  moon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`,
-  sun: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>`,
-  bookmark: `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>`,
-  logout: `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>`
+  home: `<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10.5 9-7.5 9 7.5"/><path d="M5 9.5V19a2 2 0 0 0 2 2h3.5v-5.5a1.5 1.5 0 0 1 3 0V21H17a2 2 0 0 0 2-2V9.5"/></svg>`,
+  friends: `<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
+  groups: `<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M18 21a8 8 0 0 0-16 0"/><circle cx="10" cy="8" r="4"/><path d="M22 20c0-3.37-2-6.5-4-8a5 5 0 0 0-.45-8.3"/></svg>`,
+  pages: `<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>`,
+  chat: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/><path d="M8 12h.01"/><path d="M12 12h.01"/><path d="M16 12h.01"/></svg>`,
+  bell: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>`,
+  search: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>`,
+  moon: `<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>`,
+  sun: `<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>`,
+  bookmark: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16Z"/></svg>`,
+  logout: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>`
 };
 
 let currentUserData = null;
@@ -51,6 +52,8 @@ let unsubSearchGroups = null;
 let unsubSearchPages = null;
 let globalListenersBound = false;
 let latestNotifItems = [];
+let notifInitialized = false;
+const seenNotifIds = new Set();
 
 const searchDirectory = {
   users: [],
@@ -258,7 +261,7 @@ export function renderAppChrome() {
       <a href="./friends.html" class="twin-mobile-tab ${page === "friends" ? "active" : ""}">${ICONS.friends}<span>Bạn bè</span></a>
       <a href="./groups.html" class="twin-mobile-tab ${page === "groups" ? "active" : ""}">${ICONS.groups}<span>Nhóm</span></a>
       <a href="./pages.html" class="twin-mobile-tab ${page === "pages" ? "active" : ""}">${ICONS.pages}<span>Trang</span></a>
-      <a href="./messages.html" class="twin-mobile-tab ${page === "messages" ? "active" : ""}">${ICONS.chat}<span>Chat</span></a>
+      <a href="./messages.html" class="twin-mobile-tab ${page === "messages" ? "active" : ""}" style="position:relative;">${ICONS.chat}<span class="twin-badge twin-mobile-chat-badge" id="twin-mobile-chat-badge" style="display:none">0</span><span>Chat</span></a>
     `;
     document.body.appendChild(mobileBar);
   }
@@ -271,8 +274,18 @@ function setBadgeCount(count) {
   badge.textContent = count > 9 ? "9+" : String(count);
 }
 
+function setChatBadgeCount(count) {
+  ["twin-chat-badge", "twin-mobile-chat-badge"].forEach((id) => {
+    const badge = document.getElementById(id);
+    if (!badge) return;
+    badge.style.display = count > 0 ? "grid" : "none";
+    badge.textContent = count > 9 ? "9+" : String(count);
+  });
+}
+
 async function markAllNotificationsRead() {
   setBadgeCount(0);
+  setChatBadgeCount(0);
   const unreadDocs = latestNotifItems.filter((n) => !n.read);
   unreadDocs.forEach((n) => { n.read = true; });
   if (!db || !unreadDocs.length) return;
@@ -327,7 +340,7 @@ function renderLoggedInHeaderRight(user) {
   const isDark = document.documentElement.getAttribute("data-theme") === "dark";
 
   wrap.innerHTML = `
-    <a href="./messages.html" class="twin-icon-btn" title="Tin nhắn Twin Chat">${ICONS.chat}</a>
+    <a href="./messages.html" class="twin-icon-btn" id="twin-chat-nav-btn" title="Tin nhắn Twin Chat">${ICONS.chat}<span class="twin-badge" id="twin-chat-badge" style="display:none">0</span></a>
     <button class="twin-icon-btn" id="twin-notif-btn" title="Thông báo">
       ${ICONS.bell}
       <span class="twin-badge" id="twin-notif-badge" style="display:none">0</span>
@@ -428,11 +441,32 @@ function renderLoggedInHeaderRight(user) {
 function subscribeNotifications(uid) {
   if (!db) return;
   if (unsubNotifs) unsubNotifs();
+  notifInitialized = false;
+  seenNotifIds.clear();
   const q = query(collection(db, "notifications"), where("toUid", "==", uid));
   unsubNotifs = onSnapshot(q, (snap) => {
     const items = [];
     snap.forEach((d) => items.push({ id: d.id, ...d.data() }));
     items.sort((a, b) => toMillis(b.createdAt) - toMillis(a.createdAt));
+
+    if (!notifInitialized) {
+      items.forEach((n) => seenNotifIds.add(n.id));
+      notifInitialized = true;
+    } else {
+      items.forEach((n) => {
+        if (!seenNotifIds.has(n.id)) {
+          seenNotifIds.add(n.id);
+          if (!n.read) {
+            showToast(`${n.fromName || "Ai đó"} ${n.text || ""}`, {
+              avatar: n.fromAvatar || DEFAULT_AVATAR,
+              link: n.link || "./index.html",
+              duration: 4500
+            });
+          }
+        }
+      });
+    }
+
     latestNotifItems = items;
 
     const notifDrop = document.getElementById("twin-notif-dropdown");
@@ -440,7 +474,10 @@ function subscribeNotifications(uid) {
     if (isDropdownOpen && items.some((n) => !n.read)) {
       markAllNotificationsRead();
     } else {
-      setBadgeCount(items.filter((n) => !n.read).length);
+      const unread = items.filter((n) => !n.read);
+      setBadgeCount(unread.length);
+      const unreadMsg = unread.filter((n) => n.type === "message" || (n.link && n.link.startsWith("./messages.html")));
+      setChatBadgeCount(unreadMsg.length);
     }
     renderNotifList();
   }, (err) => console.warn("Notifications:", err));
@@ -521,6 +558,15 @@ export function openTwinChat(peer) {
         senderUid: currentUserData.uid,
         text,
         createdAt: serverTimestamp()
+      });
+      const snippet = text.length > 50 ? `${text.slice(0, 50)}…` : text;
+      pushNotification(peer.uid, {
+        fromUid: currentUserData.uid,
+        fromName: currentUserData.name,
+        fromAvatar: currentUserData.avatar,
+        type: "message",
+        text: `đã nhắn tin: "${snippet}"`,
+        link: `./messages.html?uid=${encodeURIComponent(currentUserData.uid)}`
       });
     } catch (err) {
       console.error(err);

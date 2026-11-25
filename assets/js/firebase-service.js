@@ -11,7 +11,9 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
   signOut,
-  updateProfile
+  updateProfile,
+  sendPasswordResetEmail,
+  sendPasswordResetEmail
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import {
   getFirestore,
@@ -63,6 +65,13 @@ export async function signInWithGoogle() {
   const cred = await signInWithPopup(auth, googleProvider);
   await ensureUserDoc(cred.user);
   return cred.user;
+}
+
+export async function resetUserPassword(email) {
+  if (!auth) throw new Error("Chưa cấu hình Firebase.");
+  const cleanEmail = String(email || "").trim();
+  if (!cleanEmail) throw new Error("Vui lòng nhập địa chỉ email.");
+  await sendPasswordResetEmail(auth, cleanEmail);
 }
 
 export {
@@ -251,7 +260,7 @@ export function sanitizeHtml(rawHtml = "") {
   return docHtml.body.innerHTML;
 }
 
-export function showToast(message) {
+export function showToast(message, opts = {}) {
   let container = document.getElementById("twin-toast-container");
   if (!container) {
     container = document.createElement("div");
@@ -259,11 +268,29 @@ export function showToast(message) {
     container.className = "twin-toast-container";
     document.body.appendChild(container);
   }
-  const el = document.createElement("div");
-  el.className = "twin-toast";
-  el.textContent = message;
+  const isLink = Boolean(opts && opts.link);
+  const el = document.createElement(isLink ? "a" : "div");
+  el.className = "twin-toast" + (isLink ? " twin-toast-link" : "");
+  if (isLink) el.href = safeLink(opts.link);
+  if (opts && opts.avatar) {
+    const img = document.createElement("img");
+    img.className = "twin-avatar twin-avatar-sm";
+    img.src = opts.avatar;
+    img.alt = "";
+    img.style.width = "26px";
+    img.style.height = "26px";
+    el.appendChild(img);
+  }
+  const span = document.createElement("span");
+  span.textContent = message;
+  el.appendChild(span);
   container.appendChild(el);
-  setTimeout(() => el.remove(), 3200);
+  const duration = (opts && opts.duration) || 3800;
+  setTimeout(() => {
+    el.style.opacity = "0";
+    el.style.transform = "translateY(8px)";
+    setTimeout(() => el.remove(), 220);
+  }, duration);
 }
 
 export function escapeHtml(str = "") {
@@ -332,9 +359,18 @@ export async function ensureUserDoc(user, extra = {}) {
     const profile = {
       uid: user.uid,
       name: extra.name || user.displayName || user.email?.split("@")[0] || "Thành viên Twin",
+      email: user.email || "",
       avatar: user.photoURL || DEFAULT_AVATAR,
       cover: "",
       bio: "Xin chào, mình đang dùng Twin!",
+      birthday: "",
+      hometown: "",
+      location: "",
+      work: "",
+      education: "",
+      gender: "",
+      phone: "",
+      website: "",
       friends: [],
       friendRequests: [],
       savedPosts: [],
@@ -346,18 +382,23 @@ export async function ensureUserDoc(user, extra = {}) {
   return snap.data();
 }
 
-export async function pushNotification(toUid, payload) {
-  if (!db || !toUid || toUid === payload.fromUid) return;
-  await addDoc(collection(db, "notifications"), {
-    toUid,
-    fromUid: payload.fromUid,
-    fromName: payload.fromName || "Ai đó",
-    fromAvatar: payload.fromAvatar || DEFAULT_AVATAR,
-    text: payload.text,
-    link: safeLink(payload.link),
-    read: false,
-    createdAt: serverTimestamp()
-  });
+export async function pushNotification(toUid, payload = {}) {
+  if (!db || !toUid || !payload.fromUid || toUid === payload.fromUid) return;
+  try {
+    await addDoc(collection(db, "notifications"), {
+      toUid,
+      fromUid: payload.fromUid,
+      fromName: payload.fromName || "Thành viên Twin",
+      fromAvatar: payload.fromAvatar || DEFAULT_AVATAR,
+      type: payload.type || "general",
+      text: payload.text || "có tương tác mới.",
+      link: safeLink(payload.link),
+      read: false,
+      createdAt: serverTimestamp()
+    });
+  } catch (err) {
+    console.warn("pushNotification failed:", err);
+  }
 }
 
 export function getChatId(uid1, uid2) {
