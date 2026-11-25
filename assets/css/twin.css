@@ -1331,3 +1331,276 @@ body.page-404 {
   .twin-auth-brand h1 { font-size: 34px; }
   .twin-profile-bar { padding: 0 14px 18px; }
 }
+/* =====================================================
+   POLISHED ICONS, ICON-ONLY ACTIONS, PROFILE META & MOBILE (ANDROID / iOS)
+===================================================== */
+:root {
+  --sat: env(safe-area-inset-top, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+  --sal: env(safe-area-inset-left, 0px);
+  --sar: env(safe-area-inset-right, 0px);
+}
+
+html, body {
+  overscroll-behavior-y: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+a, button, label {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Header safe-area for iOS notch / Dynamic Island */
+.twin-header {
+  height: calc(var(--header-h) + var(--sat));
+  padding-top: var(--sat);
+  padding-left: calc(18px + var(--sal));
+  padding-right: calc(18px + var(--sar));
+}
+
+/* Icon-only post action bar */
+.twin-icon-only-actions {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  padding-top: 8px;
+}
+.twin-icon-only-actions .twin-action-btn {
+  min-height: 42px;
+  padding: 8px;
+  border-radius: 14px;
+  border: 1px solid transparent;
+  color: var(--text-2);
+  transition: background 0.16s ease, color 0.16s ease, transform 0.14s cubic-bezier(0.34, 1.56, 0.64, 1), border-color 0.16s ease;
+}
+.twin-icon-only-actions .twin-action-btn:hover {
+  background: var(--glass-hover);
+  border-color: var(--border);
+  color: var(--primary);
+}
+.twin-icon-only-actions .twin-action-btn:active {
+  transform: scale(0.9);
+}
+.twin-icon-only-actions .twin-action-btn.reacted {
+  color: var(--primary);
+  background: var(--primary-soft);
+  border-color: rgba(10, 132, 255, 0.25);
+}
+.twin-icon-only-actions .twin-action-btn svg {
+  width: 20px;
+  height: 20px;
+  transition: transform 0.16s ease;
+}
+.twin-icon-only-actions .twin-action-btn:hover svg {
+  transform: scale(1.08);
+}
+.twin-react-active-emoji {
+  font-size: 20px;
+  line-height: 1;
+  display: inline-block;
+}
+
+/* Polished icon buttons & sidebar items */
+.twin-side-item {
+  border: 1px solid transparent;
+  transition: background 0.16s ease, border-color 0.16s ease, transform 0.12s ease;
+}
+.twin-side-item:hover, .twin-side-item.active {
+  border-color: var(--border);
+}
+.twin-side-item:active { transform: scale(0.985); }
+.twin-side-icon {
+  transition: transform 0.18s ease, background 0.18s ease;
+}
+.twin-side-item:hover .twin-side-icon {
+  transform: scale(1.06);
+}
+.twin-nav-link svg, .twin-icon-btn svg {
+  transition: transform 0.16s ease;
+}
+.twin-nav-link:hover svg, .twin-icon-btn:hover svg {
+  transform: scale(1.07);
+}
+
+/* Forgot password link button */
+.twin-link-btn {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--primary);
+  padding: 2px 4px;
+  border-radius: 6px;
+  transition: opacity 0.15s, background 0.15s;
+}
+.twin-link-btn:hover {
+  background: var(--primary-soft);
+}
+
+/* Profile metadata list & edit modal form */
+.twin-profile-meta-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+.twin-profile-meta-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: var(--text-2);
+}
+.twin-profile-meta-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
+  background: var(--primary-soft);
+  color: var(--primary);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  margin-top: -1px;
+}
+
+.twin-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.twin-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.twin-form-field label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-2);
+  padding-left: 2px;
+}
+
+/* Clickable notification toast */
+.twin-toast {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 360px;
+  transition: opacity 0.22s ease, transform 0.22s ease;
+}
+.twin-toast-link {
+  cursor: pointer;
+  border-color: rgba(10, 132, 255, 0.35);
+}
+.twin-toast-link:hover {
+  background: var(--glass-hover);
+}
+
+/* Mobile chat badge on bottom bar */
+.twin-mobile-chat-badge {
+  top: 2px;
+  right: calc(50% - 20px);
+  min-width: 16px;
+  height: 16px;
+  font-size: 10px;
+}
+
+/* Smooth momentum scrolling on iOS */
+.twin-messenger-list,
+.twin-messenger-feed,
+.twin-stories-row,
+.twin-modal,
+.twin-dropdown,
+.twin-search-dropdown {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* =====================================================
+   ANDROID & iOS MOBILE OPTIMIZATIONS
+===================================================== */
+@media (max-width: 820px) {
+  html, body {
+    background-attachment: scroll;
+  }
+
+  /* Prevent iOS Safari auto-zoom on input focus */
+  input, textarea, select,
+  .twin-input, .twin-textarea, .twin-select,
+  .twin-search-box input {
+    font-size: 16px !important;
+  }
+
+  .twin-header {
+    padding-left: calc(10px + var(--sal));
+    padding-right: calc(10px + var(--sar));
+  }
+
+  .twin-mobile-bar {
+    bottom: calc(10px + var(--sab));
+    left: calc(10px + var(--sal));
+    right: calc(10px + var(--sar));
+    height: 60px;
+  }
+
+  .twin-main {
+    padding: 12px 10px calc(var(--mobile-bar-h) + var(--sab) + 28px);
+  }
+
+  .twin-card {
+    padding: 14px;
+    border-radius: 18px;
+  }
+
+  .twin-modal-backdrop {
+    padding: 12px;
+    padding-bottom: calc(12px + var(--sab));
+  }
+  .twin-modal {
+    padding: 18px;
+    border-radius: 22px;
+    max-height: calc(100dvh - var(--sat) - var(--sab) - 24px);
+  }
+
+  .twin-form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .twin-toast-container {
+    bottom: calc(var(--mobile-bar-h) + var(--sab) + 22px);
+    left: 12px;
+    right: 12px;
+    align-items: center;
+  }
+  .twin-toast {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  /* Native-like fullscreen chat on Android & iOS */
+  body.page-messages.mobile-chat-open .twin-mobile-bar {
+    display: none !important;
+  }
+  body.page-messages.mobile-chat-open .twin-messenger-wrap {
+    padding-bottom: 0;
+  }
+  body.page-messages .twin-chat-form {
+    padding: 10px 10px calc(10px + var(--sab));
+  }
+  body.page-messages .twin-messenger-topbar {
+    padding: 10px 12px;
+  }
+}
+
+@media (max-width: 420px) {
+  .twin-icon-only-actions .twin-action-btn {
+    min-height: 40px;
+    padding: 6px;
+  }
+  .twin-profile-bar {
+    padding: 0 14px 18px;
+  }
+}
