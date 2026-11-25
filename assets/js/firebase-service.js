@@ -338,6 +338,15 @@ export async function uploadToCloudinary(file) {
   return data.secure_url;
 }
 
+export const ROOT_ADMIN_EMAILS = ["ndtwws99@gmail.com"];
+
+export function isUserAdmin(user) {
+  if (!user) return false;
+  if (user.role === "admin") return true;
+  const email = String(user.email || auth?.currentUser?.email || "").trim().toLowerCase();
+  return Boolean(email && ROOT_ADMIN_EMAILS.includes(email));
+}
+
 export async function ensureUserDoc(user, extra = {}) {
   if (!db || !user) return null;
   const ref = doc(db, "users", user.uid);
@@ -347,7 +356,12 @@ export async function ensureUserDoc(user, extra = {}) {
       uid: user.uid,
       name: extra.name || user.displayName || user.email?.split("@")[0] || "Thành viên Twin",
       email: user.email || "",
+      role: "member",
       showEmail: true,
+      showPersonalInfo: true,
+      allowMessagesFrom: "everyone",
+      allowFriendRequests: true,
+      showActivity: true,
       avatar: user.photoURL || DEFAULT_AVATAR,
       cover: "",
       bio: "Xin chào, mình đang dùng Twin!",

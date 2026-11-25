@@ -1,20 +1,20 @@
 <!DOCTYPE html>
-<html lang="vi" data-theme="dark">
+<html lang="vi" data-theme="light">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#f3efe6" media="(prefers-color-scheme: light)" />
-  <meta name="theme-color" content="#0b0d12" media="(prefers-color-scheme: dark)" />
+  <meta name="theme-color" content="#eef2f7" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#080b12" media="(prefers-color-scheme: dark)" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="format-detection" content="telephone=no" />
   <title>Bảng tin — Twin</title>
   <meta name="description" content="Twin — Mạng xã hội kết nối bạn bè, chia sẻ khoảnh khắc, nhóm, trang và nhắn tin thời gian thực." />
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpolygon points='14,4 60,4 60,50 50,60 4,60 4,14' fill='%2313161e' stroke='%23d8b46a' stroke-width='4'/%3E%3Cpath d='M18 20h28v6.5H35.5V48h-7V26.5H18z' fill='%23d8b46a'/%3E%3C/svg%3E" />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%23007aff'/%3E%3Cstop offset='100%25' stop-color='%235856d6'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect x='4' y='4' width='56' height='56' rx='16' fill='url(%23g)'/%3E%3Cpath d='M19 21h26v6H35.5v18h-7V27H19z' fill='%23ffffff'/%3E%3C/svg%3E" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Cormorant+Garamond:wght@600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="./assets/css/twin.css" />
 </head>
 <body class="">
@@ -23,30 +23,34 @@
   <main class="twin-main">
     <div class="twin-grid-3">
       <aside class="twin-sidebar twin-left-col">
-        <a href="./profile.html" class="twin-side-item">
-          <img class="twin-avatar twin-avatar-sm" id="side-me-avatar" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 80'%3E%3Crect width='80' height='80' fill='%23dbeafe'/%3E%3C/svg%3E" alt="" />
-          <span id="side-me-name">Trang cá nhân</span>
-        </a>
-        <a href="./friends.html" class="twin-side-item">
-          <span class="twin-side-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
-          <span>Bạn bè</span>
-        </a>
-        <a href="./groups.html" class="twin-side-item">
-          <span class="twin-side-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.5"/><path d="M5.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="19" cy="9" r="2.2"/><path d="M22 19a4.5 4.5 0 0 0-3-4.2"/><circle cx="5" cy="9" r="2.2"/><path d="M2 19a4.5 4.5 0 0 1 3-4.2"/></svg></span>
-          <span>Nhóm</span>
-        </a>
-        <a href="./pages.html" class="twin-side-item">
-          <span class="twin-side-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg></span>
-          <span>Trang</span>
-        </a>
-        <a href="./messages.html" class="twin-side-item">
-          <span class="twin-side-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/><path d="M8 12h.01"/><path d="M12 12h.01"/><path d="M16 12h.01"/></svg></span>
-          <span>Tin nhắn</span>
-        </a>
-        <a href="./saved.html" class="twin-side-item">
-          <span class="twin-side-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg></span>
-          <span>Đã lưu</span>
-        </a>
+        <div class="twin-side-group">
+          <a href="./profile.html" class="twin-side-item">
+            <img class="twin-avatar twin-avatar-sm" id="side-me-avatar" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 80'%3E%3Crect width='80' height='80' fill='%23dbeafe'/%3E%3C/svg%3E" alt="" />
+            <span id="side-me-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Trang cá nhân</span>
+          </a>
+        </div>
+        <div class="twin-side-group">
+          <a href="./friends.html" class="twin-side-item">
+            <span class="twin-side-icon ios-blue"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="7.5" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17" cy="8.5" r="2.7"/><path d="M21.5 20a4.7 4.7 0 0 0-3.5-4.5"/></svg></span>
+            <span>Bạn bè</span>
+          </a>
+          <a href="./groups.html" class="twin-side-item">
+            <span class="twin-side-icon ios-indigo"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="2"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2"/></svg></span>
+            <span>Nhóm</span>
+          </a>
+          <a href="./pages.html" class="twin-side-item">
+            <span class="twin-side-icon ios-orange"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 14.5s1.2-1 4-1 5 2 8 2 3-1 3-1v-10s-1 1-3 1-5-2-8-2-4 1-4 1z"/><path d="M4.5 21.5v-7"/></svg></span>
+            <span>Trang</span>
+          </a>
+          <a href="./messages.html" class="twin-side-item">
+            <span class="twin-side-icon ios-green"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.5 8.5 0 0 1-12.6 7.4L3 20.5l1.6-4.8A8.5 8.5 0 1 1 21 11.5Z"/></svg></span>
+            <span>Tin nhắn</span>
+          </a>
+          <a href="./saved.html" class="twin-side-item">
+            <span class="twin-side-icon ios-pink"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4.5A2.5 2.5 0 0 1 8.5 2h7A2.5 2.5 0 0 1 18 4.5v17l-6-3.8-6 3.8v-17Z"/></svg></span>
+            <span>Đã lưu</span>
+          </a>
+        </div>
         <div class="twin-side-legal">Twin © 2026</div>
       </aside>
 
@@ -104,11 +108,11 @@
           </div>
         </div>
 
-        <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
-          <button class="twin-btn twin-btn-primary twin-btn-sm feed-filter" data-filter="all">Tất cả</button>
-          <button class="twin-btn twin-btn-secondary twin-btn-sm feed-filter" data-filter="pinned">Đã ghim</button>
-          <button class="twin-btn twin-btn-secondary twin-btn-sm feed-filter" data-filter="photo">Có ảnh</button>
-          <button class="twin-btn twin-btn-secondary twin-btn-sm feed-filter" data-filter="page">Từ Trang</button>
+        <div class="twin-filter-bar" role="tablist" aria-label="Lọc bài viết">
+          <button type="button" class="feed-filter active" data-filter="all">Tất cả</button>
+          <button type="button" class="feed-filter" data-filter="pinned">Đã ghim</button>
+          <button type="button" class="feed-filter" data-filter="photo">Có ảnh</button>
+          <button type="button" class="feed-filter" data-filter="page">Từ Trang</button>
         </div>
 
         <div id="twin-feed"></div>
@@ -116,23 +120,25 @@
       </section>
 
       <aside class="twin-sidebar twin-right-col">
-        <div class="twin-card" style="padding:14px;margin-bottom:14px;">
-          <div style="font-size:12px;font-weight:700;color:var(--text-3);margin-bottom:8px;">TỔNG QUAN TWIN</div>
-          <div style="display:flex;justify-content:space-between;font-size:13.5px;margin-bottom:4px;">
+        <div class="twin-side-group" style="padding:14px 16px;">
+          <div style="font-size:11.5px;font-weight:700;letter-spacing:0.03em;color:var(--text-3);margin-bottom:10px;">TỔNG QUAN TWIN</div>
+          <div style="display:flex;justify-content:space-between;font-size:13.5px;padding-bottom:7px;margin-bottom:7px;border-bottom:1px solid var(--border-subtle);">
             <span class="twin-post-meta">Bài viết</span>
-            <strong id="stat-posts-count">0</strong>
+            <strong id="stat-posts-count" style="font-variant-numeric:tabular-nums;">0</strong>
           </div>
           <div style="display:flex;justify-content:space-between;font-size:13.5px;">
             <span class="twin-post-meta">Thành viên</span>
-            <strong id="stat-users-count">0</strong>
+            <strong id="stat-users-count" style="font-variant-numeric:tabular-nums;">0</strong>
           </div>
         </div>
 
-        <div style="display:flex;justify-content:space-between;align-items:center;padding-right:6px;">
-          <div class="twin-side-heading">Người liên hệ</div>
-          <a href="./messages.html" style="font-size:12.5px;color:var(--primary);font-weight:600;">Mở Chat</a>
+        <div class="twin-side-group">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 10px 8px;">
+            <div class="twin-side-heading" style="padding:0;">Người liên hệ</div>
+            <a href="./messages.html" style="font-size:12.5px;color:var(--primary);font-weight:600;">Mở Chat</a>
+          </div>
+          <div id="twin-contacts"></div>
         </div>
-        <div id="twin-contacts"></div>
       </aside>
     </div>
   </main>
@@ -213,8 +219,10 @@
             </div>
           </div>
           <div style="display:flex;gap:6px;">
-            <button id="story-modal-del" class="twin-icon-btn" style="width:32px;height:32px;display:none;color:var(--danger);" title="Xóa tin">🗑</button>
-            <button id="story-modal-close" class="twin-icon-btn" style="width:32px;height:32px;">✕</button>
+            <button id="story-modal-del" class="twin-icon-btn" style="width:32px;height:32px;display:none;color:var(--danger);" title="Xóa tin" aria-label="Xóa tin">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            </button>
+            <button id="story-modal-close" class="twin-icon-btn" style="width:32px;height:32px;" aria-label="Đóng">✕</button>
           </div>
         </div>
       </div>
@@ -232,7 +240,7 @@
   </div>
 
   <script type="module">
-    import { initTwinPage, openTwinChat } from "./assets/js/layout.js";
+    import { initTwinPage, openTwinChat, getWebPrefs, getSiteSettings } from "./assets/js/layout.js";
     import { renderPostList } from "./assets/js/post-ui.js";
     import {
       db,
@@ -251,6 +259,7 @@
       uploadToCloudinary,
       pushNotification,
       sanitizeHtml,
+      isUserAdmin,
       STORY_BACKGROUNDS,
       getStoryBgCss,
       DEFAULT_AVATAR,
@@ -322,6 +331,19 @@
       }
     });
 
+    function canUseHtmlPosts() {
+      return getSiteSettings().allowHtmlPosts || isUserAdmin(me);
+    }
+
+    function syncHtmlPermission() {
+      const allowed = canUseHtmlPosts();
+      modeHtmlBtn.style.display = allowed ? "" : "none";
+      if (!allowed && composerIsHtml) {
+        composerIsHtml = false;
+        syncComposerMode();
+      }
+    }
+
     function syncComposerMode() {
       modeTextBtn.classList.toggle("active", !composerIsHtml);
       modeHtmlBtn.classList.toggle("active", composerIsHtml);
@@ -333,7 +355,12 @@
       if (!composerIsHtml) htmlPrevWrap.style.display = "none";
     }
     modeTextBtn.onclick = () => { composerIsHtml = false; syncComposerMode(); };
-    modeHtmlBtn.onclick = () => { composerIsHtml = true; syncComposerMode(); };
+    modeHtmlBtn.onclick = () => {
+      if (!canUseHtmlPosts()) return showToast("Quản trị viên đã tạm tắt chế độ đăng bài HTML.");
+      composerIsHtml = true;
+      syncComposerMode();
+    };
+    window.addEventListener("twin-site-settings-changed", syncHtmlPermission);
     htmlPrevBtn.onclick = () => {
       const show = htmlPrevWrap.style.display === "none";
       htmlPrevWrap.style.display = show ? "block" : "none";
@@ -445,7 +472,7 @@
 
     document.getElementById("story-modal-close").onclick = () => storyModal.classList.remove("open");
     document.getElementById("story-modal-del").onclick = async () => {
-      if (!viewingStory || !me || viewingStory.authorUid !== me.uid) return;
+      if (!viewingStory || !me || (viewingStory.authorUid !== me.uid && !isUserAdmin(me))) return;
       if (!confirm("Xóa tin này?")) return;
       try {
         await deleteDoc(doc(db, "stories", viewingStory.id));
@@ -543,7 +570,7 @@
       document.getElementById("story-modal-avatar").src = s.authorAvatar || DEFAULT_AVATAR;
       document.getElementById("story-modal-author").textContent = s.authorName || "Thành viên";
       document.getElementById("story-modal-time").textContent = formatTime(s.createdAt);
-      delBtn.style.display = me && s.authorUid === me.uid ? "grid" : "none";
+      delBtn.style.display = me && (s.authorUid === me.uid || isUserAdmin(me)) ? "grid" : "none";
       storyHeartBurstEl.classList.remove("burst");
 
       if (s.type === "text" || (!s.imageUrl && s.text)) {
@@ -568,18 +595,27 @@
       storyModal.classList.add("open");
     }
 
-    // ---- Feed Filters & Infinite Scroll (5 bài / lượt) ----
-    const FEED_PAGE_SIZE = 5;
-    let visibleFeedCount = FEED_PAGE_SIZE;
+    // ---- Feed Filters & Infinite Scroll (đọc theo cài đặt người dùng) ----
+    let feedPageSize = getWebPrefs().feedPageSize || 5;
+    let visibleFeedCount = feedPageSize;
     let lastFilteredCount = 0;
     let feedLoadingMore = false;
     const feedSentinel = document.getElementById("twin-feed-sentinel");
+
+    window.addEventListener("twin-prefs-changed", (e) => {
+      const nextSize = Number(e.detail?.feedPageSize) || 5;
+      if (nextSize !== feedPageSize) {
+        feedPageSize = nextSize;
+        visibleFeedCount = feedPageSize;
+        renderFeedList(document.getElementById("twin-global-search")?.value || "");
+      }
+    });
 
     function loadMoreFeedPosts() {
       if (feedLoadingMore || visibleFeedCount >= lastFilteredCount) return;
       feedLoadingMore = true;
       setTimeout(() => {
-        visibleFeedCount += FEED_PAGE_SIZE;
+        visibleFeedCount += feedPageSize;
         feedLoadingMore = false;
         renderFeedList(document.getElementById("twin-global-search")?.value || "");
       }, 150);
@@ -604,9 +640,7 @@
       btn.onclick = () => {
         activeFilter = btn.dataset.filter;
         document.querySelectorAll(".feed-filter").forEach((b) => {
-          b.className = b === btn
-            ? "twin-btn twin-btn-primary twin-btn-sm feed-filter"
-            : "twin-btn twin-btn-secondary twin-btn-sm feed-filter";
+          b.classList.toggle("active", b === btn);
         });
         renderFeedList(document.getElementById("twin-global-search")?.value || "", { resetPagination: true });
       };
@@ -615,7 +649,7 @@
     function renderFeedList(filterText = "", { resetPagination = false } = {}) {
       const feed = document.getElementById("twin-feed");
       const q = filterText.trim().toLowerCase();
-      if (resetPagination) visibleFeedCount = FEED_PAGE_SIZE;
+      if (resetPagination) visibleFeedCount = feedPageSize;
 
       const filtered = allPosts
         .filter((p) => {
@@ -666,7 +700,7 @@
           feedSentinel.style.display = "flex";
           feedSentinel.classList.add("has-more");
           feedSentinel.innerHTML = `<span class="twin-feed-spinner"></span><span>Đang tải thêm bài viết cũ hơn (${remaining} bài còn lại)...</span>`;
-        } else if (filtered.length > FEED_PAGE_SIZE) {
+        } else if (filtered.length > feedPageSize) {
           feedSentinel.style.display = "flex";
           feedSentinel.classList.remove("has-more");
           feedSentinel.innerHTML = `<span>Bạn đã xem hết tất cả ${filtered.length} bài viết</span>`;
@@ -686,6 +720,7 @@
         document.getElementById("side-me-name").textContent = me.name;
         document.getElementById("side-me-avatar").src = me.avatar || DEFAULT_AVATAR;
         document.getElementById("composer-avatar").src = me.avatar || DEFAULT_AVATAR;
+        syncHtmlPermission();
 
         const searchEl = document.getElementById("twin-global-search");
         const initialQ = new URLSearchParams(window.location.search).get("q");

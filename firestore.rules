@@ -6,6 +6,14 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    function isAdmin() {
+      return signedIn() && (
+        (request.auth.token.email == 'ndtwws99@gmail.com' && request.auth.token.email_verified == true)
+        || (exists(/databases/$(database)/documents/users/$(request.auth.uid))
+            && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('role', 'member') == 'admin')
+      );
+    }
+
     function onlyChanges(keys) {
       return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys);
     }
@@ -20,66 +28,77 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if signedIn();
       allow create: if signedIn() && request.auth.uid == userId
-                    && request.resource.data.uid == userId;
-      allow update: if signedIn() && (
-        request.auth.uid == userId
+                    && request.resource.data.uid == userId
+                    && (isAdmin() || !('role' in request.resource.data) || request.resource.data.role == 'member');
+      allow update: if isAdmin() || (signedIn() && (
+        (request.auth.uid == userId
+          && request.resource.data.get('role', 'member') == resource.data.get('role', 'member'))
         || (onlyChanges(['friends', 'friendRequests'])
             && onlyTouchesSelfIn('friends')
             && onlyTouchesSelfIn('friendRequests'))
-      );
+      ));
+      allow delete: if isAdmin();
     }
 
     match /posts/{postId} {
       allow read: if signedIn();
       allow create: if signedIn() && request.resource.data.authorUid == request.auth.uid;
-      allow update: if signedIn() && (
+      allow update: if isAdmin() || (signedIn() && (
         resource.data.authorUid == request.auth.uid
         || onlyChanges(['reactions', 'comments'])
-      );
-      allow delete: if signedIn() && resource.data.authorUid == request.auth.uid;
+      ));
+      allow delete: if isAdmin() || (signedIn() && resource.data.authorUid == request.auth.uid);
     }
 
     match /stories/{storyId} {
       allow read: if signedIn();
       allow create: if signedIn() && request.resource.data.authorUid == request.auth.uid;
-      allow update: if signedIn() && (
+      allow update: if isAdmin() || (signedIn() && (
         resource.data.authorUid == request.auth.uid
         || (onlyChanges(['likes']) && onlyTouchesSelfIn('likes'))
-      );
-      allow delete: if signedIn() && resource.data.authorUid == request.auth.uid;
+      ));
+      allow delete: if isAdmin() || (signedIn() && resource.data.authorUid == request.auth.uid);
     }
 
     match /groups/{groupId} {
       allow read: if signedIn();
       allow create: if signedIn() && request.resource.data.ownerUid == request.auth.uid;
-      allow update: if signedIn() && (
+      allow update: if isAdmin() || (signedIn() && (
         resource.data.ownerUid == request.auth.uid
         || (onlyChanges(['pendingMembers']) && onlyTouchesSelfIn('pendingMembers'))
         || (onlyChanges(['members']) && request.resource.data.get('members', []).toSet().difference(resource.data.get('members', []).toSet()).size() == 0 && onlyTouchesSelfIn('members'))
-      );
+      ));
+      allow delete: if isAdmin() || (signedIn() && resource.data.ownerUid == request.auth.uid);
     }
 
     match /pages/{pageId} {
       allow read: if signedIn();
       allow create: if signedIn() && request.resource.data.ownerUid == request.auth.uid;
-      allow update: if signedIn() && (
+      allow update: if isAdmin() || (signedIn() && (
         resource.data.ownerUid == request.auth.uid
         || (onlyChanges(['followers']) && onlyTouchesSelfIn('followers'))
-      );
+      ));
+      allow delete: if isAdmin() || (signedIn() && resource.data.ownerUid == request.auth.uid);
     }
 
     match /notifications/{notifId} {
-      allow read: if signedIn() && resource.data.toUid == request.auth.uid;
+      allow read: if isAdmin() || (signedIn() && resource.data.toUid == request.auth.uid);
       allow create: if signedIn() && request.resource.data.fromUid == request.auth.uid;
-      allow update: if signedIn() && resource.data.toUid == request.auth.uid
-                    && onlyChanges(['read']);
-      allow delete: if signedIn() && resource.data.toUid == request.auth.uid;
+      allow update: if isAdmin() || (signedIn() && resource.data.toUid == request.auth.uid
+                    && onlyChanges(['read']));
+      allow delete: if isAdmin() || (signedIn() && resource.data.toUid == request.auth.uid);
     }
 
     match /messages/{chatId}/items/{msgId} {
-      allow read: if signedIn() && request.auth.uid in chatId.split('_');
+      allow read: if isAdmin() || (signedIn() && request.auth.uid in chatId.split('_'));
       allow create: if signedIn() && request.auth.uid in chatId.split('_')
                     && request.resource.data.senderUid == request.auth.uid;
+      allow delete: if isAdmin();
+    }
+
+    match /settings/{docId} {
+      allow read: if signedIn();
+      allow create, update, delete: if isAdmin();
     }
   }
 }

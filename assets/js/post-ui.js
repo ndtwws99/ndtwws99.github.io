@@ -17,7 +17,8 @@ import {
   formatTime,
   toMillis,
   showToast,
-  friendlyError
+  friendlyError,
+  isUserAdmin
 } from "./firebase-service.js";
 
 const svgUri = (svg) => `data:image/svg+xml,${encodeURIComponent(svg.trim())}`;
@@ -73,14 +74,14 @@ export function renderReactionIcon(key, className = "twin-rx-icon") {
 }
 
 const SVG = {
-  like: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10v12"/><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z"/></svg>`,
-  comment: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>`,
-  share: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>`,
-  save: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg>`,
-  saveFilled: `<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg>`,
-  pin: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></svg>`,
-  edit: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>`,
-  trash: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>`
+  like: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 10.5V20"/><path d="M14.8 5.6 14 10h5.4a2 2 0 0 1 1.95 2.45l-1.8 7.5A2 2 0 0 1 17.6 21.5H5a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h2.7a2 2 0 0 0 1.8-1.1L12 3.2a2.5 2.5 0 0 1 2.8 2.4Z"/></svg>`,
+  comment: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5c4.9 0 8.8 3.5 8.8 7.9 0 4.4-3.9 7.9-8.8 7.9-1.3 0-2.6-.3-3.7-.8L4 20l1.1-3.7a7.3 7.3 0 0 1-1.9-4.9c0-4.4 3.9-7.9 8.8-7.9Z"/></svg>`,
+  share: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7.5 7.5 4.5-4.5 4.5 4.5"/><path d="M5 13.5V18a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4.5"/></svg>`,
+  save: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 4h11A1.5 1.5 0 0 1 19 5.5v15l-7-4-7 4v-15A1.5 1.5 0 0 1 6.5 4Z"/></svg>`,
+  saveFilled: `<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 4h11A1.5 1.5 0 0 1 19 5.5v15l-7-4-7 4v-15A1.5 1.5 0 0 1 6.5 4Z"/></svg>`,
+  pin: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16.5V22"/><path d="M9 10.5 6 14v1.5h12V14l-3-3.5V6l1.5-2h-9L9 6v4.5Z"/></svg>`,
+  edit: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/><path d="m14 6 4 4"/></svg>`,
+  trash: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.5h16"/><path d="M18.5 6.5 17.6 19a2 2 0 0 1-2 1.8H8.4a2 2 0 0 1-2-1.8L5.5 6.5"/><path d="M9 6.5v-2a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`
 };
 
 async function safe(fn) {
@@ -309,7 +310,8 @@ export function renderPostCard(post, currentUser) {
   const myReactionKey = currentUser ? reactions[currentUser.uid] : null;
   const myReactionObj = REACTIONS.find((r) => r.key === myReactionKey);
   const comments = post.comments || [];
-  const isOwner = currentUser && currentUser.uid === post.authorUid;
+  const isOwner = Boolean(currentUser && currentUser.uid === post.authorUid);
+  const canManage = Boolean(isOwner || isUserAdmin(currentUser));
   let isSaved = !!(currentUser && (currentUser.savedPosts || []).includes(post.id));
   const isPinned = Boolean(post.pinned);
 
@@ -347,7 +349,7 @@ export function renderPostCard(post, currentUser) {
         </div>
       </a>
       ${
-        isOwner
+        canManage
           ? `<div class="twin-post-tools">
               <button class="twin-icon-btn btn-pin-post" style="width:34px;height:34px;color:${isPinned ? "var(--primary)" : "var(--text-3)"};background:${isPinned ? "var(--primary-soft)" : ""};" title="${isPinned ? "Bỏ ghim bài viết" : "Ghim bài viết lên đầu"}">${SVG.pin}</button>
               <button class="twin-icon-btn btn-edit-post" style="width:34px;height:34px;color:var(--text-3);" title="Chỉnh sửa bài viết">${SVG.edit}</button>
@@ -591,10 +593,11 @@ let hashHandled = false;
 
 function postSignature(p, currentUser) {
   const saved = !!(currentUser && (currentUser.savedPosts || []).includes(p.id));
+  const canManage = Boolean(currentUser && (currentUser.uid === p.authorUid || isUserAdmin(currentUser)));
   return JSON.stringify([
     p.content, Boolean(p.isHtml), p.imageUrl, p.feeling, p.groupName, p.pageName, p.authorName, p.authorAvatar,
     Boolean(p.pinned), p.pinnedAt || 0, p.editedAt || 0,
-    p.reactions || {}, (p.comments || []).map((c) => c.id), toMillis(p.createdAt), saved
+    p.reactions || {}, (p.comments || []).map((c) => c.id), toMillis(p.createdAt), saved, canManage
   ]);
 }
 
