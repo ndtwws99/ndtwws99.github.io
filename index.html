@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Bảng tin | Twin</title>
-  <meta name="description" content="Twin — Mạng xã hội kết nối bạn bè, chia sẻ khoảnh khắc, nhóm và trang." />
+  <meta name="description" content="Twin — Mạng xã hội kết nối bạn bè, chia sẻ khoảnh khắc, nhóm, trang và nhắn tin thời gian thực." />
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%232563eb'/%3E%3Cstop offset='100%25' stop-color='%2306b6d4'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='16' fill='url(%23g)'/%3E%3Cpath d='M16 20h32v8H36v22h-8V28H16z' fill='%23fff'/%3E%3C/svg%3E" />
   <link rel="stylesheet" href="./assets/css/twin.css" />
 </head>
@@ -13,7 +13,6 @@
 
   <main class="twin-main">
     <div class="twin-grid-3">
-      <!-- Cột trái -->
       <aside class="twin-sidebar twin-left-col">
         <a href="./profile.html" class="twin-side-item" id="side-me-link">
           <img class="twin-avatar twin-avatar-sm" id="side-me-avatar" src="" alt="" />
@@ -22,14 +21,13 @@
         <a href="./friends.html" class="twin-side-item">👥 Bạn bè</a>
         <a href="./groups.html" class="twin-side-item">🏘️ Nhóm</a>
         <a href="./pages.html" class="twin-side-item">🚩 Trang</a>
+        <a href="./messages.html" class="twin-side-item">💬 Tin nhắn</a>
         <a href="./saved.html" class="twin-side-item">🔖 Đã lưu</a>
       </aside>
 
-      <!-- Cột giữa: Stories + Composer + Feed -->
       <section>
         <div class="twin-stories-row" id="twin-stories"></div>
 
-        <!-- Tạo bài viết -->
         <div class="twin-card">
           <div class="twin-composer-top">
             <img class="twin-avatar" id="composer-avatar" src="" alt="" />
@@ -60,15 +58,16 @@
         <div id="twin-feed"></div>
       </section>
 
-      <!-- Cột phải: Liên hệ Twin Chat -->
       <aside class="twin-sidebar twin-right-col">
-        <div class="twin-side-heading">Người liên hệ · Twin Chat</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding-right:8px;">
+          <div class="twin-side-heading">Người liên hệ · Twin Chat</div>
+          <a href="./messages.html" style="font-size:12px;color:var(--twin-primary);font-weight:600;">Xem tất cả</a>
+        </div>
         <div id="twin-contacts"></div>
       </aside>
     </div>
   </main>
 
-  <!-- Modal xem Story -->
   <div class="twin-modal-backdrop" id="story-modal">
     <div class="twin-modal" style="max-width:420px;padding:0;overflow:hidden;">
       <div style="position:relative;">
@@ -82,7 +81,6 @@
     </div>
   </div>
 
-  <!-- Input ẩn tạo story -->
   <input id="story-file-input" type="file" accept="image/*" hidden />
 
   <div id="twin-chat-dock" class="twin-chat-dock"></div>
@@ -159,12 +157,10 @@
         document.getElementById("side-me-avatar").src = me.avatar || DEFAULT_AVATAR;
         document.getElementById("composer-avatar").src = me.avatar || DEFAULT_AVATAR;
 
-        // Global search filter
         document.getElementById("twin-global-search")?.addEventListener("input", (e) => {
           renderFeedList(e.target.value);
         });
 
-        // Publish Post
         document.getElementById("btn-publish-post").onclick = async () => {
           const btn = document.getElementById("btn-publish-post");
           const content = document.getElementById("post-content").value.trim();
@@ -200,7 +196,6 @@
           }
         };
 
-        // Stories realtime
         const storyFile = document.getElementById("story-file-input");
         storyFile.onchange = async () => {
           const f = storyFile.files[0];
@@ -259,14 +254,12 @@
           });
         });
 
-        // Posts realtime
         onSnapshot(query(collection(db, "posts"), orderBy("createdAt", "desc"), limit(40)), (snap) => {
           allPosts = [];
           snap.forEach((d) => allPosts.push({ id: d.id, ...d.data() }));
           renderFeedList(document.getElementById("twin-global-search")?.value || "");
         });
 
-        // Contacts realtime
         onSnapshot(collection(db, "users"), (snap) => {
           const contactsEl = document.getElementById("twin-contacts");
           contactsEl.innerHTML = "";

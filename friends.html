@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Bạn bè | Twin</title>
-  <meta name="description" content="Twin — Mạng xã hội kết nối bạn bè, chia sẻ khoảnh khắc, nhóm và trang." />
+  <meta name="description" content="Twin — Mạng xã hội kết nối bạn bè, chia sẻ khoảnh khắc, nhóm, trang và nhắn tin thời gian thực." />
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%232563eb'/%3E%3Cstop offset='100%25' stop-color='%2306b6d4'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='16' fill='url(%23g)'/%3E%3Cpath d='M16 20h32v8H36v22h-8V28H16z' fill='%23fff'/%3E%3C/svg%3E" />
   <link rel="stylesheet" href="./assets/css/twin.css" />
 </head>
@@ -33,7 +33,7 @@
   <footer id="twin-footer" class="twin-footer"></footer>
 
   <script type="module">
-    import { initTwinPage, openTwinChat } from "./assets/js/layout.js";
+    import { initTwinPage } from "./assets/js/layout.js";
     import {
       db,
       doc,
@@ -116,10 +116,9 @@
               <img class="twin-entity-cover" src="${escapeHtml(u.avatar || DEFAULT_AVATAR)}" alt="" />
               <div class="twin-entity-body">
                 <a href="./profile.html?uid=${encodeURIComponent(u.uid)}" style="font-weight:700;">${escapeHtml(u.name)}</a>
-                <button class="twin-btn twin-btn-primary twin-btn-sm btn-chat">💬 Nhắn tin</button>
+                <a href="./messages.html?uid=${encodeURIComponent(u.uid)}" class="twin-btn twin-btn-primary twin-btn-sm">💬 Nhắn tin</a>
               </div>
             `;
-            card.querySelector(".btn-chat").onclick = () => openTwinChat(u);
             frGrid.appendChild(card);
           });
 
