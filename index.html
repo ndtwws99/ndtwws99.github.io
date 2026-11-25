@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#eef2f7" media="(prefers-color-scheme: light)" />
-  <meta name="theme-color" content="#080b12" media="(prefers-color-scheme: dark)" />
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="mobile-web-app-capable" content="yes" />
@@ -80,7 +80,7 @@
 
           <div class="twin-composer-top">
             <img class="twin-avatar" id="composer-avatar" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 80'%3E%3Crect width='80' height='80' fill='%23dbeafe'/%3E%3C/svg%3E" alt="" />
-            <textarea id="post-content" class="twin-textarea" rows="1" placeholder="Bạn đang nghĩ gì? (Hỗ trợ văn bản &amp; mã HTML)"></textarea>
+            <textarea id="post-content" class="twin-textarea" rows="1" placeholder="Bạn đang nghĩ gì?"></textarea>
           </div>
 
           <div class="twin-composer-extras">
@@ -196,12 +196,15 @@
     </div>
   </div>
 
-  <!-- Modal Xem Tin (Hỗ trợ cả Tin văn bản & Tin ảnh + Thả tim + Xóa tin của mình) -->
+  <!-- Modal Xem Tin (Hỗ trợ cả Tin văn bản & Tin ảnh + Thả tim + Tự chuyển sau 5 giây + Xóa tin của mình) -->
   <div class="twin-modal-backdrop" id="story-modal">
     <div class="twin-modal" style="max-width:420px;padding:0;overflow:hidden;">
       <div style="position:relative;">
         <img id="story-modal-img" style="width:100%;max-height:70vh;object-fit:cover;display:none;cursor:pointer;" alt="Story" />
         <div id="story-modal-text-stage" class="twin-story-stage" style="display:none;border-radius:0;min-height:380px;cursor:pointer;"></div>
+
+        <div class="twin-story-top-scrim" aria-hidden="true"></div>
+        <div id="story-modal-progress" class="twin-story-progress" aria-hidden="true"></div>
 
         <div id="story-modal-heart-burst" class="twin-story-heart-burst" aria-hidden="true">
           <svg width="78" height="78" viewBox="0 0 24 24" fill="#ff3b5c" stroke="#ffffff" stroke-width="1.2" style="filter:drop-shadow(0 8px 20px rgba(255,59,92,0.55));">
@@ -209,19 +212,29 @@
           </svg>
         </div>
 
-        <div style="position:absolute;top:12px;left:12px;right:12px;display:flex;justify-content:space-between;align-items:center;color:#fff;text-shadow:0 1px 6px rgba(0,0,0,0.75);z-index:5;">
-          <div style="display:flex;align-items:center;gap:8px;">
+        <button type="button" id="story-modal-prev" class="twin-story-nav prev" style="display:none;" title="Tin trước" aria-label="Tin trước">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+        </button>
+        <button type="button" id="story-modal-next" class="twin-story-nav next" style="display:none;" title="Tin tiếp theo" aria-label="Tin tiếp theo">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+        </button>
+
+        <div class="twin-story-header">
+          <div style="display:flex;align-items:center;gap:8px;min-width:0;">
             <img id="story-modal-avatar" class="twin-avatar twin-avatar-sm" alt="" />
-            <div>
-              <strong id="story-modal-author" style="display:block;line-height:1.2;"></strong>
-              <span id="story-modal-time" style="font-size:11.5px;opacity:0.9;"></span>
+            <div style="min-width:0;">
+              <strong id="story-modal-author" style="display:block;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></strong>
+              <span id="story-modal-time" style="font-size:11.5px;opacity:0.92;"></span>
             </div>
           </div>
-          <div style="display:flex;gap:6px;">
-            <button id="story-modal-del" class="twin-icon-btn" style="width:32px;height:32px;display:none;color:var(--danger);" title="Xóa tin" aria-label="Xóa tin">
+          <div style="display:flex;gap:6px;flex-shrink:0;">
+            <button type="button" id="story-modal-pause" class="twin-icon-btn" style="width:32px;height:32px;" title="Tạm dừng" aria-label="Tạm dừng">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="4" width="4" height="16" rx="1.2"/><rect x="14" y="4" width="4" height="16" rx="1.2"/></svg>
+            </button>
+            <button type="button" id="story-modal-del" class="twin-icon-btn" style="width:32px;height:32px;display:none;color:var(--danger);" title="Xóa tin" aria-label="Xóa tin">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
             </button>
-            <button id="story-modal-close" class="twin-icon-btn" style="width:32px;height:32px;" aria-label="Đóng">✕</button>
+            <button type="button" id="story-modal-close" class="twin-icon-btn" style="width:32px;height:32px;" aria-label="Đóng">✕</button>
           </div>
         </div>
       </div>
@@ -277,6 +290,7 @@
     let viewingStory = null;
     let storyLikeBusy = false;
     const storiesById = new Map();
+    let storyOrder = [];
     let pendingStoryId = new URLSearchParams(window.location.search).get("story");
 
     // ---- Collapsible & Unified Auto-HTML Post Composer ----
@@ -441,22 +455,251 @@
       }
     };
 
-    // ---- Story Viewer Modal ----
+    // ---- Story Viewer Modal (with 5-second Auto-Advance) ----
+    const STORY_AUTO_ADVANCE_MS = 5000;
+    const STORY_PAUSE_SVG = `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="4" width="4" height="16" rx="1.2"/><rect x="14" y="4" width="4" height="16" rx="1.2"/></svg>`;
+    const STORY_PLAY_SVG = `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="6 4 20 12 6 20 6 4"/></svg>`;
+
     const storyModal = document.getElementById("story-modal");
     const storyLikeBtn = document.getElementById("story-modal-like-btn");
     const storyLikeCountEl = document.getElementById("story-modal-like-count");
     const storyLikeSummaryEl = document.getElementById("story-modal-like-summary");
     const storyHeartBurstEl = document.getElementById("story-modal-heart-burst");
+    const storyProgressEl = document.getElementById("story-modal-progress");
+    const storyPrevBtn = document.getElementById("story-modal-prev");
+    const storyNextBtn = document.getElementById("story-modal-next");
+    const storyPauseBtn = document.getElementById("story-modal-pause");
+    const storyImgEl = document.getElementById("story-modal-img");
+    const storyTextStageEl = document.getElementById("story-modal-text-stage");
 
-    document.getElementById("story-modal-close").onclick = () => storyModal.classList.remove("open");
+    let storyTimerRaf = null;
+    let storyStartPerf = 0;
+    let storyElapsedMs = 0;
+    let storyPaused = false;
+    let storyHeldPaused = false;
+    let storyHoldTimer = null;
+
+    function getCurrentStoryIndex() {
+      if (!viewingStory) return -1;
+      return storyOrder.findIndex((item) => item.id === viewingStory.id);
+    }
+
+    function stopStoryTimer() {
+      if (storyTimerRaf !== null) {
+        cancelAnimationFrame(storyTimerRaf);
+        storyTimerRaf = null;
+      }
+      if (storyHoldTimer !== null) {
+        clearTimeout(storyHoldTimer);
+        storyHoldTimer = null;
+      }
+      storyHeldPaused = false;
+    }
+
+    function updateStoryPauseButton() {
+      const paused = storyPaused || storyHeldPaused;
+      storyPauseBtn.innerHTML = paused ? STORY_PLAY_SVG : STORY_PAUSE_SVG;
+      storyPauseBtn.title = paused ? "Tiếp tục" : "Tạm dừng";
+      storyPauseBtn.setAttribute("aria-label", paused ? "Tiếp tục" : "Tạm dừng");
+    }
+
+    function renderStoryProgressBars(activeIdx, progressRatio = 0) {
+      const count = Math.max(storyOrder.length, 1);
+      const clampedIdx = activeIdx >= 0 ? activeIdx : 0;
+      const pct = Math.max(0, Math.min(100, progressRatio * 100));
+      storyProgressEl.innerHTML = Array.from({ length: count }, (_, i) => {
+        const done = i < clampedIdx;
+        const fillWidth = done ? 100 : i === clampedIdx ? pct : 0;
+        return `<div class="twin-story-progress-seg ${done ? "done" : ""}"><div class="twin-story-progress-fill" style="width:${fillWidth}%"></div></div>`;
+      }).join("");
+    }
+
+    function updateActiveProgressFill(ratio) {
+      const idx = getCurrentStoryIndex();
+      const targetIdx = idx >= 0 ? idx : 0;
+      const fill = storyProgressEl.children[targetIdx]?.querySelector(".twin-story-progress-fill");
+      if (fill) {
+        fill.style.width = `${Math.max(0, Math.min(100, ratio * 100))}%`;
+      }
+    }
+
+    function updateStoryNavButtons(activeIdx) {
+      storyPrevBtn.style.display = activeIdx > 0 ? "grid" : "none";
+      storyNextBtn.style.display = activeIdx >= 0 && activeIdx < storyOrder.length - 1 ? "grid" : "none";
+    }
+
+    function closeStoryViewer() {
+      stopStoryTimer();
+      storyPaused = false;
+      storyElapsedMs = 0;
+      viewingStory = null;
+      storyModal.classList.remove("open");
+    }
+
+    function advanceStory(step) {
+      if (!storyModal.classList.contains("open") || !viewingStory) return;
+      const idx = getCurrentStoryIndex();
+      if (idx === -1) {
+        if (step > 0 && storyOrder.length > 0) {
+          openStoryViewer(storyOrder[0]);
+        } else {
+          closeStoryViewer();
+        }
+        return;
+      }
+      const nextIdx = idx + step;
+      if (nextIdx >= 0 && nextIdx < storyOrder.length) {
+        openStoryViewer(storyOrder[nextIdx]);
+      } else if (step > 0) {
+        closeStoryViewer();
+      }
+    }
+
+    function startStoryTimer(resetProgress = true) {
+      stopStoryTimer();
+      if (resetProgress) {
+        storyElapsedMs = 0;
+        storyPaused = false;
+      }
+      updateStoryPauseButton();
+      if (storyPaused || storyHeldPaused) {
+        updateActiveProgressFill(storyElapsedMs / STORY_AUTO_ADVANCE_MS);
+        return;
+      }
+      storyStartPerf = performance.now() - storyElapsedMs;
+
+      const tick = (now) => {
+        if (!storyModal.classList.contains("open") || !viewingStory) {
+          stopStoryTimer();
+          return;
+        }
+        if (storyPaused || storyHeldPaused) {
+          storyTimerRaf = null;
+          return;
+        }
+        storyElapsedMs = now - storyStartPerf;
+        const ratio = storyElapsedMs / STORY_AUTO_ADVANCE_MS;
+        updateActiveProgressFill(ratio);
+        if (storyElapsedMs >= STORY_AUTO_ADVANCE_MS) {
+          stopStoryTimer();
+          advanceStory(1);
+          return;
+        }
+        storyTimerRaf = requestAnimationFrame(tick);
+      };
+      storyTimerRaf = requestAnimationFrame(tick);
+    }
+
+    function toggleStoryPause() {
+      if (!storyModal.classList.contains("open") || !viewingStory) return;
+      storyPaused = !storyPaused;
+      if (storyPaused) {
+        if (storyTimerRaf !== null) {
+          cancelAnimationFrame(storyTimerRaf);
+          storyTimerRaf = null;
+        }
+        updateStoryPauseButton();
+      } else {
+        startStoryTimer(false);
+      }
+    }
+
+    function bindStoryHoldToPause(el) {
+      const releaseHold = () => {
+        if (storyHoldTimer !== null) {
+          clearTimeout(storyHoldTimer);
+          storyHoldTimer = null;
+        }
+        if (storyHeldPaused) {
+          storyHeldPaused = false;
+          updateStoryPauseButton();
+          if (!storyPaused && storyModal.classList.contains("open") && viewingStory) {
+            startStoryTimer(false);
+          }
+        }
+      };
+      el.addEventListener("pointerdown", () => {
+        if (storyHoldTimer !== null) clearTimeout(storyHoldTimer);
+        storyHoldTimer = setTimeout(() => {
+          storyHoldTimer = null;
+          if (!storyModal.classList.contains("open") || !viewingStory) return;
+          storyHeldPaused = true;
+          if (storyTimerRaf !== null) {
+            cancelAnimationFrame(storyTimerRaf);
+            storyTimerRaf = null;
+          }
+          updateStoryPauseButton();
+        }, 200);
+      });
+      el.addEventListener("pointerup", releaseHold);
+      el.addEventListener("pointercancel", releaseHold);
+      el.addEventListener("pointerleave", releaseHold);
+    }
+
+    bindStoryHoldToPause(storyImgEl);
+    bindStoryHoldToPause(storyTextStageEl);
+
+    storyPrevBtn.onclick = (e) => {
+      e.stopPropagation();
+      advanceStory(-1);
+    };
+    storyNextBtn.onclick = (e) => {
+      e.stopPropagation();
+      advanceStory(1);
+    };
+    storyPauseBtn.onclick = (e) => {
+      e.stopPropagation();
+      toggleStoryPause();
+    };
+    document.getElementById("story-modal-close").onclick = () => closeStoryViewer();
+
+    // Ensure timer always stops if backdrop click or Escape closes the modal externally
+    new MutationObserver(() => {
+      if (!storyModal.classList.contains("open")) {
+        stopStoryTimer();
+        storyPaused = false;
+        storyElapsedMs = 0;
+        viewingStory = null;
+      }
+    }).observe(storyModal, { attributes: true, attributeFilter: ["class"] });
+
+    document.addEventListener("keydown", (e) => {
+      if (!storyModal.classList.contains("open")) return;
+      if (e.key === "ArrowRight") {
+        e.preventDefault();
+        advanceStory(1);
+      } else if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        advanceStory(-1);
+      } else if (e.key === " " && !["INPUT", "TEXTAREA", "BUTTON"].includes(document.activeElement?.tagName)) {
+        e.preventDefault();
+        toggleStoryPause();
+      }
+    });
+
     document.getElementById("story-modal-del").onclick = async () => {
       if (!viewingStory || !me || (viewingStory.authorUid !== me.uid && !isUserAdmin(me))) return;
-      if (!confirm("Xóa tin này?")) return;
+      const wasPaused = storyPaused;
+      storyPaused = true;
+      if (storyTimerRaf !== null) {
+        cancelAnimationFrame(storyTimerRaf);
+        storyTimerRaf = null;
+      }
+      updateStoryPauseButton();
+      if (!confirm("Xóa tin này?")) {
+        storyPaused = wasPaused;
+        if (!storyPaused) startStoryTimer(false);
+        else updateStoryPauseButton();
+        return;
+      }
       try {
         await deleteDoc(doc(db, "stories", viewingStory.id));
-        storyModal.classList.remove("open");
+        closeStoryViewer();
         showToast("Đã xóa tin.");
       } catch (err) {
+        storyPaused = wasPaused;
+        if (!storyPaused) startStoryTimer(false);
+        else updateStoryPauseButton();
         showToast(friendlyError(err));
       }
     };
@@ -535,13 +778,11 @@
     }
 
     storyLikeBtn.onclick = () => toggleStoryLike();
-    document.getElementById("story-modal-img").ondblclick = () => toggleStoryLike({ onlyLike: true });
-    document.getElementById("story-modal-text-stage").ondblclick = () => toggleStoryLike({ onlyLike: true });
+    storyImgEl.ondblclick = () => toggleStoryLike({ onlyLike: true });
+    storyTextStageEl.ondblclick = () => toggleStoryLike({ onlyLike: true });
 
     function openStoryViewer(s) {
       viewingStory = s;
-      const imgEl = document.getElementById("story-modal-img");
-      const stageEl = document.getElementById("story-modal-text-stage");
       const capEl = document.getElementById("story-modal-caption");
       const delBtn = document.getElementById("story-modal-del");
 
@@ -552,16 +793,16 @@
       storyHeartBurstEl.classList.remove("burst");
 
       if (s.type === "text" || (!s.imageUrl && s.text)) {
-        imgEl.style.display = "none";
-        stageEl.style.display = "flex";
-        stageEl.style.background = getStoryBgCss(s.bgId || s.bgCss);
-        stageEl.className = `twin-story-stage ${s.fontClass || "font-bold"}`;
-        stageEl.textContent = s.text || "";
+        storyImgEl.style.display = "none";
+        storyTextStageEl.style.display = "flex";
+        storyTextStageEl.style.background = getStoryBgCss(s.bgId || s.bgCss);
+        storyTextStageEl.className = `twin-story-stage ${s.fontClass || "font-bold"}`;
+        storyTextStageEl.textContent = s.text || "";
         capEl.style.display = "none";
       } else {
-        stageEl.style.display = "none";
-        imgEl.style.display = "block";
-        imgEl.src = s.imageUrl;
+        storyTextStageEl.style.display = "none";
+        storyImgEl.style.display = "block";
+        storyImgEl.src = s.imageUrl;
         if (s.caption) {
           capEl.textContent = s.caption;
           capEl.style.display = "block";
@@ -570,7 +811,11 @@
         }
       }
       renderStoryLikeState(s);
+      const activeIdx = getCurrentStoryIndex();
+      renderStoryProgressBars(activeIdx, 0);
+      updateStoryNavButtons(activeIdx);
       storyModal.classList.add("open");
+      startStoryTimer(true);
     }
 
     // ---- Feed Filters & Infinite Scroll (đọc theo cài đặt người dùng) ----
@@ -830,7 +1075,9 @@
           };
 
           const dayAgo = Date.now() - 24 * 60 * 60 * 1000;
+          const prevViewingIdx = viewingStory ? getCurrentStoryIndex() : -1;
           storiesById.clear();
+          storyOrder = [];
           snap.forEach((d) => {
             const s = { id: d.id, ...d.data() };
             if (s.createdAt && toMillis(s.createdAt) < dayAgo) return;
@@ -838,6 +1085,7 @@
             if (!isTextStory && !s.imageUrl) return;
 
             storiesById.set(s.id, s);
+            storyOrder.push(s);
             const likesCount = Array.isArray(s.likes) ? s.likes.length : 0;
             const likesBadge = likesCount > 0
               ? `<span class="twin-story-likes-badge">❤️ ${likesCount}</span>`
@@ -874,6 +1122,14 @@
             if (latest) {
               viewingStory = latest;
               renderStoryLikeState(latest);
+              const idx = getCurrentStoryIndex();
+              renderStoryProgressBars(idx, storyElapsedMs / STORY_AUTO_ADVANCE_MS);
+              updateStoryNavButtons(idx);
+            } else if (storyOrder.length > 0) {
+              const fallbackIdx = Math.min(Math.max(prevViewingIdx, 0), storyOrder.length - 1);
+              openStoryViewer(storyOrder[fallbackIdx]);
+            } else {
+              closeStoryViewer();
             }
           }
 

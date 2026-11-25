@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#eef2f7" media="(prefers-color-scheme: light)" />
-  <meta name="theme-color" content="#080b12" media="(prefers-color-scheme: dark)" />
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="mobile-web-app-capable" content="yes" />
@@ -39,36 +39,36 @@
 
       <div class="twin-profile-bar">
         <div class="twin-profile-id">
-          <div style="position:relative;flex-shrink:0;">
-            <img id="pf-avatar" class="twin-avatar twin-avatar-xl" alt="Avatar" />
-            <label id="pf-avatar-btn" class="twin-icon-btn" style="position:absolute;right:2px;bottom:2px;width:34px;height:34px;display:none;cursor:pointer;box-shadow:var(--shadow-sm);" title="Đổi ảnh đại diện" aria-label="Đổi ảnh đại diện">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7.5 7H4.5A2.5 2.5 0 0 0 2 9.5v8A2.5 2.5 0 0 0 4.5 20h15a2.5 2.5 0 0 0 2.5-2.5v-8A2.5 2.5 0 0 0 19.5 7h-3l-2-3Z"/><circle cx="12" cy="13.2" r="3.2"/></svg>
+          <div class="twin-profile-avatar-wrap">
+            <div class="twin-profile-avatar-ring">
+              <img id="pf-avatar" class="twin-avatar twin-avatar-xl" alt="Avatar" />
+            </div>
+            <label id="pf-avatar-btn" class="twin-icon-btn twin-profile-cam-btn" style="display:none;" title="Đổi ảnh đại diện" aria-label="Đổi ảnh đại diện">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7.5 7H4.5A2.5 2.5 0 0 0 2 9.5v8A2.5 2.5 0 0 0 4.5 20h15a2.5 2.5 0 0 0 2.5-2.5v-8A2.5 2.5 0 0 0 19.5 7h-3l-2-3Z"/><circle cx="12" cy="13.2" r="3.2"/></svg>
               <input id="pf-avatar-input" type="file" accept="image/*" hidden />
             </label>
           </div>
           <div class="twin-profile-meta-block">
             <h1 id="pf-name" class="twin-profile-name">Đang tải...</h1>
-            <p id="pf-bio" class="twin-post-meta" style="font-size:14px;margin-top:4px;"></p>
             <div class="twin-profile-stats" id="pf-stats">
-              <span><strong id="pf-friends-count">0</strong> bạn bè</span>
-              <span>·</span>
-              <span><strong id="pf-posts-count">0</strong> bài viết</span>
+              <div class="twin-profile-stat">
+                <strong id="pf-posts-count">0</strong>
+                <span>Bài viết</span>
+              </div>
+              <div class="twin-profile-stat">
+                <strong id="pf-friends-count">0</strong>
+                <span>Bạn bè</span>
+              </div>
             </div>
           </div>
         </div>
-        <div id="pf-actions" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;"></div>
+        <div id="pf-actions" class="twin-profile-actions"></div>
       </div>
     </section>
 
     <div class="twin-grid-2">
       <aside class="twin-card twin-profile-about">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-          <h3 style="font-size:16.5px;font-weight:800;letter-spacing:-0.02em;">Giới thiệu</h3>
-          <button type="button" id="pf-open-edit-inline" class="twin-btn twin-btn-secondary twin-btn-sm" style="display:none;padding:6px 12px;font-size:12.5px;">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 1 1 3 3L7 19l-4 1 1-4Z"/></svg>
-            <span>Chỉnh sửa</span>
-          </button>
-        </div>
+        <h3 style="font-size:16.5px;font-weight:800;letter-spacing:-0.02em;margin-bottom:12px;">Giới thiệu</h3>
         <p id="pf-bio-box" style="font-size:14px;color:var(--text-2);margin-bottom:14px;line-height:1.55;"></p>
         <div id="pf-info-list" class="twin-info-list"></div>
       </aside>
@@ -178,7 +178,7 @@
   </div>
 
   <script type="module">
-    import { initTwinPage, openAccountSettingsModal } from "./assets/js/layout.js";
+    import { initTwinPage } from "./assets/js/layout.js";
     import { renderPostList } from "./assets/js/post-ui.js";
     import {
       auth,
@@ -240,7 +240,6 @@
       nameEl.innerHTML = `${escapeHtml(profile.name || "Thành viên Twin")}${
         isUserAdmin(profile) ? ` <span class="twin-role-badge admin" style="vertical-align:middle;margin-left:6px;">Quản trị viên</span>` : ""
       }`;
-      document.getElementById("pf-bio").textContent = profile.bio || "";
       document.getElementById("pf-bio-box").textContent = profile.bio || "Chưa có tiểu sử.";
       document.getElementById("pf-friends-count").textContent = String((profile.friends || []).length);
 
@@ -352,24 +351,13 @@
           const coverRemoveBtn = document.getElementById("pf-cover-remove-btn");
           coverRemoveBtn.style.display = profile.cover ? "inline-flex" : "none";
           document.getElementById("pf-avatar-btn").style.display = "grid";
-          const inlineEditBtn = document.getElementById("pf-open-edit-inline");
-          inlineEditBtn.style.display = "inline-flex";
 
           actions.innerHTML = `
-            <button type="button" id="pf-open-edit-btn" class="twin-btn twin-btn-primary twin-btn-sm">
+            <button type="button" id="pf-open-edit-btn" class="twin-btn twin-btn-secondary twin-btn-sm twin-profile-act-full">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 1 1 3 3L7 19l-4 1 1-4Z"/></svg>
               <span>Chỉnh sửa hồ sơ</span>
             </button>
-            <button type="button" id="pf-open-settings-btn" class="twin-btn twin-btn-secondary twin-btn-sm">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2.5v2.2M12 19.3v2.2M4.93 4.93l1.56 1.56M17.51 17.51l1.56 1.56M2.5 12h2.2M19.3 12h2.2M4.93 19.07l1.56-1.56M17.51 6.49l1.56-1.56"/></svg>
-              <span>Cài đặt</span>
-            </button>
-            <button type="button" id="pf-reset-pass-btn" class="twin-btn twin-btn-secondary twin-btn-sm">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="5"/><path d="m21 2-9.6 9.6"/><path d="m15.5 7.5 3 3L22 7l-3-3"/></svg>
-              <span>Đặt / Đổi mật khẩu</span>
-            </button>
           `;
-          document.getElementById("pf-open-settings-btn").onclick = () => openAccountSettingsModal("effects");
 
           const editModal = document.getElementById("pf-edit-modal");
           const openEditModal = () => {
@@ -391,13 +379,8 @@
           const closeEditModal = () => editModal.classList.remove("open");
 
           document.getElementById("pf-open-edit-btn").onclick = openEditModal;
-          inlineEditBtn.onclick = openEditModal;
           document.getElementById("pf-edit-close").onclick = closeEditModal;
           document.getElementById("pf-edit-cancel").onclick = closeEditModal;
-
-          document.getElementById("pf-reset-pass-btn").onclick = () => {
-            openAccountSettingsModal("privacy", { focusPassword: true });
-          };
 
           document.getElementById("pf-edit-form").onsubmit = async (e) => {
             e.preventDefault();

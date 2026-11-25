@@ -88,10 +88,7 @@ const openChats = new Map();
 
 export const DEFAULT_WEB_PREFS = {
   theme: "light",
-  accent: "blue",
-  glass: "full",
   motion: "full",
-  bgGrid: true,
   sound: true,
   fontSize: "md",
   density: "comfortable",
@@ -124,30 +121,31 @@ export function getWebPrefs() {
     ...stored,
     theme: stored.theme || savedTheme || DEFAULT_WEB_PREFS.theme
   };
-  const validAccents = ["blue", "indigo", "mint", "orange", "pink"];
-  if (!validAccents.includes(merged.accent)) merged.accent = "blue";
   if (!["sm", "md", "lg"].includes(merged.fontSize)) merged.fontSize = "md";
   if (!["comfortable", "compact"].includes(merged.density)) merged.density = "comfortable";
   if (!["full", "reduced"].includes(merged.motion)) merged.motion = "full";
-  if (!["full", "reduced"].includes(merged.glass)) merged.glass = "full";
   const pageSize = Number(merged.feedPageSize);
   merged.feedPageSize = [5, 10, 15, 20].includes(pageSize) ? pageSize : (siteSettings.defaultFeedPageSize || 5);
-  merged.bgGrid = merged.bgGrid !== false;
   merged.sound = merged.sound !== false;
   return merged;
 }
 
 export function applyWebPrefs(prefs = getWebPrefs()) {
   const root = document.documentElement;
-  root.setAttribute("data-theme", prefs.theme === "dark" ? "dark" : "light");
-  root.setAttribute("data-accent", prefs.accent || "blue");
-  root.setAttribute("data-glass", prefs.glass === "reduced" ? "reduced" : "full");
+  const isDark = prefs.theme === "dark";
+  root.setAttribute("data-theme", isDark ? "dark" : "light");
+  root.removeAttribute("data-accent");
+  root.removeAttribute("data-glass");
+  root.removeAttribute("data-bg-grid");
   root.setAttribute("data-motion", prefs.motion === "reduced" ? "reduced" : "full");
-  root.setAttribute("data-bg-grid", prefs.bgGrid === false ? "off" : "on");
   root.setAttribute("data-font-size", prefs.fontSize || "md");
   root.setAttribute("data-density", prefs.density || "comfortable");
 
-  const isDark = prefs.theme === "dark";
+  const themeColor = isDark ? "#000000" : "#ffffff";
+  document.querySelectorAll('meta[name="theme-color"]').forEach((meta) => {
+    meta.setAttribute("content", themeColor);
+  });
+
   const menuThemeBtn = document.getElementById("twin-menu-theme");
   if (menuThemeBtn) {
     menuThemeBtn.innerHTML = `${isDark ? ICONS.sun : ICONS.moon}<span id="twin-theme-label">${isDark ? "Chế độ Sáng" : "Chế độ Tối"}</span>`;
@@ -619,9 +617,6 @@ function renderLoggedInHeaderRight(user) {
       ${ICONS.bell}
       <span class="twin-badge" id="twin-notif-badge" style="display:none">0</span>
     </button>
-    <button class="twin-icon-btn" id="twin-settings-btn" title="Cài đặt tài khoản" aria-label="Cài đặt tài khoản">
-      ${ICONS.settings}
-    </button>
     <button id="twin-account-btn" style="display:flex;align-items:center;" title="Tài khoản" aria-label="Tài khoản">
       <img class="twin-avatar" src="${escapeHtml(user.avatar || DEFAULT_AVATAR)}" alt="Avatar" />
     </button>
@@ -719,12 +714,6 @@ function renderLoggedInHeaderRight(user) {
     accDrop.classList.remove("open");
     openGeminiAssistantModal();
   };
-  document.getElementById("twin-settings-btn").onclick = (e) => {
-    e.stopPropagation();
-    notifDrop.classList.remove("open");
-    accDrop.classList.remove("open");
-    openAccountSettingsModal("effects");
-  };
   document.getElementById("twin-menu-settings").onclick = (e) => {
     e.stopPropagation();
     accDrop.classList.remove("open");
@@ -753,14 +742,6 @@ function renderLoggedInHeaderRight(user) {
     window.location.href = "./login.html";
   };
 }
-
-const ACCENT_PALETTES = [
-  { id: "blue", label: "Xanh iOS", color: "#007aff" },
-  { id: "indigo", label: "Chàm", color: "#5856d6" },
-  { id: "mint", label: "Bạc hà", color: "#009c7b" },
-  { id: "orange", label: "Hoàng hôn", color: "#e86c00" },
-  { id: "pink", label: "Anh đào", color: "#e02b6b" }
-];
 
 function renderAdminUserList(filterText = "") {
   const listEl = document.getElementById("ts-admin-user-list");
@@ -862,17 +843,17 @@ export function openAccountSettingsModal(initialTab = "effects", { focusPassword
       </div>
 
       <div class="twin-settings-body">
-        <!-- TAB 1: iOS 27 SETTINGS — HIỆU ỨNG & THÔNG SỐ WEB -->
+        <!-- TAB 1: HIỂN THỊ & THÔNG SỐ WEB -->
         <div class="twin-settings-panel ${activeTab === "effects" ? "active" : ""}" data-panel="effects">
           <div class="twin-setting-section">
-            <div class="twin-setting-group-title">Màn hình &amp; Màu sắc</div>
+            <div class="twin-setting-group-title">Giao diện &amp; Trải nghiệm</div>
             <div class="twin-setting-group">
               <div class="twin-setting-row">
                 <div class="twin-setting-lead">
-                  <span class="twin-side-icon ios-blue">${ICONS.sun}</span>
+                  <span class="twin-side-icon">${ICONS.sun}</span>
                   <div class="twin-setting-info">
-                    <div class="twin-setting-label">Giao diện</div>
-                    <div class="twin-setting-desc">Kính lỏng Sáng hoặc Kính tối.</div>
+                    <div class="twin-setting-label">Chế độ hiển thị</div>
+                    <div class="twin-setting-desc">Chuyển đổi giữa nền Sáng tinh gọn và nền Tối OLED.</div>
                   </div>
                 </div>
                 <div class="twin-seg-tabs">
@@ -881,47 +862,12 @@ export function openAccountSettingsModal(initialTab = "effects", { focusPassword
                 </div>
               </div>
 
-              <div class="twin-setting-row twin-setting-row-col">
-                <div class="twin-setting-lead">
-                  <span class="twin-side-icon ios-indigo">${ICONS.palette}</span>
-                  <div class="twin-setting-info">
-                    <div class="twin-setting-label">Màu điểm nhấn</div>
-                    <div class="twin-setting-desc">Đồng bộ nút bấm, thanh chọn và biểu tượng đang kích hoạt.</div>
-                  </div>
-                </div>
-                <div class="twin-accent-grid">
-                  ${ACCENT_PALETTES.map(
-                    (p) => `
-                    <button type="button" class="twin-accent-swatch ${prefs.accent === p.id ? "active" : ""}" data-accent-val="${p.id}">
-                      <span class="twin-accent-dot" style="background:${p.color};"></span>
-                      <span>${p.label}</span>
-                    </button>`
-                  ).join("")}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="twin-setting-section">
-            <div class="twin-setting-group-title">Hiệu ứng kính lỏng &amp; Trải nghiệm</div>
-            <div class="twin-setting-group">
               <label class="twin-setting-row">
                 <div class="twin-setting-lead">
-                  <span class="twin-side-icon ios-teal">${ICONS.glass}</span>
-                  <div class="twin-setting-info">
-                    <div class="twin-setting-label">Độ trong kính lỏng (Mờ nền)</div>
-                    <div class="twin-setting-desc">Hiệu ứng khúc xạ kính trong suốt trên thẻ và thanh điều hướng.</div>
-                  </div>
-                </div>
-                <input type="checkbox" id="ts-pref-glass" class="twin-switch" ${prefs.glass !== "reduced" ? "checked" : ""} />
-              </label>
-
-              <label class="twin-setting-row">
-                <div class="twin-setting-lead">
-                  <span class="twin-side-icon ios-blue">${ICONS.motion}</span>
+                  <span class="twin-side-icon">${ICONS.motion}</span>
                   <div class="twin-setting-info">
                     <div class="twin-setting-label">Hiệu ứng chuyển động</div>
-                    <div class="twin-setting-desc">Hoạt ảnh tương tác mượt cho tin ngắn, cảm xúc và bảng chọn.</div>
+                    <div class="twin-setting-desc">Hoạt ảnh mượt cho tin ngắn, cảm xúc và bảng chọn.</div>
                   </div>
                 </div>
                 <input type="checkbox" id="ts-pref-motion" class="twin-switch" ${prefs.motion !== "reduced" ? "checked" : ""} />
@@ -929,18 +875,7 @@ export function openAccountSettingsModal(initialTab = "effects", { focusPassword
 
               <label class="twin-setting-row">
                 <div class="twin-setting-lead">
-                  <span class="twin-side-icon ios-indigo">${ICONS.sun}</span>
-                  <div class="twin-setting-info">
-                    <div class="twin-setting-label">Ánh phản chiếu nền</div>
-                    <div class="twin-setting-desc">Tạo chiều sâu ánh sáng dịu phía sau các lớp kính.</div>
-                  </div>
-                </div>
-                <input type="checkbox" id="ts-pref-grid" class="twin-switch" ${prefs.bgGrid ? "checked" : ""} />
-              </label>
-
-              <label class="twin-setting-row">
-                <div class="twin-setting-lead">
-                  <span class="twin-side-icon ios-pink">${ICONS.volume}</span>
+                  <span class="twin-side-icon">${ICONS.volume}</span>
                   <div class="twin-setting-info">
                     <div class="twin-setting-label">Âm thanh thông báo</div>
                     <div class="twin-setting-desc">Phát âm báo nhẹ khi nhận tin nhắn hoặc tương tác mới.</div>
@@ -1218,22 +1153,8 @@ export function openAccountSettingsModal(initialTab = "effects", { focusPassword
     };
   });
 
-  backdrop.querySelectorAll(".twin-accent-swatch").forEach((btn) => {
-    btn.onclick = () => {
-      const val = btn.dataset.accentVal;
-      backdrop.querySelectorAll(".twin-accent-swatch").forEach((b) => b.classList.toggle("active", b === btn));
-      saveWebPrefs({ accent: val });
-    };
-  });
-
-  backdrop.querySelector("#ts-pref-glass").onchange = (e) => {
-    saveWebPrefs({ glass: e.target.checked ? "full" : "reduced" });
-  };
   backdrop.querySelector("#ts-pref-motion").onchange = (e) => {
     saveWebPrefs({ motion: e.target.checked ? "full" : "reduced" });
-  };
-  backdrop.querySelector("#ts-pref-grid").onchange = (e) => {
-    saveWebPrefs({ bgGrid: e.target.checked });
   };
   backdrop.querySelector("#ts-pref-sound").onchange = (e) => {
     saveWebPrefs({ sound: e.target.checked });
