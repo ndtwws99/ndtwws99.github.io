@@ -100,6 +100,12 @@ const DEFAULT_SITE_SETTINGS = {
   siteName: "Twin",
   announcement: "",
   allowHtmlPosts: true,
+  allowStories: true,
+  allowVideoPosts: true,
+  readOnlyMode: false,
+  storyDurationHours: 24,
+  maxShortVideoSec: 60,
+  maxVideoSizeMb: 100,
   defaultFeedPageSize: 5
 };
 
@@ -206,10 +212,19 @@ function subscribeSiteSettings() {
   unsubSiteSettings = onSnapshot(doc(db, "settings", "web"), (snap) => {
     const data = snap.exists() ? snap.data() : {};
     const parsedSize = Number(data.defaultFeedPageSize);
+    const parsedStoryHours = Number(data.storyDurationHours);
+    const parsedShortSec = Number(data.maxShortVideoSec);
+    const parsedMaxMb = Number(data.maxVideoSizeMb);
     siteSettings = {
       siteName: typeof data.siteName === "string" && data.siteName.trim() ? data.siteName.trim().slice(0, 32) : "Twin",
       announcement: typeof data.announcement === "string" ? data.announcement.trim().slice(0, 240) : "",
       allowHtmlPosts: data.allowHtmlPosts !== false,
+      allowStories: data.allowStories !== false,
+      allowVideoPosts: data.allowVideoPosts !== false,
+      readOnlyMode: Boolean(data.readOnlyMode),
+      storyDurationHours: Number.isFinite(parsedStoryHours) && parsedStoryHours >= 1 && parsedStoryHours <= 168 ? Math.round(parsedStoryHours) : 24,
+      maxShortVideoSec: Number.isFinite(parsedShortSec) && parsedShortSec >= 5 && parsedShortSec <= 300 ? Math.round(parsedShortSec) : 60,
+      maxVideoSizeMb: Number.isFinite(parsedMaxMb) && parsedMaxMb >= 5 && parsedMaxMb <= 100 ? Math.round(parsedMaxMb) : 100,
       defaultFeedPageSize: [5, 10, 15, 20].includes(parsedSize) ? parsedSize : 5
     };
     applySiteSettingsToDOM();
@@ -612,7 +627,7 @@ function renderLoggedInHeaderRight(user) {
       ${ICONS.bell}
       <span class="twin-badge" id="twin-notif-badge" style="display:none">0</span>
     </button>
-    <button id="twin-account-btn" style="display:flex;align-items:center;" title="Tài khoản" aria-label="Tài khoản">
+    <button class="twin-icon-btn twin-account-btn" id="twin-account-btn" title="Tài khoản" aria-label="Tài khoản">
       <img class="twin-avatar" src="${escapeHtml(user.avatar || DEFAULT_AVATAR)}" alt="Avatar" />
     </button>
 
@@ -1076,13 +1091,38 @@ export function openAccountSettingsModal(initialTab = "effects", { focusPassword
                 <input id="ts-site-announcement" class="twin-input" type="text" maxlength="240" placeholder="Để trống nếu muốn ẩn banner thông báo..." value="${escapeHtml(siteSettings.announcement)}" />
               </div>
 
-              <label class="twin-setting-row">
+              <div class="twin-setting-row">
                 <div class="twin-setting-info">
-                  <div class="twin-setting-label">Cho phép đăng bài mã HTML</div>
-                  <div class="twin-setting-desc">Tắt nếu chỉ muốn Admin dùng chế độ đăng bài HTML.</div>
+                  <div class="twin-setting-label">Thời gian hiển thị Tin (giờ)</div>
+                  <div class="twin-setting-desc">Tin & Video ngắn tự động ẩn sau số giờ này (1 – 168 giờ).</div>
                 </div>
-                <input type="checkbox" id="ts-site-allow-html" class="twin-switch" ${siteSettings.allowHtmlPosts ? "checked" : ""} />
-              </label>
+                <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+                  <input id="ts-site-story-hours" class="twin-input" type="number" min="1" max="168" value="${siteSettings.storyDurationHours}" style="width:82px;text-align:center;padding:7px 8px;" required />
+                  <span class="twin-post-meta" style="font-weight:600;">giờ</span>
+                </div>
+              </div>
+
+              <div class="twin-setting-row">
+                <div class="twin-setting-info">
+                  <div class="twin-setting-label">Độ dài tối đa Video ngắn ở Tin</div>
+                  <div class="twin-setting-desc">Giới hạn thời lượng video ngắn khi đăng ở mục Tin (5 – 300 giây).</div>
+                </div>
+                <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+                  <input id="ts-site-short-sec" class="twin-input" type="number" min="5" max="300" value="${siteSettings.maxShortVideoSec}" style="width:82px;text-align:center;padding:7px 8px;" required />
+                  <span class="twin-post-meta" style="font-weight:600;">giây</span>
+                </div>
+              </div>
+
+              <div class="twin-setting-row">
+                <div class="twin-setting-info">
+                  <div class="twin-setting-label">Dung lượng Video tải lên tối đa</div>
+                  <div class="twin-setting-desc">Áp dụng cho cả video bài viết và video ngắn ở Tin (5 – 100 MB).</div>
+                </div>
+                <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+                  <input id="ts-site-max-video-mb" class="twin-input" type="number" min="5" max="100" value="${siteSettings.maxVideoSizeMb}" style="width:82px;text-align:center;padding:7px 8px;" required />
+                  <span class="twin-post-meta" style="font-weight:600;">MB</span>
+                </div>
+              </div>
 
               <div class="twin-setting-row">
                 <div class="twin-setting-info">
@@ -1094,6 +1134,42 @@ export function openAccountSettingsModal(initialTab = "effects", { focusPassword
                 </select>
               </div>
             </div>
+
+            <div class="twin-setting-group-title" style="margin-top:8px;">Quyền đăng tải & Kiểm soát hệ thống</div>
+            <div class="twin-setting-group">
+              <label class="twin-setting-row">
+                <div class="twin-setting-info">
+                  <div class="twin-setting-label">Cho phép thành viên đăng Tin / Video ngắn</div>
+                  <div class="twin-setting-desc">Tắt nếu chỉ muốn Admin được đăng tin mới.</div>
+                </div>
+                <input type="checkbox" id="ts-site-allow-stories" class="twin-switch" ${siteSettings.allowStories ? "checked" : ""} />
+              </label>
+
+              <label class="twin-setting-row">
+                <div class="twin-setting-info">
+                  <div class="twin-setting-label">Cho phép thành viên đăng Video bài viết</div>
+                  <div class="twin-setting-desc">Tắt nếu chỉ muốn Admin được đăng video lên bảng tin.</div>
+                </div>
+                <input type="checkbox" id="ts-site-allow-video" class="twin-switch" ${siteSettings.allowVideoPosts ? "checked" : ""} />
+              </label>
+
+              <label class="twin-setting-row">
+                <div class="twin-setting-info">
+                  <div class="twin-setting-label">Cho phép đăng bài mã HTML</div>
+                  <div class="twin-setting-desc">Tắt nếu chỉ muốn Admin dùng chế độ đăng bài HTML.</div>
+                </div>
+                <input type="checkbox" id="ts-site-allow-html" class="twin-switch" ${siteSettings.allowHtmlPosts ? "checked" : ""} />
+              </label>
+
+              <label class="twin-setting-row">
+                <div class="twin-setting-info">
+                  <div class="twin-setting-label">Chế độ chỉ đọc (Tạm khóa đăng mới)</div>
+                  <div class="twin-setting-desc">Khi bật, chỉ Admin mới có thể đăng bài viết hoặc tin mới.</div>
+                </div>
+                <input type="checkbox" id="ts-site-readonly" class="twin-switch" ${siteSettings.readOnlyMode ? "checked" : ""} />
+              </label>
+            </div>
+
             <div style="display:flex;justify-content:flex-end;margin-top:4px;">
               <button type="submit" id="ts-save-site-btn" class="twin-btn twin-btn-primary twin-btn-sm">Lưu cấu hình Web</button>
             </div>
@@ -1327,10 +1403,19 @@ export function openAccountSettingsModal(initialTab = "effects", { focusPassword
     backdrop.querySelector("#ts-admin-site-form").onsubmit = async (e) => {
       e.preventDefault();
       const saveBtn = backdrop.querySelector("#ts-save-site-btn");
+      const rawHours = Number(backdrop.querySelector("#ts-site-story-hours").value);
+      const rawShortSec = Number(backdrop.querySelector("#ts-site-short-sec").value);
+      const rawMaxMb = Number(backdrop.querySelector("#ts-site-max-video-mb").value);
       const nextSite = {
         siteName: backdrop.querySelector("#ts-site-name").value.trim().slice(0, 32) || "Twin",
         announcement: backdrop.querySelector("#ts-site-announcement").value.trim().slice(0, 240),
+        storyDurationHours: Math.max(1, Math.min(168, Math.round(Number.isFinite(rawHours) ? rawHours : 24))),
+        maxShortVideoSec: Math.max(5, Math.min(300, Math.round(Number.isFinite(rawShortSec) ? rawShortSec : 60))),
+        maxVideoSizeMb: Math.max(5, Math.min(100, Math.round(Number.isFinite(rawMaxMb) ? rawMaxMb : 100))),
+        allowStories: backdrop.querySelector("#ts-site-allow-stories").checked,
+        allowVideoPosts: backdrop.querySelector("#ts-site-allow-video").checked,
         allowHtmlPosts: backdrop.querySelector("#ts-site-allow-html").checked,
+        readOnlyMode: backdrop.querySelector("#ts-site-readonly").checked,
         defaultFeedPageSize: Number(backdrop.querySelector("#ts-site-feedsize").value) || 5,
         updatedAt: serverTimestamp(),
         updatedBy: currentUserData.uid

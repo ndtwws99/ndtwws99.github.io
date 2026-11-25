@@ -458,7 +458,7 @@ export function readVideoMetadata(file) {
   });
 }
 
-export function uploadVideoToCloudinary(file, onProgress) {
+export function uploadVideoToCloudinary(file, onProgress, { maxSizeMb = 100 } = {}) {
   return new Promise((resolve, reject) => {
     if (!file) return resolve({ url: "", duration: 0, width: 0, height: 0, poster: "" });
     if (!isCloudinaryConfigured()) {
@@ -467,8 +467,9 @@ export function uploadVideoToCloudinary(file, onProgress) {
     if (!file.type || !file.type.startsWith("video/")) {
       return reject(new Error("Chỉ hỗ trợ tệp video (MP4, MOV, WebM...)."));
     }
-    if (file.size > 100 * 1024 * 1024) {
-      return reject(new Error("Video quá lớn (tối đa 100MB)."));
+    const limitMb = Math.max(5, Math.min(100, Number(maxSizeMb) || 100));
+    if (file.size > limitMb * 1024 * 1024) {
+      return reject(new Error(`Video quá lớn (tối đa ${limitMb}MB).`));
     }
 
     const endpoint = `https://api.cloudinary.com/v1_1/${cloudinaryConfig.cloudName}/video/upload`;

@@ -10,7 +10,7 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="format-detection" content="telephone=no" />
   <title>Video & Video ngắn — Twin</title>
-  <meta name="description" content="Xem và đăng tải video ngắn (Reels) và video trên mạng xã hội Twin." />
+  <meta name="description" content="Xem và đăng tải video ngắn (Tin) và video bài đăng trên mạng xã hội Twin." />
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%23007aff'/%3E%3Cstop offset='100%25' stop-color='%235856d6'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='32' cy='32' r='28' fill='url(%23g)'/%3E%3Cpath d='M19 21h26v6H35.5v18h-7V27H19z' fill='%23ffffff'/%3E%3C/svg%3E" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -23,7 +23,7 @@
   <main class="twin-main twin-reels-main">
     <div class="twin-reels-toolbar">
       <div class="twin-seg-tabs" role="tablist" aria-label="Loại video">
-        <button type="button" id="reels-tab-short" class="twin-seg-tab active" role="tab" aria-selected="true">Video ngắn</button>
+        <button type="button" id="reels-tab-short" class="twin-seg-tab active" role="tab" aria-selected="true">Video ngắn (Tin)</button>
         <button type="button" id="reels-tab-video" class="twin-seg-tab" role="tab" aria-selected="false">Video</button>
       </div>
       <button type="button" id="reels-open-upload" class="twin-btn twin-btn-primary twin-btn-sm">
@@ -32,7 +32,7 @@
       </button>
     </div>
 
-    <!-- Tab 1: Video ngắn (Reels dọc kiểu Instagram) -->
+    <!-- Tab 1: Video ngắn từ mục Tin (Stories video) -->
     <section id="reels-short-panel" class="twin-reels-stage-wrap">
       <div id="reels-scroller" class="twin-reels-scroller"></div>
       <div class="twin-reels-nav-arrows" id="reels-nav-arrows" style="display:none;">
@@ -45,13 +45,13 @@
       </div>
     </section>
 
-    <!-- Tab 2: Danh sách Video thường -->
+    <!-- Tab 2: Danh sách Video bài đăng -->
     <section id="reels-video-panel" class="twin-videos-feed" style="display:none;">
       <div id="reels-video-list"></div>
     </section>
   </main>
 
-  <!-- Modal Đăng Video / Video ngắn -->
+  <!-- Modal Đăng Video ngắn (Tin) / Video thường (Bài đăng) -->
   <div class="twin-modal-backdrop" id="upload-video-modal">
     <div class="twin-modal" style="max-width:480px;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
@@ -61,9 +61,11 @@
 
       <form id="uv-form" style="display:flex;flex-direction:column;gap:12px;">
         <div class="twin-seg-tabs" style="width:100%;display:grid;grid-template-columns:1fr 1fr;">
-          <button type="button" id="uv-type-short" class="twin-seg-tab active">Video ngắn (9:16)</button>
-          <button type="button" id="uv-type-video" class="twin-seg-tab">Video thường</button>
+          <button type="button" id="uv-type-short" class="twin-seg-tab active">Video ngắn (Tin)</button>
+          <button type="button" id="uv-type-video" class="twin-seg-tab">Video bài đăng</button>
         </div>
+
+        <p id="uv-policy-hint" class="twin-post-meta" style="margin:0;padding:8px 11px;border-radius:10px;background:var(--surface-subtle);border:1px solid var(--border-subtle);line-height:1.45;"></p>
 
         <div id="uv-preview-box" class="twin-composer-video-preview is-short" style="display:none;position:relative;">
           <video id="uv-preview-video" class="twin-post-video" controls playsinline muted></video>
@@ -72,7 +74,7 @@
 
         <label class="twin-btn twin-btn-secondary" style="width:100%;cursor:pointer;">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5.5" width="14" height="13" rx="2.5"/><path d="m16.5 10 5-3v10l-5-3"/></svg>
-          <span id="uv-file-label">Chọn video từ thiết bị (tối đa 100MB)</span>
+          <span id="uv-file-label">Chọn video từ thiết bị</span>
           <input id="uv-file-input" type="file" accept="video/*" hidden />
         </label>
 
@@ -98,23 +100,8 @@
     </div>
   </div>
 
-  <!-- Modal Bình luận cho Video ngắn -->
-  <div class="twin-modal-backdrop" id="reel-comments-modal">
-    <div class="twin-modal" style="max-width:460px;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-        <h2 style="font-size:17px;font-weight:800;">Bình luận</h2>
-        <button type="button" id="rc-close-btn" class="twin-icon-btn" style="width:32px;height:32px;" aria-label="Đóng">✕</button>
-      </div>
-      <div id="rc-list" class="twin-reel-cmt-list"></div>
-      <form id="rc-form" class="twin-comment-form" style="margin-top:12px;">
-        <input id="rc-input" class="twin-input" type="text" placeholder="Viết bình luận..." maxlength="1000" required style="padding:9px 14px;" />
-        <button type="submit" class="twin-btn twin-btn-primary twin-btn-sm">Gửi</button>
-      </form>
-    </div>
-  </div>
-
   <script type="module">
-    import { initTwinPage } from "./assets/js/layout.js";
+    import { initTwinPage, getSiteSettings } from "./assets/js/layout.js";
     import { renderPostList } from "./assets/js/post-ui.js";
     import {
       db,
@@ -125,7 +112,6 @@
       deleteDoc,
       arrayUnion,
       arrayRemove,
-      deleteField,
       query,
       orderBy,
       limit,
@@ -148,10 +134,7 @@
     const ICON = {
       heart: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`,
       heartFilled: `<svg width="24" height="24" viewBox="0 0 24 24" fill="#ff3040" stroke="#ff3040" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`,
-      comment: `<svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5c4.9 0 8.8 3.5 8.8 7.9 0 4.4-3.9 7.9-8.8 7.9-1.3 0-2.6-.3-3.7-.8L4 20l1.1-3.7a7.3 7.3 0 0 1-1.9-4.9c0-4.4 3.9-7.9 8.8-7.9Z"/></svg>`,
       share: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7.5 7.5 4.5-4.5 4.5 4.5"/><path d="M5 13.5V18a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4.5"/></svg>`,
-      save: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 4h11A1.5 1.5 0 0 1 19 5.5v15l-7-4-7 4v-15A1.5 1.5 0 0 1 6.5 4Z"/></svg>`,
-      saveFilled: `<svg width="22" height="22" viewBox="0 0 24 24" fill="#ffffff" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 4h11A1.5 1.5 0 0 1 19 5.5v15l-7-4-7 4v-15A1.5 1.5 0 0 1 6.5 4Z"/></svg>`,
       trash: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.5h16"/><path d="M18.5 6.5 17.6 19a2 2 0 0 1-2 1.8H8.4a2 2 0 0 1-2-1.8L5.5 6.5"/><path d="M9 6.5v-2a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`,
       muted: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="22" y1="9" x2="16" y2="15"/><line x1="16" y1="9" x2="22" y2="15"/></svg>`,
       sound: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5.5a9.5 9.5 0 0 1 0 13"/></svg>`,
@@ -159,12 +142,13 @@
     };
 
     let me = null;
+    let rawVideoStories = [];
+    let activeVideoStories = [];
     let allVideoPosts = [];
     let activeTab = new URLSearchParams(window.location.search).get("tab") === "video" ? "video" : "short";
     let targetReelId = new URLSearchParams(window.location.search).get("id") || "";
     let globalMuted = true;
     let reelObserver = null;
-    let activeCommentReelId = null;
 
     const tabShortBtn = document.getElementById("reels-tab-short");
     const tabVideoBtn = document.getElementById("reels-tab-video");
@@ -202,6 +186,7 @@
     const uploadModal = document.getElementById("upload-video-modal");
     const uvTypeShort = document.getElementById("uv-type-short");
     const uvTypeVideo = document.getElementById("uv-type-video");
+    const uvPolicyHint = document.getElementById("uv-policy-hint");
     const uvFileInput = document.getElementById("uv-file-input");
     const uvFileLabel = document.getElementById("uv-file-label");
     const uvPreviewBox = document.getElementById("uv-preview-box");
@@ -218,11 +203,55 @@
     let uvDuration = 0;
     let uvObjUrl = "";
 
+    function updateUploadPolicyUi() {
+      const cfg = getSiteSettings();
+      const admin = isUserAdmin(me);
+      const maxSizeMb = cfg.maxVideoSizeMb || 100;
+      const maxShortSec = cfg.maxShortVideoSec || 60;
+      const storyHours = cfg.storyDurationHours || 24;
+
+      if (!uvFile) {
+        uvFileLabel.textContent = `Chọn video từ thiết bị (tối đa ${maxSizeMb}MB)`;
+      }
+
+      if (cfg.readOnlyMode && !admin) {
+        uvPolicyHint.textContent = "Quản trị viên đang bật chế độ chỉ đọc. Hiện chỉ Quản trị viên mới có thể đăng nội dung mới.";
+        uvSubmitBtn.disabled = true;
+        return;
+      }
+
+      if (uvMode === "short") {
+        if (!cfg.allowStories && !admin) {
+          uvPolicyHint.textContent = "Quản trị viên hiện đã tạm tắt tính năng đăng Tin video ngắn.";
+          uvSubmitBtn.disabled = true;
+        } else {
+          uvPolicyHint.textContent = `Video ngắn sẽ đăng vào mục Tin · thời lượng tối đa ${maxShortSec} giây · hiển thị trong ${storyHours} giờ · tối đa ${maxSizeMb}MB.`;
+          uvSubmitBtn.disabled = false;
+        }
+      } else {
+        if (!cfg.allowVideoPosts && !admin) {
+          uvPolicyHint.textContent = "Quản trị viên hiện đã tạm tắt tính năng đăng bài viết video.";
+          uvSubmitBtn.disabled = true;
+        } else {
+          uvPolicyHint.textContent = `Video sẽ đăng lên Bảng tin & mục Video · dung lượng tối đa ${maxSizeMb}MB.`;
+          uvSubmitBtn.disabled = false;
+        }
+      }
+    }
+
     function setUploadMode(mode) {
       uvMode = mode === "video" ? "video" : "short";
       uvTypeShort.classList.toggle("active", uvMode === "short");
       uvTypeVideo.classList.toggle("active", uvMode === "video");
       uvPreviewBox.classList.toggle("is-short", uvMode === "short");
+      updateUploadPolicyUi();
+
+      if (uvFile && uvMode === "short" && uvDuration > 0) {
+        const maxSec = getSiteSettings().maxShortVideoSec || 60;
+        if (uvDuration > maxSec + 0.5) {
+          showToast(`Video này dài ${formatDuration(uvDuration)}, vượt giới hạn ${maxSec} giây của Tin video ngắn.`);
+        }
+      }
     }
     uvTypeShort.onclick = () => setUploadMode("short");
     uvTypeVideo.onclick = () => setUploadMode("video");
@@ -240,7 +269,8 @@
       uvPreviewVideo.load();
       uvPreviewBox.style.display = "none";
       uvMetaRow.style.display = "none";
-      uvFileLabel.textContent = "Chọn video từ thiết bị (tối đa 100MB)";
+      const maxSizeMb = getSiteSettings().maxVideoSizeMb || 100;
+      uvFileLabel.textContent = `Chọn video từ thiết bị (tối đa ${maxSizeMb}MB)`;
     }
 
     function openUploadModal(defaultMode = activeTab) {
@@ -266,8 +296,10 @@
         showToast("Vui lòng chọn tệp video hợp lệ.");
         return;
       }
-      if (f.size > 100 * 1024 * 1024) {
-        showToast("Video quá lớn (tối đa 100MB).");
+      const cfg = getSiteSettings();
+      const maxSizeMb = cfg.maxVideoSizeMb || 100;
+      if (f.size > maxSizeMb * 1024 * 1024) {
+        showToast(`Video quá lớn (giới hạn hiện tại là ${maxSizeMb}MB).`);
         return;
       }
       uvFile = f;
@@ -283,133 +315,107 @@
       if (uvFile !== f) return;
       uvDuration = meta.duration || 0;
       uvMetaRow.textContent = `${meta.duration ? `Thời lượng: ${formatDuration(meta.duration)} · ` : ""}Dung lượng: ${sizeMb} MB`;
+
+      if (uvMode === "short" && uvDuration > (cfg.maxShortVideoSec || 60) + 0.5) {
+        showToast(`Tin video ngắn tối đa ${cfg.maxShortVideoSec || 60} giây (video này dài ${formatDuration(uvDuration)}).`);
+        clearUploadSelection();
+      }
     };
 
     document.getElementById("uv-form").onsubmit = async (e) => {
       e.preventDefault();
       if (!me) return;
+      const cfg = getSiteSettings();
+      const admin = isUserAdmin(me);
+      if (cfg.readOnlyMode && !admin) {
+        return showToast("Quản trị viên đang bật chế độ chỉ đọc.");
+      }
+      if (uvMode === "short" && !cfg.allowStories && !admin) {
+        return showToast("Tính năng đăng Tin video ngắn đang tạm tắt.");
+      }
+      if (uvMode === "video" && !cfg.allowVideoPosts && !admin) {
+        return showToast("Tính năng đăng video bài viết đang tạm tắt.");
+      }
       if (!uvFile) return showToast("Hãy chọn một tệp video để đăng.");
 
+      const maxShortSec = cfg.maxShortVideoSec || 60;
+      if (uvMode === "short" && uvDuration > maxShortSec + 0.5) {
+        return showToast(`Tin video ngắn tối đa ${maxShortSec} giây. Vui lòng chọn video ngắn hơn hoặc chuyển sang Video bài đăng.`);
+      }
+
+      const maxSizeMb = cfg.maxVideoSizeMb || 100;
       uvSubmitBtn.disabled = true;
       uvSubmitBtn.textContent = "Đang tải...";
       uvProgress.style.display = "flex";
       uvProgressFill.style.width = "0%";
       uvProgressText.textContent = "Đang tải video 0%...";
       try {
-        const uploaded = await uploadVideoToCloudinary(uvFile, (pct) => {
-          uvProgressFill.style.width = `${pct}%`;
-          uvProgressText.textContent = `Đang tải video ${pct}%...`;
-          uvSubmitBtn.textContent = `Đang tải ${pct}%...`;
-        });
-        const docRef = await addDoc(collection(db, "posts"), {
-          authorUid: me.uid,
-          authorName: me.name,
-          authorAvatar: me.avatar || DEFAULT_AVATAR,
-          content: uvCaption.value.trim(),
-          isHtml: false,
-          feeling: "",
-          imageUrl: "",
-          videoUrl: uploaded.url,
-          videoType: uvMode,
-          videoDuration: uploaded.duration || uvDuration || 0,
-          videoPoster: uploaded.poster || "",
-          pinned: false,
-          reactions: {},
-          comments: [],
-          createdAt: serverTimestamp()
-        });
+        const uploaded = await uploadVideoToCloudinary(
+          uvFile,
+          (pct) => {
+            uvProgressFill.style.width = `${pct}%`;
+            uvProgressText.textContent = `Đang tải video ${pct}%...`;
+            uvSubmitBtn.textContent = `Đang tải ${pct}%...`;
+          },
+          { maxSizeMb }
+        );
+        const finalDuration = uploaded.duration || uvDuration || 0;
+        if (uvMode === "short" && finalDuration > maxShortSec + 0.5) {
+          throw new Error(`Video vượt quá giới hạn ${maxShortSec} giây của Tin video ngắn.`);
+        }
+
         const postedMode = uvMode;
+        if (postedMode === "short") {
+          const docRef = await addDoc(collection(db, "stories"), {
+            authorUid: me.uid,
+            authorName: me.name,
+            authorAvatar: me.avatar || DEFAULT_AVATAR,
+            type: "video",
+            videoUrl: uploaded.url,
+            videoPoster: uploaded.poster || "",
+            duration: finalDuration,
+            imageUrl: "",
+            caption: uvCaption.value.trim(),
+            text: "",
+            bgId: "",
+            fontClass: "font-bold",
+            likes: [],
+            createdAt: serverTimestamp()
+          });
+          targetReelId = docRef.id;
+        } else {
+          await addDoc(collection(db, "posts"), {
+            authorUid: me.uid,
+            authorName: me.name,
+            authorAvatar: me.avatar || DEFAULT_AVATAR,
+            content: uvCaption.value.trim(),
+            isHtml: false,
+            feeling: "",
+            imageUrl: "",
+            videoUrl: uploaded.url,
+            videoType: "video",
+            videoDuration: finalDuration,
+            videoPoster: uploaded.poster || "",
+            pinned: false,
+            reactions: {},
+            comments: [],
+            createdAt: serverTimestamp()
+          });
+          targetReelId = "";
+        }
+
         uvCaption.value = "";
         clearUploadSelection();
         closeUploadModal();
-        targetReelId = postedMode === "short" ? docRef.id : "";
         setTab(postedMode);
-        showToast(postedMode === "short" ? "Đã đăng video ngắn!" : "Đã đăng video!");
+        showToast(postedMode === "short" ? "Đã đăng video ngắn lên Tin!" : "Đã đăng video lên bảng tin!");
       } catch (err) {
         showToast(friendlyError(err));
       } finally {
         uvProgress.style.display = "none";
         uvProgressFill.style.width = "0%";
-        uvSubmitBtn.disabled = false;
         uvSubmitBtn.textContent = "Đăng ngay";
-      }
-    };
-
-    // ---- Reel Comments Modal ----
-    const rcModal = document.getElementById("reel-comments-modal");
-    const rcList = document.getElementById("rc-list");
-    const rcInput = document.getElementById("rc-input");
-
-    function renderReelCommentsModal() {
-      if (!activeCommentReelId) return;
-      const post = allVideoPosts.find((p) => p.id === activeCommentReelId);
-      if (!post) {
-        rcModal.classList.remove("open");
-        activeCommentReelId = null;
-        return;
-      }
-      const comments = post.comments || [];
-      if (!comments.length) {
-        rcList.innerHTML = '<p class="twin-post-meta" style="text-align:center;padding:24px 8px;">Chưa có bình luận nào. Hãy là người đầu tiên bình luận!</p>';
-      } else {
-        rcList.innerHTML = comments
-          .map(
-            (c) => `
-          <div class="twin-comment-item">
-            <img class="twin-avatar twin-avatar-sm" src="${escapeHtml(c.authorAvatar || DEFAULT_AVATAR)}" alt="" />
-            <div class="twin-comment-bubble">
-              <div style="font-weight:700;font-size:13px;">${escapeHtml(c.authorName)}</div>
-              <div>${escapeHtml(c.text)}</div>
-            </div>
-          </div>`
-          )
-          .join("");
-      }
-    }
-
-    function openReelComments(postId) {
-      activeCommentReelId = postId;
-      renderReelCommentsModal();
-      rcModal.classList.add("open");
-      setTimeout(() => rcInput.focus(), 60);
-    }
-
-    document.getElementById("rc-close-btn").onclick = () => {
-      rcModal.classList.remove("open");
-      activeCommentReelId = null;
-    };
-
-    document.getElementById("rc-form").onsubmit = async (e) => {
-      e.preventDefault();
-      if (!me || !activeCommentReelId) return;
-      const text = rcInput.value.trim();
-      if (!text) return;
-      const post = allVideoPosts.find((p) => p.id === activeCommentReelId);
-      if (!post) return;
-      rcInput.value = "";
-      const newCmt = {
-        id: Date.now().toString(),
-        authorUid: me.uid,
-        authorName: me.name,
-        authorAvatar: me.avatar || DEFAULT_AVATAR,
-        text,
-        createdAt: Date.now()
-      };
-      try {
-        await updateDoc(doc(db, "posts", post.id), { comments: arrayUnion(newCmt) });
-        if (post.authorUid && post.authorUid !== me.uid) {
-          pushNotification(post.authorUid, {
-            fromUid: me.uid,
-            fromName: me.name,
-            fromAvatar: me.avatar || DEFAULT_AVATAR,
-            type: "comment",
-            text: `đã bình luận video ngắn của bạn: "${text.slice(0, 45)}"`,
-            link: `./reels.html?id=${encodeURIComponent(post.id)}`
-          }).catch(() => {});
-        }
-      } catch (err) {
-        rcInput.value = text;
-        showToast(friendlyError(err));
+        updateUploadPolicyUi();
       }
     };
 
@@ -465,47 +471,35 @@
       scroller.scrollBy({ top: scroller.clientHeight, behavior: "smooth" });
     };
 
-    // ---- Render Short Videos (Reels) ----
+    // ---- Render Short Videos (từ Stories type === "video") ----
     const renderedReelMap = new Map();
 
-    function syncReelDynamicState(card, post) {
-      const reactions = post.reactions || {};
-      const likesCount = Object.keys(reactions).length;
-      const liked = Boolean(me && reactions[me.uid]);
-      const commentsCount = (post.comments || []).length;
-      const saved = Boolean(me && (me.savedPosts || []).includes(post.id));
+    function syncReelDynamicState(card, story) {
+      const likes = Array.isArray(story.likes) ? story.likes : [];
+      const liked = Boolean(me && likes.includes(me.uid));
 
       const likeBtn = card.querySelector(".btn-reel-like");
       if (likeBtn) {
         likeBtn.classList.toggle("liked", liked);
         likeBtn.querySelector(".twin-reel-act-icon").innerHTML = liked ? ICON.heartFilled : ICON.heart;
-        likeBtn.querySelector(".twin-reel-act-count").textContent = String(likesCount);
-      }
-      const cmtBtn = card.querySelector(".btn-reel-cmt");
-      if (cmtBtn) {
-        cmtBtn.querySelector(".twin-reel-act-count").textContent = String(commentsCount);
-      }
-      const saveBtn = card.querySelector(".btn-reel-save");
-      if (saveBtn) {
-        saveBtn.classList.toggle("saved", saved);
-        saveBtn.querySelector(".twin-reel-act-icon").innerHTML = saved ? ICON.saveFilled : ICON.save;
+        likeBtn.querySelector(".twin-reel-act-count").textContent = String(likes.length);
       }
     }
 
-    function createReelCard(post) {
+    function createReelCard(story) {
       const card = document.createElement("article");
       card.className = "twin-reel-card";
-      card.dataset.reelId = post.id;
+      card.dataset.reelId = story.id;
 
-      const poster = post.videoPoster || getVideoPosterUrl(post.videoUrl);
-      const durText = post.videoDuration ? formatDuration(post.videoDuration) : "";
-      const canManage = Boolean(me && (me.uid === post.authorUid || isUserAdmin(me)));
+      const poster = story.videoPoster || getVideoPosterUrl(story.videoUrl);
+      const durText = story.duration ? formatDuration(story.duration) : "";
+      const canManage = Boolean(me && (me.uid === story.authorUid || isUserAdmin(me)));
 
       card.innerHTML = `
         <div class="twin-reel-frame">
           <video
             class="twin-reel-video"
-            src="${escapeHtml(post.videoUrl)}"
+            src="${escapeHtml(story.videoUrl)}"
             ${poster ? `poster="${escapeHtml(poster)}"` : ""}
             playsinline
             loop
@@ -518,7 +512,7 @@
           <div class="twin-reel-top-bar">
             <span class="twin-post-video-badge short">
               <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="6 4 20 12 6 20 6 4"/></svg>
-              <span>Video ngắn${durText ? ` · ${escapeHtml(durText)}` : ""}</span>
+              <span>Tin ngắn${durText ? ` · ${escapeHtml(durText)}` : ""}</span>
             </span>
             <button type="button" class="twin-reel-top-btn btn-reel-mute" title="Bật âm thanh" aria-label="Âm thanh">${globalMuted ? ICON.muted : ICON.sound}</button>
           </div>
@@ -528,20 +522,13 @@
               <span class="twin-reel-act-icon">${ICON.heart}</span>
               <span class="twin-reel-act-count">0</span>
             </button>
-            <button type="button" class="twin-reel-act-btn btn-reel-cmt" title="Bình luận">
-              <span class="twin-reel-act-icon">${ICON.comment}</span>
-              <span class="twin-reel-act-count">0</span>
-            </button>
             <button type="button" class="twin-reel-act-btn btn-reel-share" title="Chia sẻ">
               <span class="twin-reel-act-icon">${ICON.share}</span>
               <span class="twin-reel-act-count">Gửi</span>
             </button>
-            <button type="button" class="twin-reel-act-btn btn-reel-save" title="Lưu video">
-              <span class="twin-reel-act-icon">${ICON.save}</span>
-            </button>
             ${
               canManage
-                ? `<button type="button" class="twin-reel-act-btn btn-reel-del" title="Xóa video ngắn">
+                ? `<button type="button" class="twin-reel-act-btn btn-reel-del" title="Xóa tin video ngắn">
                     <span class="twin-reel-act-icon">${ICON.trash}</span>
                   </button>`
                 : ""
@@ -549,14 +536,14 @@
           </div>
 
           <div class="twin-reel-meta">
-            <a href="./profile.html?uid=${encodeURIComponent(post.authorUid)}" class="twin-reel-author">
-              <img class="twin-avatar twin-avatar-sm" src="${escapeHtml(post.authorAvatar || DEFAULT_AVATAR)}" alt="" />
+            <a href="./profile.html?uid=${encodeURIComponent(story.authorUid)}" class="twin-reel-author">
+              <img class="twin-avatar twin-avatar-sm" src="${escapeHtml(story.authorAvatar || DEFAULT_AVATAR)}" alt="" />
               <div style="min-width:0;">
-                <div class="twin-reel-author-name">${escapeHtml(post.authorName || "Thành viên Twin")}</div>
-                <div class="twin-reel-time">${escapeHtml(formatTime(post.createdAt))}</div>
+                <div class="twin-reel-author-name">${escapeHtml(story.authorName || "Thành viên Twin")}</div>
+                <div class="twin-reel-time">${escapeHtml(formatTime(story.createdAt))}</div>
               </div>
             </a>
-            ${post.content ? `<p class="twin-reel-caption">${escapeHtml(post.content)}</p>` : ""}
+            ${story.caption ? `<p class="twin-reel-caption">${escapeHtml(story.caption)}</p>` : ""}
           </div>
         </div>
       `;
@@ -587,11 +574,12 @@
       card.querySelector(".btn-reel-like").onclick = async (e) => {
         e.stopPropagation();
         if (!me) return;
-        const latest = allVideoPosts.find((p) => p.id === post.id) || post;
-        const already = Boolean((latest.reactions || {})[me.uid]);
+        const latest = activeVideoStories.find((s) => s.id === story.id) || story;
+        const likes = Array.isArray(latest.likes) ? latest.likes : [];
+        const already = likes.includes(me.uid);
         try {
-          await updateDoc(doc(db, "posts", post.id), {
-            [`reactions.${me.uid}`]: already ? deleteField() : "love"
+          await updateDoc(doc(db, "stories", story.id), {
+            likes: already ? arrayRemove(me.uid) : arrayUnion(me.uid)
           });
           if (!already && latest.authorUid && latest.authorUid !== me.uid) {
             pushNotification(latest.authorUid, {
@@ -599,8 +587,8 @@
               fromName: me.name,
               fromAvatar: me.avatar || DEFAULT_AVATAR,
               type: "reaction",
-              text: "đã thả tim video ngắn của bạn ❤️",
-              link: `./reels.html?id=${encodeURIComponent(post.id)}`
+              text: "đã thả tim tin video ngắn của bạn ❤️",
+              link: `./reels.html?id=${encodeURIComponent(story.id)}`
             }).catch(() => {});
           }
         } catch (err) {
@@ -608,42 +596,15 @@
         }
       };
 
-      card.querySelector(".btn-reel-cmt").onclick = (e) => {
-        e.stopPropagation();
-        openReelComments(post.id);
-      };
-
       card.querySelector(".btn-reel-share").onclick = async (e) => {
         e.stopPropagation();
         const url = new URL("./reels.html", window.location.href);
-        url.search = `?id=${encodeURIComponent(post.id)}`;
+        url.search = `?id=${encodeURIComponent(story.id)}`;
         try {
           await navigator.clipboard.writeText(url.href);
-          showToast("Đã sao chép liên kết video ngắn!");
+          showToast("Đã sao chép liên kết tin video ngắn!");
         } catch {
           window.prompt("Sao chép liên kết:", url.href);
-        }
-      };
-
-      card.querySelector(".btn-reel-save").onclick = async (e) => {
-        e.stopPropagation();
-        if (!me) return;
-        const list = Array.isArray(me.savedPosts) ? me.savedPosts : (me.savedPosts = []);
-        const wasSaved = list.includes(post.id);
-        try {
-          await updateDoc(doc(db, "users", me.uid), {
-            savedPosts: wasSaved ? arrayRemove(post.id) : arrayUnion(post.id)
-          });
-          if (wasSaved) {
-            const idx = list.indexOf(post.id);
-            if (idx >= 0) list.splice(idx, 1);
-          } else {
-            list.push(post.id);
-          }
-          syncReelDynamicState(card, allVideoPosts.find((p) => p.id === post.id) || post);
-          showToast(wasSaved ? "Đã bỏ lưu video." : "Đã lưu video!");
-        } catch (err) {
-          showToast(friendlyError(err));
         }
       };
 
@@ -651,30 +612,47 @@
       if (delBtn) {
         delBtn.onclick = async (e) => {
           e.stopPropagation();
-          if (!confirm("Xóa video ngắn này?")) return;
+          if (!confirm("Xóa tin video ngắn này?")) return;
           try {
-            await deleteDoc(doc(db, "posts", post.id));
-            showToast("Đã xóa video ngắn.");
+            await deleteDoc(doc(db, "stories", story.id));
+            showToast("Đã xóa tin video ngắn.");
           } catch (err) {
             showToast(friendlyError(err));
           }
         };
       }
 
-      syncReelDynamicState(card, post);
+      syncReelDynamicState(card, story);
       return card;
     }
 
+    function filterAndRenderShortStories() {
+      const cfg = getSiteSettings();
+      const maxAgeMs = (cfg.storyDurationHours || 24) * 3600000;
+      const now = Date.now();
+      activeVideoStories = rawVideoStories
+        .filter((s) => {
+          if (!(s.type === "video" || s.videoUrl)) return false;
+          const ts = toMillis(s.createdAt);
+          if (!ts) return true;
+          return now - ts <= maxAgeMs;
+        })
+        .sort((a, b) => (toMillis(b.createdAt) || now) - (toMillis(a.createdAt) || now));
+
+      renderShorts(activeVideoStories);
+    }
+
     function renderShorts(shorts) {
+      const cfg = getSiteSettings();
       if (!shorts.length) {
         renderedReelMap.clear();
         navArrows.style.display = "none";
         scroller.innerHTML = `
           <div class="twin-card twin-reels-empty">
             <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-3);margin-bottom:10px;"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M3 9h18"/><path d="M8.5 3 11 9"/><path d="M14.5 3 17 9"/><polygon points="10.2 12.2 15.5 15.2 10.2 18.2 10.2 12.2" fill="currentColor" stroke="none"/></svg>
-            <h3 style="font-size:17px;font-weight:700;margin-bottom:6px;">Chưa có video ngắn nào</h3>
-            <p class="twin-post-meta" style="margin-bottom:16px;">Hãy chia sẻ khoảnh khắc ngắn đầu tiên theo phong cách Reels!</p>
-            <button type="button" id="reels-empty-upload" class="twin-btn twin-btn-primary">Đăng video ngắn đầu tiên</button>
+            <h3 style="font-size:17px;font-weight:700;margin-bottom:6px;">Chưa có tin video ngắn nào</h3>
+            <p class="twin-post-meta" style="margin-bottom:16px;">Tin video ngắn tối đa ${cfg.maxShortVideoSec || 60} giây và hiển thị trong ${cfg.storyDurationHours || 24} giờ.</p>
+            <button type="button" id="reels-empty-upload" class="twin-btn twin-btn-primary">Đăng tin video ngắn</button>
           </div>
         `;
         document.getElementById("reels-empty-upload").onclick = () => openUploadModal("short");
@@ -687,15 +665,15 @@
 
       const seen = new Set();
       let prev = null;
-      shorts.forEach((p) => {
-        let card = renderedReelMap.get(p.id);
+      shorts.forEach((s) => {
+        let card = renderedReelMap.get(s.id);
         if (!card) {
-          card = createReelCard(p);
-          renderedReelMap.set(p.id, card);
+          card = createReelCard(s);
+          renderedReelMap.set(s.id, card);
         } else {
-          syncReelDynamicState(card, p);
+          syncReelDynamicState(card, s);
         }
-        seen.add(p.id);
+        seen.add(s.id);
         const want = prev ? prev.nextSibling : scroller.firstChild;
         if (card !== want) scroller.insertBefore(card, want);
         prev = card;
@@ -733,12 +711,27 @@
       if (emptyBtn) emptyBtn.onclick = () => openUploadModal("video");
     }
 
+    window.addEventListener("twin-site-settings-changed", () => {
+      updateUploadPolicyUi();
+      filterAndRenderShortStories();
+    });
+
     initTwinPage({
       requireAuth: true,
       onReady: (user) => {
         me = user;
         if (!me) return;
         setTab(activeTab);
+        updateUploadPolicyUi();
+
+        onSnapshot(query(collection(db, "stories"), orderBy("createdAt", "desc"), limit(80)), (snap) => {
+          rawVideoStories = [];
+          snap.forEach((d) => {
+            const s = { id: d.id, ...d.data() };
+            if (s.type === "video" || s.videoUrl) rawVideoStories.push(s);
+          });
+          filterAndRenderShortStories();
+        }, (err) => showToast(friendlyError(err)));
 
         onSnapshot(query(collection(db, "posts"), orderBy("createdAt", "desc"), limit(200)), (snap) => {
           allVideoPosts = [];
@@ -747,13 +740,7 @@
             if (p.videoUrl) allVideoPosts.push(p);
           });
           allVideoPosts.sort((a, b) => toMillis(b.createdAt) - toMillis(a.createdAt));
-
-          const shorts = allVideoPosts.filter((p) => p.videoType === "short");
-          const videos = allVideoPosts.filter((p) => p.videoType !== "short");
-
-          renderShorts(shorts);
-          renderVideos(videos);
-          if (activeCommentReelId) renderReelCommentsModal();
+          renderVideos(allVideoPosts);
         }, (err) => showToast(friendlyError(err)));
       }
     });
