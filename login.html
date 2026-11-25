@@ -3,6 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#edf2f9" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#080b13" media="(prefers-color-scheme: dark)" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="format-detection" content="telephone=no" />
   <title>Đăng nhập — Twin</title>
   <meta name="description" content="Twin — Mạng xã hội kết nối bạn bè, chia sẻ khoảnh khắc, nhóm, trang và nhắn tin thời gian thực." />
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%231877f2'/%3E%3Cstop offset='100%25' stop-color='%230ea5e9'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='32' cy='32' r='32' fill='url(%23g)'/%3E%3Cpath d='M17 20h30v7.5H36V48h-8V27.5H17z' fill='%23fff'/%3E%3C/svg%3E" />
@@ -31,7 +37,10 @@
       <form id="login-form" style="display:flex;flex-direction:column;gap:12px;">
         <input id="login-email" class="twin-input" type="email" placeholder="Email của bạn" required />
         <input id="login-pass" class="twin-input" type="password" placeholder="Mật khẩu" required />
-        <button class="twin-btn twin-btn-primary" type="submit" style="padding:11px;margin-top:4px;">Đăng nhập</button>
+        <div class="twin-forgot-row">
+          <button id="btn-forgot-password" type="button" class="twin-forgot-link">Quên mật khẩu?</button>
+        </div>
+        <button class="twin-btn twin-btn-primary" type="submit" style="padding:11px;margin-top:2px;">Đăng nhập</button>
       </form>
 
       <form id="register-form" style="display:none;flex-direction:column;gap:12px;">
@@ -57,6 +66,27 @@
 
   <div class="twin-auth-foot">Twin © 2026</div>
 
+  <!-- Modal Quên mật khẩu -->
+  <div class="twin-modal-backdrop" id="forgot-modal">
+    <div class="twin-modal" style="max-width:420px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <h2 style="font-size:19px;font-weight:800;">Quên mật khẩu</h2>
+        <button type="button" id="forgot-close-btn" class="twin-icon-btn" style="width:32px;height:32px;">✕</button>
+      </div>
+      <p class="twin-post-meta" style="font-size:13.5px;margin-bottom:14px;line-height:1.5;">
+        Nhập địa chỉ email đã đăng ký tài khoản Twin. Chúng tôi sẽ gửi liên kết đặt lại mật khẩu vào hộp thư của bạn.
+      </p>
+      <form id="forgot-form" style="display:flex;flex-direction:column;gap:12px;">
+        <input id="forgot-email" class="twin-input" type="email" placeholder="Nhập email của bạn" required />
+        <div id="forgot-feedback" class="twin-alert-success" style="display:none;"></div>
+        <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:2px;">
+          <button type="button" id="forgot-cancel-btn" class="twin-btn twin-btn-secondary twin-btn-sm">Đóng</button>
+          <button type="submit" id="forgot-submit-btn" class="twin-btn twin-btn-primary twin-btn-sm">Gửi liên kết đặt lại</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script type="module">
     import { initTwinPage } from "./assets/js/layout.js";
     import {
@@ -64,6 +94,7 @@
       signInWithEmailAndPassword,
       createUserWithEmailAndPassword,
       signInWithGoogle,
+      resetPassword,
       updateProfile,
       ensureUserDoc,
       showToast,
@@ -159,6 +190,54 @@
         showToast("Đăng nhập Google thất bại: " + friendlyError(err));
         busy = false;
         btn.disabled = false;
+      }
+    };
+
+    // ---- Quên mật khẩu ----
+    const forgotModal = document.getElementById("forgot-modal");
+    const forgotForm = document.getElementById("forgot-form");
+    const forgotEmailInput = document.getElementById("forgot-email");
+    const forgotFeedback = document.getElementById("forgot-feedback");
+    const forgotSubmitBtn = document.getElementById("forgot-submit-btn");
+
+    function closeForgotModal() {
+      forgotModal.classList.remove("open");
+    }
+
+    document.getElementById("btn-forgot-password").onclick = () => {
+      const typedEmail = document.getElementById("login-email").value.trim();
+      if (typedEmail) forgotEmailInput.value = typedEmail;
+      forgotFeedback.style.display = "none";
+      forgotFeedback.textContent = "";
+      forgotModal.classList.add("open");
+      setTimeout(() => forgotEmailInput.focus(), 50);
+    };
+    document.getElementById("forgot-close-btn").onclick = closeForgotModal;
+    document.getElementById("forgot-cancel-btn").onclick = closeForgotModal;
+    forgotModal.addEventListener("click", (e) => {
+      if (e.target === forgotModal) closeForgotModal();
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") closeForgotModal();
+    });
+
+    forgotForm.onsubmit = async (e) => {
+      e.preventDefault();
+      const email = forgotEmailInput.value.trim();
+      if (!email) return showToast("Vui lòng nhập địa chỉ email.");
+      forgotSubmitBtn.disabled = true;
+      forgotSubmitBtn.textContent = "Đang gửi...";
+      forgotFeedback.style.display = "none";
+      try {
+        await resetPassword(email);
+        forgotFeedback.textContent = `Đã gửi liên kết đặt lại mật khẩu đến ${email}. Vui lòng kiểm tra hộp thư (bao gồm mục Thư rác / Spam).`;
+        forgotFeedback.style.display = "block";
+        showToast("Đã gửi email đặt lại mật khẩu!");
+      } catch (err) {
+        showToast("Không gửi được email: " + friendlyError(err));
+      } finally {
+        forgotSubmitBtn.disabled = false;
+        forgotSubmitBtn.textContent = "Gửi liên kết đặt lại";
       }
     };
   </script>

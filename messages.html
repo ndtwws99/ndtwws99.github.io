@@ -3,6 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#edf2f9" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#080b13" media="(prefers-color-scheme: dark)" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="format-detection" content="telephone=no" />
   <title>Tin nhắn — Twin</title>
   <meta name="description" content="Twin — Mạng xã hội kết nối bạn bè, chia sẻ khoảnh khắc, nhóm, trang và nhắn tin thời gian thực." />
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%231877f2'/%3E%3Cstop offset='100%25' stop-color='%230ea5e9'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='32' cy='32' r='32' fill='url(%23g)'/%3E%3Cpath d='M17 20h30v7.5H36V48h-8V27.5H17z' fill='%23fff'/%3E%3C/svg%3E" />
@@ -58,20 +64,23 @@
   </div>
 
   <script type="module">
-    import { initTwinPage } from "./assets/js/layout.js";
+    import { initTwinPage, setActiveChatPeer, onUnreadChatCountsChange } from "./assets/js/layout.js";
     import {
       db,
       collection,
       addDoc,
       query,
       orderBy,
+      limit,
       onSnapshot,
       serverTimestamp,
       uploadToCloudinary,
+      pushNotification,
       getChatId,
       DEFAULT_AVATAR,
       escapeHtml,
       formatTime,
+      toMillis,
       showToast,
       friendlyError
     } from "./assets/js/firebase-service.js";
@@ -80,6 +89,9 @@
     let allUsers = [];
     let activePeer = null;
     let unsubChat = null;
+    let unreadByPeer = new Map();
+    const lastMessages = new Map();
+    const lastMsgUnsubs = new Map();
 
     const shell = document.getElementById("messenger-shell");
     const convList = document.getElementById("msg-conv-list");
@@ -89,24 +101,91 @@
     const textInput = document.getElementById("msg-text-input");
     const imgInput = document.getElementById("msg-image-input");
 
-    document.getElementById("msg-back-btn").onclick = () => shell.classList.remove("chat-open");
+    document.getElementById("msg-back-btn").onclick = () => {
+      shell.classList.remove("chat-open");
+      document.body.classList.remove("mobile-chat-active");
+      setActiveChatPeer(null);
+      renderUsers(document.getElementById("msg-search-user").value);
+    };
+
+    onUnreadChatCountsChange((counts) => {
+      unreadByPeer = counts;
+      if (me) renderUsers(document.getElementById("msg-search-user").value);
+    });
+
+    function formatLastMessagePreview(last) {
+      if (!last) return "Chưa có tin nhắn";
+      const prefix = me && last.senderUid === me.uid ? "Bạn: " : "";
+      if (last.text) return `${prefix}${last.text}`;
+      if (last.imageUrl) return `${prefix}Đã gửi một hình ảnh`;
+      return "Chưa có tin nhắn";
+    }
+
+    function syncLastMessageListeners() {
+      if (!me) return;
+      const activeUids = new Set(allUsers.map((u) => u.uid));
+      for (const [uid, unsub] of lastMsgUnsubs.entries()) {
+        if (!activeUids.has(uid)) {
+          unsub();
+          lastMsgUnsubs.delete(uid);
+          lastMessages.delete(uid);
+        }
+      }
+      allUsers.forEach((u) => {
+        if (lastMsgUnsubs.has(u.uid)) return;
+        const chatId = getChatId(me.uid, u.uid);
+        const q = query(collection(db, "messages", chatId, "items"), orderBy("createdAt", "desc"), limit(1));
+        const unsub = onSnapshot(q, (snap) => {
+          if (snap.empty) {
+            lastMessages.delete(u.uid);
+          } else {
+            const m = snap.docs[0].data();
+            lastMessages.set(u.uid, {
+              text: m.text || "",
+              imageUrl: m.imageUrl || "",
+              senderUid: m.senderUid || "",
+              createdAt: m.createdAt || null,
+              timeMs: toMillis(m.createdAt) || Date.now()
+            });
+          }
+          renderUsers(document.getElementById("msg-search-user").value);
+        }, () => {});
+        lastMsgUnsubs.set(u.uid, unsub);
+      });
+    }
 
     function renderUsers(filter = "") {
       convList.innerHTML = "";
       const q = filter.trim().toLowerCase();
-      const list = allUsers.filter((u) => !q || (u.name || "").toLowerCase().includes(q));
+      const list = allUsers
+        .filter((u) => !q || (u.name || "").toLowerCase().includes(q))
+        .sort((a, b) => (lastMessages.get(b.uid)?.timeMs || 0) - (lastMessages.get(a.uid)?.timeMs || 0));
       if (!list.length) {
         convList.innerHTML = '<p class="twin-post-meta" style="padding:14px;">Chưa có người dùng khác.</p>';
         return;
       }
       list.forEach((u) => {
+        const last = lastMessages.get(u.uid);
+        const preview = formatLastMessagePreview(last);
+        const timeLabel = last ? formatTime(last.createdAt) : "";
+        const unread = unreadByPeer.get(u.uid) || 0;
+        const isActive = Boolean(activePeer && activePeer.uid === u.uid);
         const btn = document.createElement("button");
-        btn.className = `twin-conv-item ${activePeer && activePeer.uid === u.uid ? "active" : ""}`;
+        btn.className = `twin-conv-item ${isActive ? "active" : ""} ${unread > 0 ? "unread" : ""}`;
         btn.innerHTML = `
-          <img class="twin-avatar twin-avatar-md" src="${escapeHtml(u.avatar || DEFAULT_AVATAR)}" alt="" />
+          <div class="twin-conv-avatar-wrap">
+            <img class="twin-avatar twin-avatar-md" src="${escapeHtml(u.avatar || DEFAULT_AVATAR)}" alt="" />
+            ${unread > 0 ? '<span class="twin-conv-dot" aria-hidden="true"></span>' : ""}
+          </div>
           <div style="min-width:0;flex:1;">
-            <div style="font-weight:700;font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(u.name)}</div>
-            <div class="twin-post-meta" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(u.bio || "Nhấn để trò chuyện")}</div>
+            <div class="twin-conv-top">
+              <div class="twin-conv-name">${escapeHtml(u.name)}</div>
+              ${timeLabel ? `<span class="twin-conv-time">${escapeHtml(timeLabel)}</span>` : ""}
+            </div>
+            <div class="twin-conv-bottom">
+              <div class="twin-conv-preview">${escapeHtml(preview)}</div>
+              ${unread > 0 ? `<span class="twin-conv-badge">${unread > 9 ? "9+" : unread}</span>` : ""}
+            </div>
           </div>
         `;
         btn.onclick = () => selectPeer(u);
@@ -118,6 +197,8 @@
       const same = activePeer && activePeer.uid === peer.uid;
       activePeer = peer;
       shell.classList.add("chat-open");
+      document.body.classList.add("mobile-chat-active");
+      setActiveChatPeer(peer.uid);
       topbar.style.display = "flex";
       sendForm.style.display = "flex";
       document.getElementById("msg-peer-avatar").src = peer.avatar || DEFAULT_AVATAR;
@@ -183,6 +264,7 @@
             const u = d.data();
             if (u.uid !== me.uid) allUsers.push(u);
           });
+          syncLastMessageListeners();
           renderUsers(document.getElementById("msg-search-user").value);
           if (preselectUid && !activePeer) {
             const found = allUsers.find((u) => u.uid === preselectUid);
@@ -203,6 +285,14 @@
               text,
               createdAt: serverTimestamp()
             });
+            pushNotification(activePeer.uid, {
+              fromUid: me.uid,
+              fromName: me.name,
+              fromAvatar: me.avatar || DEFAULT_AVATAR,
+              type: "message",
+              text: `đã nhắn: "${text.slice(0, 45)}"`,
+              link: `./messages.html?uid=${encodeURIComponent(me.uid)}`
+            }).catch((err) => console.warn("Message notification:", err));
           } catch (err) {
             textInput.value = text; // không mất tin nhắn khi gửi lỗi
             showToast(friendlyError(err));
@@ -222,6 +312,14 @@
               imageUrl,
               createdAt: serverTimestamp()
             });
+            pushNotification(activePeer.uid, {
+              fromUid: me.uid,
+              fromName: me.name,
+              fromAvatar: me.avatar || DEFAULT_AVATAR,
+              type: "message",
+              text: "đã gửi một hình ảnh cho bạn",
+              link: `./messages.html?uid=${encodeURIComponent(me.uid)}`
+            }).catch((err) => console.warn("Image message notification:", err));
           } catch (err) {
             showToast(friendlyError(err));
           } finally {

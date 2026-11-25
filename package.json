@@ -1,0 +1,15 @@
+{
+  "name": "twin-social",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node server.js",
+    "start": "node server.js",
+    "build": "node --check server.js",
+    "lint": "node --check server.js && node --check assets/js/config.js && node --check assets/js/firebase-service.js && node --check assets/js/layout.js && node --check assets/js/post-ui.js"
+  },
+  "dependencies": {
+    "express": "^5.3.0"
+  }
+}

@@ -3,6 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#edf2f9" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#080b13" media="(prefers-color-scheme: dark)" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="format-detection" content="telephone=no" />
   <title>Trang cá nhân — Twin</title>
   <meta name="description" content="Twin — Mạng xã hội kết nối bạn bè, chia sẻ khoảnh khắc, nhóm, trang và nhắn tin thời gian thực." />
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%231877f2'/%3E%3Cstop offset='100%25' stop-color='%230ea5e9'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='32' cy='32' r='32' fill='url(%23g)'/%3E%3Cpath d='M17 20h30v7.5H36V48h-8V27.5H17z' fill='%23fff'/%3E%3C/svg%3E" />
@@ -18,8 +24,9 @@
     <section class="twin-profile-hero">
       <div class="twin-cover-wrap">
         <img id="pf-cover" class="twin-cover-img" alt="Ảnh bìa" style="display:none;" />
-        <label id="pf-cover-btn" class="twin-btn twin-btn-secondary twin-btn-sm" style="position:absolute;right:16px;bottom:16px;display:none;cursor:pointer;backdrop-filter:blur(8px);">
-          Đổi ảnh bìa
+        <label id="pf-cover-btn" class="twin-btn twin-btn-secondary twin-btn-sm" style="position:absolute;right:16px;bottom:16px;display:none;cursor:pointer;backdrop-filter:blur(10px);">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+          <span>Đổi ảnh bìa</span>
           <input id="pf-cover-input" type="file" accept="image/*" hidden />
         </label>
       </div>
@@ -27,14 +34,19 @@
         <div class="twin-profile-id">
           <div style="position:relative;">
             <img id="pf-avatar" class="twin-avatar twin-avatar-xl" alt="Avatar" />
-            <label id="pf-avatar-btn" class="twin-icon-btn" style="position:absolute;right:4px;bottom:4px;display:none;cursor:pointer;box-shadow:var(--shadow-sm);" title="Đổi ảnh đại diện">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            <label id="pf-avatar-btn" class="twin-icon-btn" style="position:absolute;right:4px;bottom:4px;display:none;cursor:pointer;box-shadow:var(--shadow-sm);" title="Đổi ảnh đại diện" aria-label="Đổi ảnh đại diện">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
               <input id="pf-avatar-input" type="file" accept="image/*" hidden />
             </label>
           </div>
-          <div style="padding-bottom:6px;">
+          <div style="padding-bottom:6px;min-width:0;">
             <h1 id="pf-name" style="font-size:26px;font-weight:800;letter-spacing:-0.5px;">Đang tải...</h1>
             <p id="pf-bio" class="twin-post-meta" style="font-size:14.5px;margin-top:2px;"></p>
+            <div class="twin-profile-stats" id="pf-stats">
+              <span><strong id="pf-friends-count">0</strong> bạn bè</span>
+              <span>·</span>
+              <span><strong id="pf-posts-count">0</strong> bài viết</span>
+            </div>
           </div>
         </div>
         <div id="pf-actions" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
@@ -42,13 +54,16 @@
     </section>
 
     <div class="twin-grid-2">
-      <aside class="twin-card">
-        <h3 style="margin-bottom:10px;font-size:16px;">Giới thiệu</h3>
-        <p id="pf-bio-box" style="font-size:14px;color:var(--text-2);margin-bottom:12px;"></p>
-        <div id="pf-edit-bio-wrap" style="display:none;">
-          <textarea id="pf-bio-input" class="twin-textarea" maxlength="300" placeholder="Cập nhật tiểu sử..."></textarea>
-          <button id="pf-save-bio" class="twin-btn twin-btn-primary twin-btn-sm" style="margin-top:8px;width:100%;">Lưu tiểu sử</button>
+      <aside class="twin-card twin-profile-about">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+          <h3 style="font-size:16.5px;font-weight:800;letter-spacing:-0.2px;">Giới thiệu</h3>
+          <button type="button" id="pf-open-edit-inline" class="twin-btn twin-btn-secondary twin-btn-sm" style="display:none;padding:5px 11px;font-size:12.5px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+            <span>Chỉnh sửa</span>
+          </button>
         </div>
+        <p id="pf-bio-box" style="font-size:14px;color:var(--text-2);margin-bottom:14px;line-height:1.55;"></p>
+        <div id="pf-info-list" class="twin-info-list"></div>
       </aside>
 
       <section>
@@ -57,14 +72,115 @@
     </div>
   </main>
 
+  <!-- Modal chỉnh sửa đầy đủ thông tin trang cá nhân -->
+  <div class="twin-modal-backdrop" id="pf-edit-modal">
+    <div class="twin-modal" style="max-width:560px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+        <h2 style="font-size:19px;font-weight:800;">Chỉnh sửa trang cá nhân</h2>
+        <button type="button" id="pf-edit-close" class="twin-icon-btn" style="width:34px;height:34px;">✕</button>
+      </div>
+      <form id="pf-edit-form" style="display:flex;flex-direction:column;gap:12px;">
+        <div>
+          <label class="twin-field-label" for="pf-in-name">Tên hiển thị</label>
+          <input id="pf-in-name" class="twin-input" type="text" maxlength="60" placeholder="Họ và tên" required />
+        </div>
+
+        <div>
+          <label class="twin-field-label" for="pf-in-bio">Tiểu sử</label>
+          <textarea id="pf-in-bio" class="twin-textarea" maxlength="300" placeholder="Giới thiệu ngắn về bạn..." style="min-height:72px;"></textarea>
+        </div>
+
+        <div class="twin-form-grid-2">
+          <div>
+            <label class="twin-field-label" for="pf-in-birthday">Ngày sinh</label>
+            <input id="pf-in-birthday" class="twin-input" type="date" />
+          </div>
+          <div>
+            <label class="twin-field-label" for="pf-in-gender">Giới tính</label>
+            <select id="pf-in-gender" class="twin-select">
+              <option value="">Không hiển thị</option>
+              <option value="Nam">Nam</option>
+              <option value="Nữ">Nữ</option>
+              <option value="Khác">Khác</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="twin-form-grid-2">
+          <div>
+            <label class="twin-field-label" for="pf-in-hometown">Quê quán</label>
+            <input id="pf-in-hometown" class="twin-input" type="text" maxlength="100" placeholder="VD: Đà Nẵng, Việt Nam" />
+          </div>
+          <div>
+            <label class="twin-field-label" for="pf-in-location">Nơi sống hiện tại</label>
+            <input id="pf-in-location" class="twin-input" type="text" maxlength="100" placeholder="VD: TP. Hồ Chí Minh" />
+          </div>
+        </div>
+
+        <div class="twin-form-grid-2">
+          <div>
+            <label class="twin-field-label" for="pf-in-work">Công việc</label>
+            <input id="pf-in-work" class="twin-input" type="text" maxlength="100" placeholder="VD: Thiết kế UI/UX tại Twin" />
+          </div>
+          <div>
+            <label class="twin-field-label" for="pf-in-education">Học vấn</label>
+            <input id="pf-in-education" class="twin-input" type="text" maxlength="100" placeholder="VD: Đại học Bách Khoa" />
+          </div>
+        </div>
+
+        <div class="twin-form-grid-2">
+          <div>
+            <label class="twin-field-label" for="pf-in-relationship">Mối quan hệ</label>
+            <select id="pf-in-relationship" class="twin-select">
+              <option value="">Không hiển thị</option>
+              <option value="Độc thân">Độc thân</option>
+              <option value="Đang hẹn hò">Đang hẹn hò</option>
+              <option value="Đã đính hôn">Đã đính hôn</option>
+              <option value="Đã kết hôn">Đã kết hôn</option>
+              <option value="Phức tạp">Phức tạp</option>
+            </select>
+          </div>
+          <div>
+            <label class="twin-field-label" for="pf-in-phone">Số điện thoại</label>
+            <input id="pf-in-phone" class="twin-input" type="tel" maxlength="25" placeholder="VD: 0901 234 567" />
+          </div>
+        </div>
+
+        <div class="twin-form-grid-2">
+          <div>
+            <label class="twin-field-label" for="pf-in-email">Email liên hệ</label>
+            <input id="pf-in-email" class="twin-input" type="email" maxlength="120" placeholder="email@example.com" />
+          </div>
+          <div>
+            <label class="twin-field-label" for="pf-in-website">Website / Liên kết</label>
+            <input id="pf-in-website" class="twin-input" type="url" maxlength="180" placeholder="https://..." />
+          </div>
+        </div>
+
+        <label style="display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--text-2);cursor:pointer;">
+          <input id="pf-in-show-email" type="checkbox" style="width:16px;height:16px;accent-color:var(--primary);" />
+          <span>Hiển thị địa chỉ email trên trang cá nhân</span>
+        </label>
+
+        <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:6px;">
+          <button type="button" id="pf-edit-cancel" class="twin-btn twin-btn-secondary">Hủy</button>
+          <button type="submit" id="pf-edit-save" class="twin-btn twin-btn-primary">Lưu thông tin</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script type="module">
     import { initTwinPage } from "./assets/js/layout.js";
     import { renderPostList } from "./assets/js/post-ui.js";
     import {
+      auth,
       db,
       doc,
       getDoc,
       updateDoc,
+      updateProfile,
+      resetPassword,
       collection,
       query,
       where,
@@ -74,10 +190,119 @@
       uploadToCloudinary,
       pushNotification,
       DEFAULT_AVATAR,
+      escapeHtml,
       toMillis,
       showToast,
       friendlyError
     } from "./assets/js/firebase-service.js";
+
+    const INFO_ICONS = {
+      work: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="7" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>`,
+      education: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>`,
+      location: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>`,
+      hometown: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 9-7 9 7"/><path d="M5 9v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9"/></svg>`,
+      birthday: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8"/><path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1"/><path d="M2 21h20"/><path d="M7 8v3"/><path d="M12 8v3"/><path d="M17 8v3"/><path d="M7 4h.01"/><path d="M12 4h.01"/><path d="M17 4h.01"/></svg>`,
+      gender: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 0 0-16 0"/></svg>`,
+      heart: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>`,
+      mail: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>`,
+      phone: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>`,
+      globe: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>`,
+      calendar: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`
+    };
+
+    function formatBirthday(val) {
+      if (!val) return "";
+      const parts = String(val).split("-");
+      if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+      return val;
+    }
+
+    function safeExternalUrl(raw) {
+      const s = String(raw || "").trim();
+      if (!s) return "";
+      try {
+        const u = new URL(/^https?:\/\//i.test(s) ? s : `https://${s}`);
+        if (u.protocol === "http:" || u.protocol === "https:") return u.href;
+      } catch {}
+      return "";
+    }
+
+    function renderProfileDetails(profile, isMe) {
+      document.title = `${profile.name} — Twin`;
+      document.getElementById("pf-name").textContent = profile.name || "Thành viên Twin";
+      document.getElementById("pf-bio").textContent = profile.bio || "";
+      document.getElementById("pf-bio-box").textContent = profile.bio || "Chưa có tiểu sử.";
+      document.getElementById("pf-friends-count").textContent = String((profile.friends || []).length);
+
+      const rows = [];
+      if (profile.work) {
+        rows.push({ icon: INFO_ICONS.work, html: `Công việc: <strong>${escapeHtml(profile.work)}</strong>` });
+      }
+      if (profile.education) {
+        rows.push({ icon: INFO_ICONS.education, html: `Học vấn: <strong>${escapeHtml(profile.education)}</strong>` });
+      }
+      if (profile.location) {
+        rows.push({ icon: INFO_ICONS.location, html: `Sống tại <strong>${escapeHtml(profile.location)}</strong>` });
+      }
+      if (profile.hometown) {
+        rows.push({ icon: INFO_ICONS.hometown, html: `Quê quán: <strong>${escapeHtml(profile.hometown)}</strong>` });
+      }
+      if (profile.birthday) {
+        rows.push({ icon: INFO_ICONS.birthday, html: `Ngày sinh: <strong>${escapeHtml(formatBirthday(profile.birthday))}</strong>` });
+      }
+      if (profile.gender) {
+        rows.push({ icon: INFO_ICONS.gender, html: `Giới tính: <strong>${escapeHtml(profile.gender)}</strong>` });
+      }
+      if (profile.relationship) {
+        rows.push({ icon: INFO_ICONS.heart, html: `Tình trạng: <strong>${escapeHtml(profile.relationship)}</strong>` });
+      }
+      const displayEmail = profile.email || (isMe ? auth?.currentUser?.email || "" : "");
+      if (displayEmail && profile.showEmail !== false) {
+        rows.push({
+          icon: INFO_ICONS.mail,
+          html: `Email: <a href="mailto:${escapeHtml(displayEmail)}" style="color:var(--primary);font-weight:600;word-break:break-all;">${escapeHtml(displayEmail)}</a>`
+        });
+      }
+      if (profile.phone) {
+        rows.push({
+          icon: INFO_ICONS.phone,
+          html: `Điện thoại: <a href="tel:${escapeHtml(profile.phone)}" style="color:var(--primary);font-weight:600;">${escapeHtml(profile.phone)}</a>`
+        });
+      }
+      const webHref = safeExternalUrl(profile.website);
+      if (webHref) {
+        const prettyUrl = webHref.replace(/^https?:\/\//i, "").replace(/\/$/, "");
+        rows.push({
+          icon: INFO_ICONS.globe,
+          html: `<a href="${escapeHtml(webHref)}" target="_blank" rel="noopener noreferrer" style="color:var(--primary);font-weight:600;word-break:break-all;">${escapeHtml(prettyUrl)}</a>`
+        });
+      }
+      if (profile.createdAt) {
+        const ms = toMillis(profile.createdAt);
+        if (ms > 0) {
+          const d = new Date(ms);
+          rows.push({
+            icon: INFO_ICONS.calendar,
+            html: `Tham gia Twin từ <strong>tháng ${d.getMonth() + 1}/${d.getFullYear()}</strong>`
+          });
+        }
+      }
+
+      const listEl = document.getElementById("pf-info-list");
+      if (!rows.length) {
+        listEl.innerHTML = `<p class="twin-post-meta">${isMe ? "Thêm ngày sinh, quê quán, email... để mọi người hiểu thêm về bạn." : "Chưa có thông tin giới thiệu chi tiết."}</p>`;
+      } else {
+        listEl.innerHTML = rows
+          .map(
+            (r) => `
+          <div class="twin-info-item">
+            <span class="twin-info-icon">${r.icon}</span>
+            <span class="twin-info-text">${r.html}</span>
+          </div>`
+          )
+          .join("");
+      }
+    }
 
     initTwinPage({
       requireAuth: true,
@@ -93,32 +318,107 @@
         }
         const profile = snap.data();
 
-        document.title = `${profile.name} — Twin`;
-        document.getElementById("pf-name").textContent = profile.name;
-        document.getElementById("pf-bio").textContent = profile.bio || "";
-        document.getElementById("pf-bio-box").textContent = profile.bio || "Chưa có tiểu sử.";
         document.getElementById("pf-avatar").src = profile.avatar || DEFAULT_AVATAR;
         if (profile.cover) {
           const c = document.getElementById("pf-cover");
           c.src = profile.cover;
           c.style.display = "block";
         }
+        renderProfileDetails(profile, isMe);
+
+        const actions = document.getElementById("pf-actions");
 
         if (isMe) {
           document.getElementById("pf-cover-btn").style.display = "inline-flex";
           document.getElementById("pf-avatar-btn").style.display = "grid";
-          document.getElementById("pf-edit-bio-wrap").style.display = "block";
-          document.getElementById("pf-bio-input").value = profile.bio || "";
+          const inlineEditBtn = document.getElementById("pf-open-edit-inline");
+          inlineEditBtn.style.display = "inline-flex";
 
-          document.getElementById("pf-save-bio").onclick = async () => {
-            const bio = document.getElementById("pf-bio-input").value.trim().slice(0, 300);
+          actions.innerHTML = `
+            <button type="button" id="pf-open-edit-btn" class="twin-btn twin-btn-primary twin-btn-sm">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+              <span>Chỉnh sửa hồ sơ</span>
+            </button>
+            <button type="button" id="pf-reset-pass-btn" class="twin-btn twin-btn-secondary twin-btn-sm">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6"/><path d="m15.5 7.5 3 3L22 7l-3-3"/></svg>
+              <span>Đặt lại mật khẩu</span>
+            </button>
+          `;
+
+          const editModal = document.getElementById("pf-edit-modal");
+          const openEditModal = () => {
+            document.getElementById("pf-in-name").value = profile.name || "";
+            document.getElementById("pf-in-bio").value = profile.bio || "";
+            document.getElementById("pf-in-birthday").value = profile.birthday || "";
+            document.getElementById("pf-in-gender").value = profile.gender || "";
+            document.getElementById("pf-in-hometown").value = profile.hometown || "";
+            document.getElementById("pf-in-location").value = profile.location || "";
+            document.getElementById("pf-in-work").value = profile.work || "";
+            document.getElementById("pf-in-education").value = profile.education || "";
+            document.getElementById("pf-in-relationship").value = profile.relationship || "";
+            document.getElementById("pf-in-phone").value = profile.phone || "";
+            document.getElementById("pf-in-email").value = profile.email || auth?.currentUser?.email || "";
+            document.getElementById("pf-in-website").value = profile.website || "";
+            document.getElementById("pf-in-show-email").checked = profile.showEmail !== false;
+            editModal.classList.add("open");
+          };
+          const closeEditModal = () => editModal.classList.remove("open");
+
+          document.getElementById("pf-open-edit-btn").onclick = openEditModal;
+          inlineEditBtn.onclick = openEditModal;
+          document.getElementById("pf-edit-close").onclick = closeEditModal;
+          document.getElementById("pf-edit-cancel").onclick = closeEditModal;
+
+          document.getElementById("pf-reset-pass-btn").onclick = async () => {
+            const targetEmail = auth?.currentUser?.email || profile.email;
+            if (!targetEmail) return showToast("Chưa có email tài khoản để đặt lại mật khẩu.");
+            const btn = document.getElementById("pf-reset-pass-btn");
+            btn.disabled = true;
             try {
-              await updateDoc(doc(db, "users", me.uid), { bio });
-              document.getElementById("pf-bio").textContent = bio;
-              document.getElementById("pf-bio-box").textContent = bio || "Chưa có tiểu sử.";
-              showToast("Đã lưu tiểu sử!");
+              await resetPassword(targetEmail);
+              showToast(`Đã gửi email đặt lại mật khẩu đến ${targetEmail}!`);
             } catch (err) {
               showToast(friendlyError(err));
+            } finally {
+              btn.disabled = false;
+            }
+          };
+
+          document.getElementById("pf-edit-form").onsubmit = async (e) => {
+            e.preventDefault();
+            const saveBtn = document.getElementById("pf-edit-save");
+            const nextData = {
+              name: document.getElementById("pf-in-name").value.trim().slice(0, 60) || profile.name,
+              bio: document.getElementById("pf-in-bio").value.trim().slice(0, 300),
+              birthday: document.getElementById("pf-in-birthday").value.trim(),
+              gender: document.getElementById("pf-in-gender").value.trim(),
+              hometown: document.getElementById("pf-in-hometown").value.trim().slice(0, 100),
+              location: document.getElementById("pf-in-location").value.trim().slice(0, 100),
+              work: document.getElementById("pf-in-work").value.trim().slice(0, 100),
+              education: document.getElementById("pf-in-education").value.trim().slice(0, 100),
+              relationship: document.getElementById("pf-in-relationship").value.trim(),
+              phone: document.getElementById("pf-in-phone").value.trim().slice(0, 25),
+              email: document.getElementById("pf-in-email").value.trim().slice(0, 120),
+              website: document.getElementById("pf-in-website").value.trim().slice(0, 180),
+              showEmail: document.getElementById("pf-in-show-email").checked
+            };
+
+            saveBtn.disabled = true;
+            saveBtn.textContent = "Đang lưu...";
+            try {
+              await updateDoc(doc(db, "users", me.uid), nextData);
+              if (auth?.currentUser && nextData.name !== profile.name) {
+                updateProfile(auth.currentUser, { displayName: nextData.name }).catch(() => {});
+              }
+              Object.assign(profile, nextData);
+              renderProfileDetails(profile, true);
+              closeEditModal();
+              showToast("Đã cập nhật thông tin trang cá nhân!");
+            } catch (err) {
+              showToast(friendlyError(err));
+            } finally {
+              saveBtn.disabled = false;
+              saveBtn.textContent = "Lưu thông tin";
             }
           };
 
@@ -156,8 +456,6 @@
             }
           };
         } else {
-          const actions = document.getElementById("pf-actions");
-          // Trạng thái: friend | incoming (họ đã gửi cho mình) | sent (mình đã gửi) | none
           let state = (me.friends || []).includes(targetUid)
             ? "friend"
             : (me.friendRequests || []).includes(targetUid)
@@ -195,10 +493,11 @@
                 pushNotification(targetUid, {
                   fromUid: me.uid,
                   fromName: me.name,
-                  fromAvatar: me.avatar,
+                  fromAvatar: me.avatar || DEFAULT_AVATAR,
+                  type: "friend",
                   text: "đã gửi lời mời kết bạn.",
                   link: "./friends.html"
-                }).catch(() => {});
+                }).catch((err) => console.warn("Friend notification:", err));
               } else if (state === "sent") {
                 await updateDoc(doc(db, "users", targetUid), { friendRequests: arrayRemove(me.uid) });
                 state = "none";
@@ -211,10 +510,11 @@
                 pushNotification(targetUid, {
                   fromUid: me.uid,
                   fromName: me.name,
-                  fromAvatar: me.avatar,
+                  fromAvatar: me.avatar || DEFAULT_AVATAR,
+                  type: "friend",
                   text: "đã chấp nhận lời mời kết bạn.",
                   link: `./profile.html?uid=${encodeURIComponent(me.uid)}`
-                }).catch(() => {});
+                }).catch((err) => console.warn("Accept notification:", err));
               }
             } catch (err) {
               showToast(friendlyError(err));
@@ -224,12 +524,12 @@
           };
         }
 
-        // Client-side sort to prevent Firestore composite index errors
         const q = query(collection(db, "posts"), where("authorUid", "==", targetUid));
         onSnapshot(q, (snap) => {
           const box = document.getElementById("pf-posts");
           const items = [];
           snap.forEach((d) => items.push({ id: d.id, ...d.data() }));
+          document.getElementById("pf-posts-count").textContent = String(items.length);
           items.sort((a, b) => ((b.pinned ? 1 : 0) - (a.pinned ? 1 : 0)) || ((b.pinned && a.pinned) ? ((b.pinnedAt || 0) - (a.pinnedAt || 0)) : 0) || (toMillis(b.createdAt) - toMillis(a.createdAt)));
           renderPostList(
             box,

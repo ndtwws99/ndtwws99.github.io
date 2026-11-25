@@ -11,7 +11,8 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
   signOut,
-  updateProfile
+  updateProfile,
+  sendPasswordResetEmail
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import {
   getFirestore,
@@ -65,6 +66,17 @@ export async function signInWithGoogle() {
   return cred.user;
 }
 
+export async function resetPassword(email) {
+  if (!auth) throw new Error("Chưa cấu hình Firebase.");
+  const cleanEmail = String(email || "").trim();
+  if (!cleanEmail) {
+    const err = new Error("Vui lòng nhập địa chỉ email.");
+    err.code = "auth/missing-email";
+    throw err;
+  }
+  await sendPasswordResetEmail(auth, cleanEmail);
+}
+
 export {
   app,
   analytics,
@@ -77,6 +89,7 @@ export {
   createUserWithEmailAndPassword,
   signOut,
   updateProfile,
+  sendPasswordResetEmail,
   collection,
   doc,
   getDoc,
@@ -126,6 +139,7 @@ export function friendlyError(err) {
     "auth/wrong-password": "Email hoặc mật khẩu không đúng.",
     "auth/user-not-found": "Email hoặc mật khẩu không đúng.",
     "auth/invalid-email": "Email không hợp lệ.",
+    "auth/missing-email": "Vui lòng nhập địa chỉ email.",
     "auth/email-already-in-use": "Email này đã được đăng ký.",
     "auth/weak-password": "Mật khẩu quá yếu (tối thiểu 6 ký tự).",
     "auth/too-many-requests": "Thử quá nhiều lần. Vui lòng đợi một lát rồi thử lại.",
@@ -332,9 +346,20 @@ export async function ensureUserDoc(user, extra = {}) {
     const profile = {
       uid: user.uid,
       name: extra.name || user.displayName || user.email?.split("@")[0] || "Thành viên Twin",
+      email: user.email || "",
+      showEmail: true,
       avatar: user.photoURL || DEFAULT_AVATAR,
       cover: "",
       bio: "Xin chào, mình đang dùng Twin!",
+      birthday: "",
+      hometown: "",
+      location: "",
+      work: "",
+      education: "",
+      gender: "",
+      relationship: "",
+      phone: "",
+      website: "",
       friends: [],
       friendRequests: [],
       savedPosts: [],
@@ -343,7 +368,12 @@ export async function ensureUserDoc(user, extra = {}) {
     await setDoc(ref, profile);
     return profile;
   }
-  return snap.data();
+  const data = snap.data();
+  if (user.email && !data.email) {
+    data.email = user.email;
+    updateDoc(ref, { email: user.email }).catch(() => {});
+  }
+  return data;
 }
 
 export async function pushNotification(toUid, payload) {
@@ -353,9 +383,11 @@ export async function pushNotification(toUid, payload) {
     fromUid: payload.fromUid,
     fromName: payload.fromName || "Ai đó",
     fromAvatar: payload.fromAvatar || DEFAULT_AVATAR,
+    type: payload.type || "general",
     text: payload.text,
     link: safeLink(payload.link),
     read: false,
+    createdAtMs: Date.now(),
     createdAt: serverTimestamp()
   });
 }
