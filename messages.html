@@ -3,11 +3,6 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="theme-color" content="#edf2f9" media="(prefers-color-scheme: light)" />
-  <meta name="theme-color" content="#080b13" media="(prefers-color-scheme: dark)" />
   <title>Tin nhắn — Twin</title>
   <meta name="description" content="Twin — Mạng xã hội kết nối bạn bè, chia sẻ khoảnh khắc, nhóm, trang và nhắn tin thời gian thực." />
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%231877f2'/%3E%3Cstop offset='100%25' stop-color='%230ea5e9'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='32' cy='32' r='32' fill='url(%23g)'/%3E%3Cpath d='M17 20h30v7.5H36V48h-8V27.5H17z' fill='%23fff'/%3E%3C/svg%3E" />
@@ -73,7 +68,6 @@
       onSnapshot,
       serverTimestamp,
       uploadToCloudinary,
-      pushNotification,
       getChatId,
       DEFAULT_AVATAR,
       escapeHtml,
@@ -95,10 +89,7 @@
     const textInput = document.getElementById("msg-text-input");
     const imgInput = document.getElementById("msg-image-input");
 
-    document.getElementById("msg-back-btn").onclick = () => {
-      shell.classList.remove("chat-open");
-      document.body.classList.remove("mobile-chat-open");
-    };
+    document.getElementById("msg-back-btn").onclick = () => shell.classList.remove("chat-open");
 
     function renderUsers(filter = "") {
       convList.innerHTML = "";
@@ -127,7 +118,6 @@
       const same = activePeer && activePeer.uid === peer.uid;
       activePeer = peer;
       shell.classList.add("chat-open");
-      document.body.classList.add("mobile-chat-open");
       topbar.style.display = "flex";
       sendForm.style.display = "flex";
       document.getElementById("msg-peer-avatar").src = peer.avatar || DEFAULT_AVATAR;
@@ -213,15 +203,6 @@
               text,
               createdAt: serverTimestamp()
             });
-            const snippet = text.length > 50 ? `${text.slice(0, 50)}…` : text;
-            pushNotification(activePeer.uid, {
-              fromUid: me.uid,
-              fromName: me.name,
-              fromAvatar: me.avatar,
-              type: "message",
-              text: `đã nhắn tin: "${snippet}"`,
-              link: `./messages.html?uid=${encodeURIComponent(me.uid)}`
-            });
           } catch (err) {
             textInput.value = text; // không mất tin nhắn khi gửi lỗi
             showToast(friendlyError(err));
@@ -240,14 +221,6 @@
               text: "",
               imageUrl,
               createdAt: serverTimestamp()
-            });
-            pushNotification(activePeer.uid, {
-              fromUid: me.uid,
-              fromName: me.name,
-              fromAvatar: me.avatar,
-              type: "message",
-              text: "đã gửi một hình ảnh.",
-              link: `./messages.html?uid=${encodeURIComponent(me.uid)}`
             });
           } catch (err) {
             showToast(friendlyError(err));
