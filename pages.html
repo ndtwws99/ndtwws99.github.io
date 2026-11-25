@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Trang | Twin</title>
+  <meta name="description" content="Twin — Mạng xã hội kết nối bạn bè, chia sẻ khoảnh khắc, nhóm và trang." />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%232563eb'/%3E%3Cstop offset='100%25' stop-color='%2306b6d4'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='16' fill='url(%23g)'/%3E%3Cpath d='M16 20h32v8H36v22h-8V28H16z' fill='%23fff'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="./assets/css/twin.css" />
+</head>
+<body>
+  <header id="twin-header" class="twin-header"></header>
+
+  <main class="twin-main" style="max-width:1100px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+      <h1>Trang (Pages) trên Twin</h1>
+      <button id="btn-open-create-page" class="twin-btn twin-btn-primary">➕ Tạo Trang mới</button>
+    </div>
+
+    <div id="pages-grid" class="twin-cards-grid"></div>
+  </main>
+
+  <div class="twin-modal-backdrop" id="page-modal">
+    <div class="twin-modal">
+      <h2 style="margin-bottom:14px;">Tạo Trang Twin mới</h2>
+      <form id="create-page-form" style="display:flex;flex-direction:column;gap:12px;">
+        <input id="cp-name" class="twin-input" placeholder="Tên Trang (VD: Tin tức Công nghệ)" required />
+        <input id="cp-cat" class="twin-input" placeholder="Danh mục (VD: Giải trí, Giáo dục, Thương hiệu)" required />
+        <textarea id="cp-desc" class="twin-textarea" placeholder="Mô tả Trang..."></textarea>
+        <label class="twin-btn twin-btn-secondary twin-btn-sm" style="cursor:pointer;">
+          🖼️ Ảnh đại diện Trang (tùy chọn)
+          <input id="cp-cover" type="file" accept="image/*" hidden />
+        </label>
+        <div style="display:flex;justify-content:flex-end;gap:8px;">
+          <button type="button" id="cp-cancel" class="twin-btn twin-btn-secondary">Hủy</button>
+          <button type="submit" class="twin-btn twin-btn-primary">Tạo Trang</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="twin-chat-dock" class="twin-chat-dock"></div>
+  <div id="twin-toast-container" class="twin-toast-container"></div>
+  <footer id="twin-footer" class="twin-footer"></footer>
+
+  <script type="module">
+    import { initTwinPage } from "./assets/js/layout.js";
+    import {
+      db,
+      collection,
+      doc,
+      addDoc,
+      updateDoc,
+      query,
+      orderBy,
+      onSnapshot,
+      arrayUnion,
+      arrayRemove,
+      serverTimestamp,
+      uploadToCloudinary,
+      escapeHtml,
+      showToast
+    } from "./assets/js/firebase-service.js";
+
+    const modal = document.getElementById("page-modal");
+    document.getElementById("btn-open-create-page").onclick = () => modal.classList.add("open");
+    document.getElementById("cp-cancel").onclick = () => modal.classList.remove("open");
+
+    initTwinPage({
+      requireAuth: true,
+      onReady: (me) => {
+        if (!me) return;
+
+        document.getElementById("create-page-form").onsubmit = async (e) => {
+          e.preventDefault();
+          const name = document.getElementById("cp-name").value.trim();
+          const category = document.getElementById("cp-cat").value.trim();
+          const description = document.getElementById("cp-desc").value.trim();
+          const coverFile = document.getElementById("cp-cover").files[0];
+          try {
+            let coverUrl = "";
+            if (coverFile) coverUrl = await uploadToCloudinary(coverFile);
+            await addDoc(collection(db, "pages"), {
+              name,
+              category,
+              description,
+              coverUrl,
+              ownerUid: me.uid,
+              followers: [me.uid],
+              createdAt: serverTimestamp()
+            });
+            e.target.reset();
+            modal.classList.remove("open");
+            showToast("Đã tạo Trang mới trên Twin!");
+          } catch (err) {
+            showToast(err.message);
+          }
+        };
+
+        onSnapshot(query(collection(db, "pages"), orderBy("createdAt", "desc")), (snap) => {
+          const grid = document.getElementById("pages-grid");
+          grid.innerHTML = "";
+          if (snap.empty) {
+            grid.innerHTML = '<div class="twin-card">Chưa có Trang nào. Hãy tạo Trang đầu tiên!</div>';
+            return;
+          }
+          snap.forEach((d) => {
+            const p = { id: d.id, ...d.data() };
+            const following = (p.followers || []).includes(me.uid);
+            const card = document.createElement("div");
+            card.className = "twin-entity-card";
+            card.innerHTML = `
+              ${p.coverUrl ? `<img class="twin-entity-cover" src="${escapeHtml(p.coverUrl)}" alt="" />` : `<div class="twin-entity-cover"></div>`}
+              <div class="twin-entity-body">
+                <div style="font-weight:700;font-size:16px;">${escapeHtml(p.name)}</div>
+                <div class="twin-post-meta">${escapeHtml(p.category)} · ${(p.followers || []).length} người theo dõi</div>
+                <p style="font-size:13px;color:var(--twin-text-muted);flex:1;">${escapeHtml(p.description || "")}</p>
+                <button class="twin-btn ${following ? "twin-btn-secondary" : "twin-btn-primary"} twin-btn-sm btn-follow">
+                  ${following ? "✓ Đang theo dõi" : "👍 Theo dõi"}
+                </button>
+              </div>
+            `;
+            card.querySelector(".btn-follow").onclick = async () => {
+              await updateDoc(doc(db, "pages", p.id), {
+                followers: following ? arrayRemove(me.uid) : arrayUnion(me.uid)
+              });
+            };
+            grid.appendChild(card);
+          });
+        });
+      }
+    });
+  </script>
+</body>
+</html>

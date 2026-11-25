@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Trang cá nhân | Twin</title>
+  <meta name="description" content="Twin — Mạng xã hội kết nối bạn bè, chia sẻ khoảnh khắc, nhóm và trang." />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%232563eb'/%3E%3Cstop offset='100%25' stop-color='%2306b6d4'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='16' fill='url(%23g)'/%3E%3Cpath d='M16 20h32v8H36v22h-8V28H16z' fill='%23fff'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="./assets/css/twin.css" />
+</head>
+<body>
+  <header id="twin-header" class="twin-header"></header>
+
+  <main class="twin-main" style="max-width:980px;">
+    <section class="twin-profile-hero">
+      <div class="twin-cover-wrap">
+        <img id="pf-cover" class="twin-cover-img" alt="Ảnh bìa" style="display:none;" />
+        <label id="pf-cover-btn" class="twin-btn twin-btn-secondary twin-btn-sm" style="position:absolute;right:16px;bottom:16px;display:none;cursor:pointer;">
+          📷 Đổi ảnh bìa
+          <input id="pf-cover-input" type="file" accept="image/*" hidden />
+        </label>
+      </div>
+      <div class="twin-profile-bar">
+        <div class="twin-profile-id">
+          <div style="position:relative;">
+            <img id="pf-avatar" class="twin-avatar twin-avatar-xl" src="" alt="Avatar" />
+            <label id="pf-avatar-btn" class="twin-icon-btn" style="position:absolute;right:4px;bottom:4px;display:none;cursor:pointer;" title="Đổi ảnh đại diện">
+              📷
+              <input id="pf-avatar-input" type="file" accept="image/*" hidden />
+            </label>
+          </div>
+          <div>
+            <h1 id="pf-name" style="font-size:28px;">Đang tải...</h1>
+            <p id="pf-bio" class="twin-post-meta" style="font-size:15px;margin-top:4px;"></p>
+          </div>
+        </div>
+        <div id="pf-actions" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
+      </div>
+    </section>
+
+    <div class="twin-grid-2">
+      <aside class="twin-card">
+        <h3 style="margin-bottom:10px;">Giới thiệu</h3>
+        <p id="pf-bio-box" style="font-size:14px;color:var(--twin-text-muted);margin-bottom:12px;"></p>
+        <div id="pf-edit-bio-wrap" style="display:none;">
+          <textarea id="pf-bio-input" class="twin-textarea" placeholder="Cập nhật tiểu sử của bạn..."></textarea>
+          <button id="pf-save-bio" class="twin-btn twin-btn-primary twin-btn-sm" style="margin-top:8px;width:100%;">Lưu tiểu sử</button>
+        </div>
+      </aside>
+
+      <section>
+        <div id="pf-posts"></div>
+      </section>
+    </div>
+  </main>
+
+  <div id="twin-chat-dock" class="twin-chat-dock"></div>
+  <div id="twin-toast-container" class="twin-toast-container"></div>
+  <footer id="twin-footer" class="twin-footer"></footer>
+
+  <script type="module">
+    import { initTwinPage, openTwinChat } from "./assets/js/layout.js";
+    import { renderPostCard } from "./assets/js/post-ui.js";
+    import {
+      db,
+      doc,
+      getDoc,
+      updateDoc,
+      collection,
+      query,
+      where,
+      orderBy,
+      onSnapshot,
+      arrayUnion,
+      uploadToCloudinary,
+      pushNotification,
+      DEFAULT_AVATAR,
+      showToast
+    } from "./assets/js/firebase-service.js";
+
+    initTwinPage({
+      requireAuth: true,
+      onReady: async (me) => {
+        if (!me) return;
+        const params = new URLSearchParams(window.location.search);
+        const targetUid = params.get("uid") || me.uid;
+        const isMe = targetUid === me.uid;
+
+        const snap = await getDoc(doc(db, "users", targetUid));
+        if (!snap.exists()) {
+          document.getElementById("pf-name").textContent = "Không tìm thấy người dùng";
+          return;
+        }
+        const profile = snap.data();
+
+        document.title = `${profile.name} | Twin`;
+        document.getElementById("pf-name").textContent = profile.name;
+        document.getElementById("pf-bio").textContent = profile.bio || "";
+        document.getElementById("pf-bio-box").textContent = profile.bio || "Chưa có tiểu sử.";
+        document.getElementById("pf-avatar").src = profile.avatar || DEFAULT_AVATAR;
+        if (profile.cover) {
+          const c = document.getElementById("pf-cover");
+          c.src = profile.cover;
+          c.style.display = "block";
+        }
+
+        if (isMe) {
+          document.getElementById("pf-cover-btn").style.display = "inline-flex";
+          document.getElementById("pf-avatar-btn").style.display = "grid";
+          document.getElementById("pf-edit-bio-wrap").style.display = "block";
+          document.getElementById("pf-bio-input").value = profile.bio || "";
+
+          document.getElementById("pf-save-bio").onclick = async () => {
+            const bio = document.getElementById("pf-bio-input").value.trim();
+            await updateDoc(doc(db, "users", me.uid), { bio });
+            document.getElementById("pf-bio").textContent = bio;
+            document.getElementById("pf-bio-box").textContent = bio || "Chưa có tiểu sử.";
+            showToast("Đã cập nhật tiểu sử!");
+          };
+
+          document.getElementById("pf-avatar-input").onchange = async (e) => {
+            const f = e.target.files[0];
+            if (!f) return;
+            showToast("Đang tải ảnh đại diện...");
+            try {
+              const url = await uploadToCloudinary(f);
+              await updateDoc(doc(db, "users", me.uid), { avatar: url });
+              document.getElementById("pf-avatar").src = url;
+              showToast("Đã đổi ảnh đại diện!");
+            } catch (err) {
+              showToast(err.message);
+            }
+          };
+
+          document.getElementById("pf-cover-input").onchange = async (e) => {
+            const f = e.target.files[0];
+            if (!f) return;
+            showToast("Đang tải ảnh bìa...");
+            try {
+              const url = await uploadToCloudinary(f);
+              await updateDoc(doc(db, "users", me.uid), { cover: url });
+              const c = document.getElementById("pf-cover");
+              c.src = url;
+              c.style.display = "block";
+              showToast("Đã đổi ảnh bìa!");
+            } catch (err) {
+              showToast(err.message);
+            }
+          };
+        } else {
+          const actions = document.getElementById("pf-actions");
+          const isFriend = (me.friends || []).includes(targetUid);
+          actions.innerHTML = `
+            <button id="btn-add-fr" class="twin-btn ${isFriend ? "twin-btn-secondary" : "twin-btn-primary"}">${isFriend ? "✓ Bạn bè" : "➕ Kết bạn"}</button>
+            <button id="btn-msg-pf" class="twin-btn twin-btn-secondary">💬 Nhắn tin</button>
+          `;
+          document.getElementById("btn-msg-pf").onclick = () => openTwinChat(profile);
+          if (!isFriend) {
+            document.getElementById("btn-add-fr").onclick = async () => {
+              await updateDoc(doc(db, "users", targetUid), { friendRequests: arrayUnion(me.uid) });
+              await pushNotification(targetUid, {
+                fromUid: me.uid,
+                fromName: me.name,
+                fromAvatar: me.avatar,
+                text: "đã gửi cho bạn lời mời kết bạn.",
+                link: "./friends.html"
+              });
+              showToast("Đã gửi lời mời kết bạn!");
+            };
+          }
+        }
+
+        // User's posts
+        const q = query(
+          collection(db, "posts"),
+          where("authorUid", "==", targetUid),
+          orderBy("createdAt", "desc")
+        );
+        onSnapshot(q, (snap) => {
+          const box = document.getElementById("pf-posts");
+          box.innerHTML = "";
+          if (snap.empty) {
+            box.innerHTML = '<div class="twin-card" style="color:var(--twin-text-muted)">Chưa có bài viết nào.</div>';
+            return;
+          }
+          snap.forEach((d) => box.appendChild(renderPostCard({ id: d.id, ...d.data() }, me)));
+        });
+      }
+    });
+  </script>
+</body>
+</html>

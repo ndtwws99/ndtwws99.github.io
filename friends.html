@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bạn bè | Twin</title>
+  <meta name="description" content="Twin — Mạng xã hội kết nối bạn bè, chia sẻ khoảnh khắc, nhóm và trang." />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%232563eb'/%3E%3Cstop offset='100%25' stop-color='%2306b6d4'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='16' fill='url(%23g)'/%3E%3Cpath d='M16 20h32v8H36v22h-8V28H16z' fill='%23fff'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="./assets/css/twin.css" />
+</head>
+<body>
+  <header id="twin-header" class="twin-header"></header>
+
+  <main class="twin-main" style="max-width:1100px;">
+    <section class="twin-card">
+      <h2 style="margin-bottom:14px;">Lời mời kết bạn</h2>
+      <div id="friend-requests-grid" class="twin-cards-grid"></div>
+    </section>
+
+    <section class="twin-card">
+      <h2 style="margin-bottom:14px;">Bạn bè của bạn</h2>
+      <div id="my-friends-grid" class="twin-cards-grid"></div>
+    </section>
+
+    <section class="twin-card">
+      <h2 style="margin-bottom:14px;">Những người bạn có thể biết trên Twin</h2>
+      <div id="suggest-friends-grid" class="twin-cards-grid"></div>
+    </section>
+  </main>
+
+  <div id="twin-chat-dock" class="twin-chat-dock"></div>
+  <div id="twin-toast-container" class="twin-toast-container"></div>
+  <footer id="twin-footer" class="twin-footer"></footer>
+
+  <script type="module">
+    import { initTwinPage, openTwinChat } from "./assets/js/layout.js";
+    import {
+      db,
+      doc,
+      collection,
+      onSnapshot,
+      updateDoc,
+      arrayUnion,
+      arrayRemove,
+      pushNotification,
+      DEFAULT_AVATAR,
+      escapeHtml,
+      showToast
+    } from "./assets/js/firebase-service.js";
+
+    initTwinPage({
+      requireAuth: true,
+      onReady: (me) => {
+        if (!me) return;
+        onSnapshot(collection(db, "users"), (snap) => {
+          const all = [];
+          let latestMe = me;
+          snap.forEach((d) => {
+            const u = d.data();
+            if (u.uid === me.uid) latestMe = u;
+            else all.push(u);
+          });
+
+          const reqIds = latestMe.friendRequests || [];
+          const friendIds = latestMe.friends || [];
+
+          const reqGrid = document.getElementById("friend-requests-grid");
+          const frGrid = document.getElementById("my-friends-grid");
+          const sugGrid = document.getElementById("suggest-friends-grid");
+          reqGrid.innerHTML = "";
+          frGrid.innerHTML = "";
+          sugGrid.innerHTML = "";
+
+          const reqUsers = all.filter((u) => reqIds.includes(u.uid));
+          const frUsers = all.filter((u) => friendIds.includes(u.uid));
+          const sugUsers = all.filter((u) => !reqIds.includes(u.uid) && !friendIds.includes(u.uid));
+
+          if (!reqUsers.length) reqGrid.innerHTML = '<p class="twin-post-meta">Không có lời mời kết bạn nào.</p>';
+          reqUsers.forEach((u) => {
+            const card = document.createElement("div");
+            card.className = "twin-entity-card";
+            card.innerHTML = `
+              <img class="twin-entity-cover" src="${escapeHtml(u.avatar || DEFAULT_AVATAR)}" alt="" />
+              <div class="twin-entity-body">
+                <a href="./profile.html?uid=${encodeURIComponent(u.uid)}" style="font-weight:700;">${escapeHtml(u.name)}</a>
+                <button class="twin-btn twin-btn-primary twin-btn-sm btn-accept">Xác nhận</button>
+                <button class="twin-btn twin-btn-secondary twin-btn-sm btn-decline">Xóa</button>
+              </div>
+            `;
+            card.querySelector(".btn-accept").onclick = async () => {
+              await updateDoc(doc(db, "users", me.uid), {
+                friendRequests: arrayRemove(u.uid),
+                friends: arrayUnion(u.uid)
+              });
+              await updateDoc(doc(db, "users", u.uid), { friends: arrayUnion(me.uid) });
+              await pushNotification(u.uid, {
+                fromUid: me.uid,
+                fromName: latestMe.name,
+                fromAvatar: latestMe.avatar,
+                text: "đã chấp nhận lời mời kết bạn của bạn.",
+                link: `./profile.html?uid=${me.uid}`
+              });
+              showToast(`Bạn và ${u.name} đã trở thành bạn bè!`);
+            };
+            card.querySelector(".btn-decline").onclick = async () => {
+              await updateDoc(doc(db, "users", me.uid), { friendRequests: arrayRemove(u.uid) });
+            };
+            reqGrid.appendChild(card);
+          });
+
+          if (!frUsers.length) frGrid.innerHTML = '<p class="twin-post-meta">Bạn chưa kết bạn với ai.</p>';
+          frUsers.forEach((u) => {
+            const card = document.createElement("div");
+            card.className = "twin-entity-card";
+            card.innerHTML = `
+              <img class="twin-entity-cover" src="${escapeHtml(u.avatar || DEFAULT_AVATAR)}" alt="" />
+              <div class="twin-entity-body">
+                <a href="./profile.html?uid=${encodeURIComponent(u.uid)}" style="font-weight:700;">${escapeHtml(u.name)}</a>
+                <button class="twin-btn twin-btn-primary twin-btn-sm btn-chat">💬 Nhắn tin</button>
+              </div>
+            `;
+            card.querySelector(".btn-chat").onclick = () => openTwinChat(u);
+            frGrid.appendChild(card);
+          });
+
+          if (!sugUsers.length) sugGrid.innerHTML = '<p class="twin-post-meta">Không còn gợi ý mới.</p>';
+          sugUsers.forEach((u) => {
+            const card = document.createElement("div");
+            card.className = "twin-entity-card";
+            card.innerHTML = `
+              <img class="twin-entity-cover" src="${escapeHtml(u.avatar || DEFAULT_AVATAR)}" alt="" />
+              <div class="twin-entity-body">
+                <a href="./profile.html?uid=${encodeURIComponent(u.uid)}" style="font-weight:700;">${escapeHtml(u.name)}</a>
+                <button class="twin-btn twin-btn-secondary twin-btn-sm btn-add">➕ Thêm bạn bè</button>
+              </div>
+            `;
+            card.querySelector(".btn-add").onclick = async () => {
+              await updateDoc(doc(db, "users", u.uid), { friendRequests: arrayUnion(me.uid) });
+              await pushNotification(u.uid, {
+                fromUid: me.uid,
+                fromName: latestMe.name,
+                fromAvatar: latestMe.avatar,
+                text: "đã gửi cho bạn lời mời kết bạn.",
+                link: "./friends.html"
+              });
+              showToast(`Đã gửi lời mời kết bạn tới ${u.name}!`);
+            };
+            sugGrid.appendChild(card);
+          });
+        });
+      }
+    });
+  </script>
+</body>
+</html>

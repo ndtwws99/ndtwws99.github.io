@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nhóm | Twin</title>
+  <meta name="description" content="Twin — Mạng xã hội kết nối bạn bè, chia sẻ khoảnh khắc, nhóm và trang." />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%232563eb'/%3E%3Cstop offset='100%25' stop-color='%2306b6d4'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='16' fill='url(%23g)'/%3E%3Cpath d='M16 20h32v8H36v22h-8V28H16z' fill='%23fff'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="./assets/css/twin.css" />
+</head>
+<body>
+  <header id="twin-header" class="twin-header"></header>
+
+  <main class="twin-main" style="max-width:1100px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+      <h1>Nhóm trên Twin</h1>
+      <button id="btn-open-create-group" class="twin-btn twin-btn-primary">➕ Tạo nhóm mới</button>
+    </div>
+
+    <div id="groups-grid" class="twin-cards-grid"></div>
+
+    <!-- Khu vực xem bài viết của nhóm đang chọn -->
+    <section id="group-detail-section" style="display:none;margin-top:24px;">
+      <div class="twin-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+          <div>
+            <h2 id="gd-name"></h2>
+            <p id="gd-desc" class="twin-post-meta"></p>
+          </div>
+          <button id="gd-close" class="twin-btn twin-btn-secondary twin-btn-sm">Đóng nhóm</button>
+        </div>
+        <div style="margin-top:14px;display:flex;gap:8px;">
+          <input id="gd-post-input" class="twin-input" placeholder="Viết bài thảo luận trong nhóm..." />
+          <button id="gd-post-btn" class="twin-btn twin-btn-primary">Đăng</button>
+        </div>
+      </div>
+      <div id="gd-posts"></div>
+    </section>
+  </main>
+
+  <!-- Modal tạo nhóm -->
+  <div class="twin-modal-backdrop" id="group-modal">
+    <div class="twin-modal">
+      <h2 style="margin-bottom:14px;">Tạo nhóm Twin mới</h2>
+      <form id="create-group-form" style="display:flex;flex-direction:column;gap:12px;">
+        <input id="cg-name" class="twin-input" placeholder="Tên nhóm (VD: Cộng đồng Công nghệ)" required />
+        <textarea id="cg-desc" class="twin-textarea" placeholder="Mô tả ngắn về nhóm..."></textarea>
+        <label class="twin-btn twin-btn-secondary twin-btn-sm" style="cursor:pointer;">
+          🖼️ Chọn ảnh bìa nhóm (tùy chọn)
+          <input id="cg-cover" type="file" accept="image/*" hidden />
+        </label>
+        <div style="display:flex;justify-content:flex-end;gap:8px;">
+          <button type="button" id="cg-cancel" class="twin-btn twin-btn-secondary">Hủy</button>
+          <button type="submit" class="twin-btn twin-btn-primary">Tạo nhóm</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="twin-chat-dock" class="twin-chat-dock"></div>
+  <div id="twin-toast-container" class="twin-toast-container"></div>
+  <footer id="twin-footer" class="twin-footer"></footer>
+
+  <script type="module">
+    import { initTwinPage } from "./assets/js/layout.js";
+    import { renderPostCard } from "./assets/js/post-ui.js";
+    import {
+      db,
+      collection,
+      doc,
+      addDoc,
+      updateDoc,
+      query,
+      where,
+      orderBy,
+      onSnapshot,
+      arrayUnion,
+      arrayRemove,
+      serverTimestamp,
+      uploadToCloudinary,
+      DEFAULT_AVATAR,
+      escapeHtml,
+      showToast
+    } from "./assets/js/firebase-service.js";
+
+    let me = null;
+    let activeGroup = null;
+    let unsubGroupPosts = null;
+
+    const modal = document.getElementById("group-modal");
+    document.getElementById("btn-open-create-group").onclick = () => modal.classList.add("open");
+    document.getElementById("cg-cancel").onclick = () => modal.classList.remove("open");
+    document.getElementById("gd-close").onclick = () => {
+      document.getElementById("group-detail-section").style.display = "none";
+      if (unsubGroupPosts) unsubGroupPosts();
+      activeGroup = null;
+    };
+
+    function openGroupDetail(g) {
+      activeGroup = g;
+      const sec = document.getElementById("group-detail-section");
+      sec.style.display = "block";
+      document.getElementById("gd-name").textContent = g.name;
+      document.getElementById("gd-desc").textContent = `${(g.members || []).length} thành viên · ${g.description || ""}`;
+      sec.scrollIntoView({ behavior: "smooth" });
+
+      if (unsubGroupPosts) unsubGroupPosts();
+      const q = query(collection(db, "posts"), where("groupId", "==", g.id), orderBy("createdAt", "desc"));
+      unsubGroupPosts = onSnapshot(q, (snap) => {
+        const list = document.getElementById("gd-posts");
+        list.innerHTML = "";
+        if (snap.empty) {
+          list.innerHTML = '<div class="twin-card" style="color:var(--twin-text-muted)">Chưa có bài viết nào trong nhóm này.</div>';
+          return;
+        }
+        snap.forEach((d) => list.appendChild(renderPostCard({ id: d.id, ...d.data() }, me)));
+      });
+    }
+
+    initTwinPage({
+      requireAuth: true,
+      onReady: (user) => {
+        me = user;
+        if (!me) return;
+
+        document.getElementById("create-group-form").onsubmit = async (e) => {
+          e.preventDefault();
+          const name = document.getElementById("cg-name").value.trim();
+          const description = document.getElementById("cg-desc").value.trim();
+          const coverFile = document.getElementById("cg-cover").files[0];
+          try {
+            let coverUrl = "";
+            if (coverFile) coverUrl = await uploadToCloudinary(coverFile);
+            await addDoc(collection(db, "groups"), {
+              name,
+              description,
+              coverUrl,
+              ownerUid: me.uid,
+              members: [me.uid],
+              createdAt: serverTimestamp()
+            });
+            e.target.reset();
+            modal.classList.remove("open");
+            showToast("Đã tạo nhóm mới trên Twin!");
+          } catch (err) {
+            showToast(err.message);
+          }
+        };
+
+        document.getElementById("gd-post-btn").onclick = async () => {
+          if (!activeGroup) return;
+          const input = document.getElementById("gd-post-input");
+          const content = input.value.trim();
+          if (!content) return;
+          input.value = "";
+          await addDoc(collection(db, "posts"), {
+            authorUid: me.uid,
+            authorName: me.name,
+            authorAvatar: me.avatar || DEFAULT_AVATAR,
+            groupId: activeGroup.id,
+            groupName: activeGroup.name,
+            content,
+            reactions: {},
+            comments: [],
+            createdAt: serverTimestamp()
+          });
+          showToast("Đã đăng bài trong nhóm!");
+        };
+
+        onSnapshot(query(collection(db, "groups"), orderBy("createdAt", "desc")), (snap) => {
+          const grid = document.getElementById("groups-grid");
+          grid.innerHTML = "";
+          if (snap.empty) {
+            grid.innerHTML = '<div class="twin-card">Chưa có nhóm nào. Hãy tạo nhóm đầu tiên!</div>';
+            return;
+          }
+          snap.forEach((d) => {
+            const g = { id: d.id, ...d.data() };
+            const joined = (g.members || []).includes(me.uid);
+            const card = document.createElement("div");
+            card.className = "twin-entity-card";
+            card.innerHTML = `
+              ${g.coverUrl ? `<img class="twin-entity-cover" src="${escapeHtml(g.coverUrl)}" alt="" />` : `<div class="twin-entity-cover"></div>`}
+              <div class="twin-entity-body">
+                <div style="font-weight:700;font-size:16px;">${escapeHtml(g.name)}</div>
+                <div class="twin-post-meta">${(g.members || []).length} thành viên</div>
+                <p style="font-size:13px;color:var(--twin-text-muted);flex:1;">${escapeHtml(g.description || "")}</p>
+                <div style="display:flex;gap:6px;">
+                  <button class="twin-btn ${joined ? "twin-btn-secondary" : "twin-btn-primary"} twin-btn-sm btn-join" style="flex:1;">${joined ? "Rời nhóm" : "Tham gia"}</button>
+                  <button class="twin-btn twin-btn-secondary twin-btn-sm btn-view">Xem</button>
+                </div>
+              </div>
+            `;
+            card.querySelector(".btn-join").onclick = async () => {
+              await updateDoc(doc(db, "groups", g.id), {
+                members: joined ? arrayRemove(me.uid) : arrayUnion(me.uid)
+              });
+            };
+            card.querySelector(".btn-view").onclick = () => openGroupDetail(g);
+            grid.appendChild(card);
+          });
+        });
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bảng tin | Twin</title>
+  <meta name="description" content="Twin — Mạng xã hội kết nối bạn bè, chia sẻ khoảnh khắc, nhóm và trang." />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%232563eb'/%3E%3Cstop offset='100%25' stop-color='%2306b6d4'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='16' fill='url(%23g)'/%3E%3Cpath d='M16 20h32v8H36v22h-8V28H16z' fill='%23fff'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="./assets/css/twin.css" />
+</head>
+<body>
+  <header id="twin-header" class="twin-header"></header>
+
+  <main class="twin-main">
+    <div class="twin-grid-3">
+      <!-- Cột trái -->
+      <aside class="twin-sidebar twin-left-col">
+        <a href="./profile.html" class="twin-side-item" id="side-me-link">
+          <img class="twin-avatar twin-avatar-sm" id="side-me-avatar" src="" alt="" />
+          <span id="side-me-name">Trang cá nhân</span>
+        </a>
+        <a href="./friends.html" class="twin-side-item">👥 Bạn bè</a>
+        <a href="./groups.html" class="twin-side-item">🏘️ Nhóm</a>
+        <a href="./pages.html" class="twin-side-item">🚩 Trang</a>
+        <a href="./saved.html" class="twin-side-item">🔖 Đã lưu</a>
+      </aside>
+
+      <!-- Cột giữa: Stories + Composer + Feed -->
+      <section>
+        <div class="twin-stories-row" id="twin-stories"></div>
+
+        <!-- Tạo bài viết -->
+        <div class="twin-card">
+          <div class="twin-composer-top">
+            <img class="twin-avatar" id="composer-avatar" src="" alt="" />
+            <textarea id="post-content" class="twin-textarea" placeholder="Bạn đang nghĩ gì trên Twin?"></textarea>
+          </div>
+          <div id="post-preview-wrap" style="margin-top:10px;display:none;">
+            <img id="post-preview-img" class="twin-post-image" alt="Xem trước" />
+          </div>
+          <div class="twin-composer-actions">
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+              <label class="twin-btn twin-btn-secondary twin-btn-sm" style="cursor:pointer;">
+                🖼️ Ảnh (Cloudinary)
+                <input id="post-image-file" type="file" accept="image/*" hidden />
+              </label>
+              <select id="post-feeling" class="twin-select" style="width:auto;padding:6px 10px;">
+                <option value="">😊 Cảm xúc...</option>
+                <option value="hạnh phúc 😊">😊 Hạnh phúc</option>
+                <option value="hào hứng 🤩">🤩 Hào hứng</option>
+                <option value="thư giãn 😌">😌 Thư giãn</option>
+                <option value="tự hào 💪">💪 Tự hào</option>
+                <option value="buồn nhẹ 😔">😔 Buồn nhẹ</option>
+              </select>
+            </div>
+            <button id="btn-publish-post" class="twin-btn twin-btn-primary">Đăng bài</button>
+          </div>
+        </div>
+
+        <div id="twin-feed"></div>
+      </section>
+
+      <!-- Cột phải: Liên hệ Twin Chat -->
+      <aside class="twin-sidebar twin-right-col">
+        <div class="twin-side-heading">Người liên hệ · Twin Chat</div>
+        <div id="twin-contacts"></div>
+      </aside>
+    </div>
+  </main>
+
+  <!-- Modal xem Story -->
+  <div class="twin-modal-backdrop" id="story-modal">
+    <div class="twin-modal" style="max-width:420px;padding:0;overflow:hidden;">
+      <div style="position:relative;">
+        <img id="story-modal-img" style="width:100%;max-height:70vh;object-fit:cover;" alt="Story" />
+        <div style="position:absolute;top:12px;left:12px;right:12px;display:flex;justify-content:space-between;align-items:center;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,0.8);">
+          <strong id="story-modal-author"></strong>
+          <button id="story-modal-close" class="twin-btn twin-btn-secondary twin-btn-sm">✕</button>
+        </div>
+      </div>
+      <div id="story-modal-caption" style="padding:14px;font-size:14px;"></div>
+    </div>
+  </div>
+
+  <!-- Input ẩn tạo story -->
+  <input id="story-file-input" type="file" accept="image/*" hidden />
+
+  <div id="twin-chat-dock" class="twin-chat-dock"></div>
+  <div id="twin-toast-container" class="twin-toast-container"></div>
+  <footer id="twin-footer" class="twin-footer"></footer>
+
+  <script type="module">
+    import { initTwinPage, openTwinChat } from "./assets/js/layout.js";
+    import { renderPostCard } from "./assets/js/post-ui.js";
+    import {
+      db,
+      collection,
+      addDoc,
+      query,
+      orderBy,
+      limit,
+      onSnapshot,
+      serverTimestamp,
+      uploadToCloudinary,
+      DEFAULT_AVATAR,
+      escapeHtml,
+      showToast
+    } from "./assets/js/firebase-service.js";
+
+    let me = null;
+    let allPosts = [];
+    let selectedFile = null;
+
+    const previewWrap = document.getElementById("post-preview-wrap");
+    const previewImg = document.getElementById("post-preview-img");
+    const fileInput = document.getElementById("post-image-file");
+
+    fileInput.onchange = () => {
+      selectedFile = fileInput.files[0] || null;
+      if (selectedFile) {
+        previewImg.src = URL.createObjectURL(selectedFile);
+        previewWrap.style.display = "block";
+      } else {
+        previewWrap.style.display = "none";
+      }
+    };
+
+    document.getElementById("story-modal-close").onclick = () => {
+      document.getElementById("story-modal").classList.remove("open");
+    };
+
+    function renderFeedList(filterText = "") {
+      const feed = document.getElementById("twin-feed");
+      feed.innerHTML = "";
+      const q = filterText.trim().toLowerCase();
+      const filtered = allPosts.filter((p) =>
+        !q ||
+        (p.content || "").toLowerCase().includes(q) ||
+        (p.authorName || "").toLowerCase().includes(q)
+      );
+      if (!filtered.length) {
+        feed.innerHTML = '<div class="twin-card" style="text-align:center;color:var(--twin-text-muted)">Chưa có bài viết nào. Hãy đăng bài đầu tiên trên Twin!</div>';
+        return;
+      }
+      filtered.forEach((p) => feed.appendChild(renderPostCard(p, me)));
+    }
+
+    initTwinPage({
+      requireAuth: true,
+      onReady: (user) => {
+        me = user;
+        if (!me) {
+          document.getElementById("twin-feed").innerHTML =
+            '<div class="twin-card">Hãy cấu hình Firebase trong <code>assets/js/config.js</code> và đăng nhập để trải nghiệm đầy đủ Twin.</div>';
+          return;
+        }
+
+        document.getElementById("side-me-name").textContent = me.name;
+        document.getElementById("side-me-avatar").src = me.avatar || DEFAULT_AVATAR;
+        document.getElementById("composer-avatar").src = me.avatar || DEFAULT_AVATAR;
+
+        // Global search filter
+        document.getElementById("twin-global-search")?.addEventListener("input", (e) => {
+          renderFeedList(e.target.value);
+        });
+
+        // Publish Post
+        document.getElementById("btn-publish-post").onclick = async () => {
+          const btn = document.getElementById("btn-publish-post");
+          const content = document.getElementById("post-content").value.trim();
+          const feeling = document.getElementById("post-feeling").value;
+          if (!content && !selectedFile) return showToast("Hãy nhập nội dung hoặc chọn ảnh.");
+          btn.disabled = true;
+          btn.textContent = "Đang đăng...";
+          try {
+            let imageUrl = "";
+            if (selectedFile) imageUrl = await uploadToCloudinary(selectedFile);
+            await addDoc(collection(db, "posts"), {
+              authorUid: me.uid,
+              authorName: me.name,
+              authorAvatar: me.avatar || DEFAULT_AVATAR,
+              content,
+              feeling,
+              imageUrl,
+              reactions: {},
+              comments: [],
+              createdAt: serverTimestamp()
+            });
+            document.getElementById("post-content").value = "";
+            document.getElementById("post-feeling").value = "";
+            selectedFile = null;
+            fileInput.value = "";
+            previewWrap.style.display = "none";
+            showToast("Đã đăng bài lên Twin!");
+          } catch (err) {
+            showToast(err.message || "Lỗi khi đăng bài.");
+          } finally {
+            btn.disabled = false;
+            btn.textContent = "Đăng bài";
+          }
+        };
+
+        // Stories realtime
+        const storyFile = document.getElementById("story-file-input");
+        storyFile.onchange = async () => {
+          const f = storyFile.files[0];
+          if (!f) return;
+          const caption = prompt("Nhập chú thích ngắn cho tin (Story):", "") || "";
+          showToast("Đang tải tin lên Cloudinary...");
+          try {
+            const imageUrl = await uploadToCloudinary(f);
+            await addDoc(collection(db, "stories"), {
+              authorUid: me.uid,
+              authorName: me.name,
+              authorAvatar: me.avatar || DEFAULT_AVATAR,
+              imageUrl,
+              caption,
+              createdAt: serverTimestamp()
+            });
+            showToast("Đã đăng tin mới!");
+          } catch (err) {
+            showToast(err.message);
+          } finally {
+            storyFile.value = "";
+          }
+        };
+
+        onSnapshot(query(collection(db, "stories"), orderBy("createdAt", "desc"), limit(15)), (snap) => {
+          const row = document.getElementById("twin-stories");
+          row.innerHTML = `
+            <div class="twin-story-card" id="btn-add-story">
+              <img class="story-bg" src="${escapeHtml(me.avatar || DEFAULT_AVATAR)}" alt="" />
+              <div class="twin-story-overlay">
+                <div style="width:36px;height:36px;border-radius:50%;background:var(--twin-primary);display:grid;place-items:center;font-size:22px;font-weight:700;">+</div>
+                <div class="twin-story-name">Tạo tin</div>
+              </div>
+            </div>
+          `;
+          document.getElementById("btn-add-story").onclick = () => storyFile.click();
+
+          snap.forEach((d) => {
+            const s = d.data();
+            const card = document.createElement("div");
+            card.className = "twin-story-card";
+            card.innerHTML = `
+              <img class="story-bg" src="${escapeHtml(s.imageUrl)}" alt="" />
+              <div class="twin-story-overlay">
+                <img class="twin-story-avatar" src="${escapeHtml(s.authorAvatar || DEFAULT_AVATAR)}" alt="" />
+                <div class="twin-story-name">${escapeHtml(s.authorName)}</div>
+              </div>
+            `;
+            card.onclick = () => {
+              document.getElementById("story-modal-img").src = s.imageUrl;
+              document.getElementById("story-modal-author").textContent = s.authorName;
+              document.getElementById("story-modal-caption").textContent = s.caption || "";
+              document.getElementById("story-modal").classList.add("open");
+            };
+            row.appendChild(card);
+          });
+        });
+
+        // Posts realtime
+        onSnapshot(query(collection(db, "posts"), orderBy("createdAt", "desc"), limit(40)), (snap) => {
+          allPosts = [];
+          snap.forEach((d) => allPosts.push({ id: d.id, ...d.data() }));
+          renderFeedList(document.getElementById("twin-global-search")?.value || "");
+        });
+
+        // Contacts realtime
+        onSnapshot(collection(db, "users"), (snap) => {
+          const contactsEl = document.getElementById("twin-contacts");
+          contactsEl.innerHTML = "";
+          snap.forEach((d) => {
+            const u = d.data();
+            if (u.uid === me.uid) return;
+            const btn = document.createElement("button");
+            btn.className = "twin-side-item";
+            btn.innerHTML = `
+              <img class="twin-avatar twin-avatar-sm" src="${escapeHtml(u.avatar || DEFAULT_AVATAR)}" alt="" />
+              <span>${escapeHtml(u.name)}</span>
+            `;
+            btn.onclick = () => openTwinChat(u);
+            contactsEl.appendChild(btn);
+          });
+        });
+      }
+    });
+  </script>
+</body>
+</html>
