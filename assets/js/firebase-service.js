@@ -346,13 +346,37 @@ export function toMillis(ts) {
 }
 
 export function formatTime(ts) {
-  if (!ts) return "Vừa xong";
-  const ms = toMillis(ts);
-  const diff = Math.floor((Date.now() - ms) / 1000);
-  if (diff < 60) return "Vừa xong";
-  if (diff < 3600) return `${Math.floor(diff / 60)} phút trước`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)} giờ trước`;
-  return new Date(ms).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" });
+  const ms = ts ? toMillis(ts) : Date.now();
+  if (!ms) return "Vừa xong";
+  const d = new Date(ms);
+  const now = new Date();
+  const hhmm = d.toLocaleTimeString("vi-VN", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false
+  });
+  const isSameDay =
+    d.getFullYear() === now.getFullYear() &&
+    d.getMonth() === now.getMonth() &&
+    d.getDate() === now.getDate();
+
+  if (isSameDay) {
+    const diff = Math.max(0, Math.floor((now.getTime() - ms) / 1000));
+    let rel = "Vừa xong";
+    if (diff >= 3600) {
+      rel = `${Math.floor(diff / 3600)} giờ trước`;
+    } else if (diff >= 60) {
+      rel = `${Math.floor(diff / 60)} phút trước`;
+    }
+    return `${rel} · ${hhmm} Hôm nay`;
+  }
+
+  const dateStr = d.toLocaleDateString("vi-VN", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric"
+  });
+  return `${hhmm} · ${dateStr}`;
 }
 
 export async function uploadToCloudinary(file) {

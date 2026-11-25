@@ -61,7 +61,8 @@ export const ICONS = {
   type: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V5h16v2"/><path d="M9 19h6"/><path d="M12 5v14"/></svg>`,
   sliders: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/><circle cx="9" cy="6" r="2" fill="currentColor"/><circle cx="15" cy="12" r="2" fill="currentColor"/><circle cx="10" cy="18" r="2" fill="currentColor"/></svg>`,
   eye: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12s3.5-6.5 9.5-6.5 9.5 6.5 9.5 6.5-3.5 6.5-9.5 6.5-9.5-6.5-9.5-6.5Z"/><circle cx="12" cy="12" r="2.8"/></svg>`,
-  lock: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="14.5" r="5.5"/><path d="M8.5 10.2V7.8a3.5 3.5 0 0 1 7 0v2.4"/><circle cx="12" cy="14.5" r="1.2" fill="currentColor"/></svg>`
+  lock: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="14.5" r="5.5"/><path d="M8.5 10.2V7.8a3.5 3.5 0 0 1 7 0v2.4"/><circle cx="12" cy="14.5" r="1.2" fill="currentColor"/></svg>`,
+  gemini: `<svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2.2c.6 4.4 3.4 7.8 7.8 8.8l2 .5-2 .5c-4.4 1-7.2 4.4-7.8 8.8l-.2 1-.2-1c-.6-4.4-3.4-7.8-7.8-8.8l-2-.5 2-.5c4.4-1 7.2-4.4 7.8-8.8l.2-1 .2 1Z"/></svg>`
 };
 
 let currentUserData = null;
@@ -147,10 +148,13 @@ export function applyWebPrefs(prefs = getWebPrefs()) {
   root.setAttribute("data-density", prefs.density || "comfortable");
 
   const isDark = prefs.theme === "dark";
-  const iconBtn = document.getElementById("twin-theme-btn");
-  if (iconBtn) iconBtn.innerHTML = isDark ? ICONS.sun : ICONS.moon;
-  const label = document.getElementById("twin-theme-label");
-  if (label) label.textContent = isDark ? "Chế độ Sáng" : "Chế độ Tối";
+  const menuThemeBtn = document.getElementById("twin-menu-theme");
+  if (menuThemeBtn) {
+    menuThemeBtn.innerHTML = `${isDark ? ICONS.sun : ICONS.moon}<span id="twin-theme-label">${isDark ? "Chế độ Sáng" : "Chế độ Tối"}</span>`;
+  } else {
+    const label = document.getElementById("twin-theme-label");
+    if (label) label.textContent = isDark ? "Chế độ Sáng" : "Chế độ Tối";
+  }
 }
 
 export function saveWebPrefs(partial, { syncCloud = true } = {}) {
@@ -560,26 +564,43 @@ function renderNotifList() {
     return;
   }
   listEl.innerHTML = generalItems
-    .slice(0, 15)
+    .slice(0, 18)
     .map(
       (n) => `
-    <a href="${escapeHtml(safeLink(n.link))}" data-nid="${n.id}" class="twin-dropdown-item ${n.read ? "" : "twin-notif-unread"}">
+    <a href="${escapeHtml(safeLink(n.link))}" data-nid="${escapeHtml(n.id)}" class="twin-dropdown-item twin-notif-item ${n.read ? "twin-notif-read" : "twin-notif-unread"}">
       <img class="twin-avatar twin-avatar-sm" src="${escapeHtml(n.fromAvatar || DEFAULT_AVATAR)}" alt="" />
-      <div>
+      <div style="min-width:0;flex:1;">
         <div style="font-size:13.5px;line-height:1.35;"><strong>${escapeHtml(n.fromName)}</strong> ${escapeHtml(n.text)}</div>
-        <div class="twin-post-meta">${formatTime(n.createdAt)}</div>
+        <div class="twin-post-meta twin-notif-time">${escapeHtml(formatTime(n.createdAt || n.createdAtMs))}</div>
       </div>
+      ${n.read ? "" : '<span class="twin-notif-dot" aria-label="Chưa đọc"></span>'}
     </a>`
     )
     .join("");
 
   listEl.querySelectorAll("a[data-nid]").forEach((a) => {
-    a.addEventListener("click", () => {
-      a.classList.remove("twin-notif-unread");
-      const target = latestNotifItems.find((item) => item.id === a.dataset.nid);
+    a.addEventListener("click", async (e) => {
+      const nid = a.dataset.nid;
+      const href = a.getAttribute("href");
+      const target = latestNotifItems.find((item) => item.id === nid);
+      const wasUnread = Boolean(target && !target.read);
+
       if (target) target.read = true;
+      a.classList.remove("twin-notif-unread");
+      a.classList.add("twin-notif-read");
+      a.querySelector(".twin-notif-dot")?.remove();
       updateAllBadges();
-      updateDoc(doc(db, "notifications", a.dataset.nid), { read: true }).catch(() => {});
+
+      if (wasUnread && db && nid) {
+        e.preventDefault();
+        try {
+          await Promise.race([
+            updateDoc(doc(db, "notifications", nid), { read: true }),
+            new Promise((resolve) => setTimeout(resolve, 350))
+          ]);
+        } catch {}
+        if (href) window.location.href = href;
+      }
     });
   });
 }
@@ -591,19 +612,15 @@ function renderLoggedInHeaderRight(user) {
   const admin = isUserAdmin(user);
 
   wrap.innerHTML = `
-    <a href="./messages.html" id="twin-chat-btn" class="twin-icon-btn" title="Tin nhắn Twin Chat" aria-label="Tin nhắn Twin Chat">
-      ${ICONS.chat}
-      <span class="twin-badge" id="twin-chat-badge" style="display:none">0</span>
-    </a>
+    <button class="twin-icon-btn twin-gemini-btn" id="twin-gemini-btn" title="Trợ lý AI Gemini" aria-label="Trợ lý AI Gemini">
+      ${ICONS.gemini}
+    </button>
     <button class="twin-icon-btn" id="twin-notif-btn" title="Thông báo" aria-label="Thông báo">
       ${ICONS.bell}
       <span class="twin-badge" id="twin-notif-badge" style="display:none">0</span>
     </button>
     <button class="twin-icon-btn" id="twin-settings-btn" title="Cài đặt tài khoản" aria-label="Cài đặt tài khoản">
       ${ICONS.settings}
-    </button>
-    <button class="twin-icon-btn" id="twin-theme-btn" title="Đổi giao diện Sáng / Tối" aria-label="Đổi giao diện Sáng / Tối">
-      ${isDark ? ICONS.sun : ICONS.moon}
     </button>
     <button id="twin-account-btn" style="display:flex;align-items:center;" title="Tài khoản" aria-label="Tài khoản">
       <img class="twin-avatar" src="${escapeHtml(user.avatar || DEFAULT_AVATAR)}" alt="Avatar" />
@@ -630,6 +647,7 @@ function renderLoggedInHeaderRight(user) {
         </div>
       </a>
       <hr style="border:none;border-top:1px solid var(--border);margin:8px 0;" />
+      <button class="twin-dropdown-item" id="twin-menu-gemini" style="color:var(--primary);">${ICONS.gemini}<span>Trợ lý AI Gemini</span></button>
       <button class="twin-dropdown-item" id="twin-menu-settings">${ICONS.settings}<span>Cài đặt tài khoản</span></button>
       ${admin ? `<button class="twin-dropdown-item" id="twin-menu-admin" style="color:var(--primary);">${ICONS.shield}<span>Quản trị Admin</span></button>` : ""}
       <a href="./saved.html" class="twin-dropdown-item">${ICONS.bookmark}<span>Bài viết đã lưu</span></a>
@@ -648,19 +666,13 @@ function renderLoggedInHeaderRight(user) {
     e.stopPropagation();
     accDrop.classList.remove("open");
     document.getElementById("twin-search-dropdown")?.classList.remove("open");
-    const willOpen = !notifDrop.classList.contains("open");
-    notifDrop.classList.toggle("open", willOpen);
-    if (willOpen) {
-      markAllGeneralNotificationsRead();
-    }
+    notifDrop.classList.toggle("open");
   };
 
   document.getElementById("twin-mark-all-read").onclick = (e) => {
     e.stopPropagation();
     markAllGeneralNotificationsRead();
-    document.querySelectorAll("#twin-notif-list .twin-notif-unread").forEach((el) => {
-      el.classList.remove("twin-notif-unread");
-    });
+    renderNotifList();
   };
 
   accBtn.onclick = (e) => {
@@ -696,6 +708,17 @@ function renderLoggedInHeaderRight(user) {
 
   renderNotifPermBar();
 
+  document.getElementById("twin-gemini-btn").onclick = (e) => {
+    e.stopPropagation();
+    notifDrop.classList.remove("open");
+    accDrop.classList.remove("open");
+    openGeminiAssistantModal();
+  };
+  document.getElementById("twin-menu-gemini").onclick = (e) => {
+    e.stopPropagation();
+    accDrop.classList.remove("open");
+    openGeminiAssistantModal();
+  };
   document.getElementById("twin-settings-btn").onclick = (e) => {
     e.stopPropagation();
     notifDrop.classList.remove("open");
@@ -715,7 +738,6 @@ function renderLoggedInHeaderRight(user) {
       openAccountSettingsModal("admin");
     };
   }
-  document.getElementById("twin-theme-btn").onclick = toggleTheme;
   document.getElementById("twin-menu-theme").onclick = toggleTheme;
   document.getElementById("twin-reset-pass-btn").onclick = (e) => {
     e.stopPropagation();
@@ -1500,7 +1522,9 @@ function renderNotifPermBar() {
 
 function showLiveNotificationPopup(n) {
   playNotifChime();
-  const targetBtn = document.getElementById(isMessageNotif(n) ? "twin-chat-btn" : "twin-notif-btn");
+  const targetBtn = isMessageNotif(n)
+    ? document.getElementById("twin-nav-chat-badge")?.parentElement
+    : document.getElementById("twin-notif-btn");
   if (targetBtn) {
     targetBtn.classList.remove("twin-bell-ring");
     void targetBtn.offsetWidth;
@@ -1522,7 +1546,7 @@ function showLiveNotificationPopup(n) {
       <img class="twin-avatar twin-avatar-sm" src="${escapeHtml(n.fromAvatar || DEFAULT_AVATAR)}" alt="" />
       <div style="min-width:0;flex:1;">
         <div style="font-size:13.5px;line-height:1.35;"><strong>${escapeHtml(n.fromName || "Ai đó")}</strong> ${escapeHtml(n.text || "")}</div>
-        <div class="twin-post-meta" style="font-size:11.5px;">Vừa xong · Nhấn để xem</div>
+        <div class="twin-post-meta" style="font-size:11.5px;">${escapeHtml(formatTime(n.createdAt || n.createdAtMs || Date.now()))} · Nhấn để xem</div>
       </div>
     </a>
     <button type="button" class="twin-notif-popup-close" aria-label="Đóng thông báo">✕</button>
@@ -1608,15 +1632,223 @@ function subscribeNotifications(uid) {
       freshUnread.slice(0, 2).forEach((n) => showLiveNotificationPopup(n));
     }
 
-    const notifDrop = document.getElementById("twin-notif-dropdown");
-    const isDropdownOpen = notifDrop && notifDrop.classList.contains("open");
-    if (isDropdownOpen && latestNotifItems.some((n) => !n.read && !isMessageNotif(n))) {
-      markAllGeneralNotificationsRead();
-    } else {
-      updateAllBadges();
-    }
+    updateAllBadges();
     renderNotifList();
   }, (err) => console.warn("Notifications:", err));
+}
+
+// ---- Gemini AI Assistant Modal (Server-Side /api/gemini/chat) ----
+const geminiHistory = [];
+let geminiBusy = false;
+
+function formatGeminiMessageHtml(rawText = "") {
+  const escaped = escapeHtml(rawText);
+  const codeBlocks = [];
+  let out = escaped.replace(/```(?:[a-zA-Z0-9_-]+)?\n([\s\S]*?)```/g, (_m, code) => {
+    const idx = codeBlocks.length;
+    codeBlocks.push(`<pre class="twin-gemini-pre"><code>${code.trim()}</code></pre>`);
+    return `@@CODEBLOCK_${idx}@@`;
+  });
+  out = out.replace(/`([^`\n]+)`/g, '<code class="twin-gemini-code">$1</code>');
+  out = out.replace(/\*\*([^*\n]+)\*\*/g, "<strong>$1</strong>");
+  out = out.replace(/\n/g, "<br>");
+  codeBlocks.forEach((html, idx) => {
+    out = out.replace(`@@CODEBLOCK_${idx}@@`, html);
+  });
+  return out;
+}
+
+export function openGeminiAssistantModal() {
+  let backdrop = document.getElementById("twin-gemini-modal");
+  if (!backdrop) {
+    backdrop = document.createElement("div");
+    backdrop.id = "twin-gemini-modal";
+    backdrop.className = "twin-modal-backdrop";
+    backdrop.innerHTML = `
+      <div class="twin-modal twin-gemini-modal" role="dialog" aria-modal="true" aria-labelledby="twin-gemini-title">
+        <div class="twin-gemini-head">
+          <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+            <span class="twin-gemini-orb">${ICONS.gemini}</span>
+            <div style="min-width:0;">
+              <h2 id="twin-gemini-title" style="font-size:18px !important;line-height:1.2;">AI Gemini</h2>
+              <div class="twin-post-meta" style="font-size:12px;">Trợ lý thông minh trên Twin</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <button type="button" id="twin-gemini-clear" class="twin-btn twin-btn-secondary twin-btn-sm" title="Cuộc trò chuyện mới">Mới</button>
+            <button type="button" id="twin-gemini-close" class="twin-icon-btn" style="width:34px;height:34px;" aria-label="Đóng">✕</button>
+          </div>
+        </div>
+
+        <div id="twin-gemini-messages" class="twin-gemini-messages"></div>
+
+        <form id="twin-gemini-form" class="twin-gemini-form">
+          <textarea id="twin-gemini-input" class="twin-input twin-gemini-input" rows="1" placeholder="Hỏi AI Gemini bất cứ điều gì..."></textarea>
+          <button type="submit" id="twin-gemini-send" class="twin-btn twin-btn-primary twin-gemini-send" aria-label="Gửi cho Gemini">Gửi</button>
+        </form>
+      </div>
+    `;
+    document.body.appendChild(backdrop);
+
+    const msgList = backdrop.querySelector("#twin-gemini-messages");
+    const form = backdrop.querySelector("#twin-gemini-form");
+    const input = backdrop.querySelector("#twin-gemini-input");
+    const sendBtn = backdrop.querySelector("#twin-gemini-send");
+
+    const quickPrompts = [
+      "Viết caption đăng bài ngắn gọn, cuốn hút cho cuối tuần",
+      "Tạo một bài đăng HTML đẹp giới thiệu bản thân trên Twin",
+      "Gợi ý 5 câu hỏi thú vị để trò chuyện với bạn bè",
+      "Tóm tắt 3 mẹo học tập tập trung hiệu quả"
+    ];
+
+    const renderMessages = () => {
+      const canInsertToComposer = Boolean(document.getElementById("post-content"));
+      if (!geminiHistory.length && !geminiBusy) {
+        msgList.innerHTML = `
+          <div class="twin-gemini-welcome">
+            <div class="twin-gemini-orb lg">${ICONS.gemini}</div>
+            <h3>Xin chào! Mình là AI Gemini</h3>
+            <p class="twin-post-meta">Hỏi đáp, viết bài đăng, tạo mã HTML hoặc gợi ý ý tưởng ngay trên Twin.</p>
+            <div class="twin-gemini-chips">
+              ${quickPrompts.map((p) => `<button type="button" class="twin-gemini-chip" data-prompt="${escapeHtml(p)}">${escapeHtml(p)}</button>`).join("")}
+            </div>
+          </div>
+        `;
+        msgList.querySelectorAll(".twin-gemini-chip").forEach((chip) => {
+          chip.onclick = () => {
+            input.value = chip.dataset.prompt || "";
+            form.requestSubmit();
+          };
+        });
+        return;
+      }
+
+      msgList.innerHTML = geminiHistory
+        .map(
+          (item, idx) => `
+          <div class="twin-gemini-msg ${item.role === "user" ? "user" : "model"}">
+            <div class="twin-gemini-bubble">${formatGeminiMessageHtml(item.text)}</div>
+            <div class="twin-gemini-meta">
+              <span>${escapeHtml(formatTime(item.ts))}</span>
+              ${
+                item.role === "model"
+                  ? `<div class="twin-gemini-actions">
+                      <button type="button" class="twin-gemini-act" data-copy="${idx}">Sao chép</button>
+                      ${canInsertToComposer ? `<button type="button" class="twin-gemini-act" data-insert="${idx}">Dán vào bài viết</button>` : ""}
+                    </div>`
+                  : ""
+              }
+            </div>
+          </div>`
+        )
+        .join("");
+
+      if (geminiBusy) {
+        const typing = document.createElement("div");
+        typing.className = "twin-gemini-msg model";
+        typing.innerHTML = `<div class="twin-gemini-bubble twin-gemini-typing"><span></span><span></span><span></span></div>`;
+        msgList.appendChild(typing);
+      }
+
+      msgList.querySelectorAll("[data-copy]").forEach((btn) => {
+        btn.onclick = async () => {
+          const item = geminiHistory[Number(btn.dataset.copy)];
+          if (!item) return;
+          try {
+            await navigator.clipboard.writeText(item.text);
+            showToast("Đã sao chép câu trả lời của Gemini!");
+          } catch {
+            showToast("Không thể sao chép tự động.");
+          }
+        };
+      });
+
+      msgList.querySelectorAll("[data-insert]").forEach((btn) => {
+        btn.onclick = () => {
+          const item = geminiHistory[Number(btn.dataset.insert)];
+          const postBox = document.getElementById("post-content");
+          const card = document.getElementById("twin-composer-card");
+          if (!item || !postBox) return;
+          if (card && !card.classList.contains("expanded")) {
+            card.classList.add("expanded");
+            postBox.rows = 3;
+          }
+          postBox.value = item.text;
+          postBox.dispatchEvent(new Event("input", { bubbles: true }));
+          backdrop.classList.remove("open");
+          postBox.focus();
+          showToast("Đã dán nội dung từ Gemini vào khung đăng bài!");
+        };
+      });
+
+      msgList.scrollTop = msgList.scrollHeight;
+    };
+
+    backdrop._renderGemini = renderMessages;
+
+    backdrop.querySelector("#twin-gemini-close").onclick = () => backdrop.classList.remove("open");
+    backdrop.querySelector("#twin-gemini-clear").onclick = () => {
+      if (geminiBusy) return;
+      geminiHistory.length = 0;
+      renderMessages();
+      input.focus();
+    };
+
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        form.requestSubmit();
+      }
+    });
+
+    form.onsubmit = async (e) => {
+      e.preventDefault();
+      if (geminiBusy) return;
+      const text = input.value.trim();
+      if (!text) return;
+
+      geminiHistory.push({ role: "user", text, ts: Date.now() });
+      input.value = "";
+      geminiBusy = true;
+      sendBtn.disabled = true;
+      renderMessages();
+
+      try {
+        const res = await fetch("/api/gemini/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            messages: geminiHistory.map((m) => ({ role: m.role, text: m.text }))
+          })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          throw new Error(data.error || "Không thể nhận phản hồi từ AI Gemini.");
+        }
+        geminiHistory.push({
+          role: "model",
+          text: String(data.reply || "").trim() || "Mình chưa có câu trả lời cho yêu cầu này.",
+          ts: Date.now()
+        });
+      } catch (err) {
+        geminiHistory.push({
+          role: "model",
+          text: `⚠️ ${err?.message || "Đã có lỗi xảy ra khi gọi AI Gemini."}`,
+          ts: Date.now()
+        });
+      } finally {
+        geminiBusy = false;
+        sendBtn.disabled = false;
+        renderMessages();
+        input.focus();
+      }
+    };
+  }
+
+  backdrop._renderGemini?.();
+  backdrop.classList.add("open");
+  setTimeout(() => backdrop.querySelector("#twin-gemini-input")?.focus(), 60);
 }
 
 export function openTwinChat(peer) {
@@ -1687,6 +1919,12 @@ export function openTwinChat(peer) {
         img.alt = "Ảnh";
         div.appendChild(img);
       }
+      const timeEl = document.createElement("div");
+      timeEl.style.fontSize = "11px";
+      timeEl.style.opacity = "0.74";
+      timeEl.style.marginTop = "4px";
+      timeEl.textContent = formatTime(m.createdAt);
+      div.appendChild(timeEl);
       msgWrap.appendChild(div);
     });
     msgWrap.scrollTop = msgWrap.scrollHeight;
