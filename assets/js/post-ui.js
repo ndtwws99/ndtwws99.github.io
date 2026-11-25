@@ -150,7 +150,7 @@ function ensureEditModal() {
             <span>Đổi / Thêm ảnh</span>
             <input id="ep-file-input" type="file" accept="image/*" hidden />
           </label>
-          <select id="ep-feeling" class="twin-select" style="width:auto;padding:6px 12px;border-radius:999px;font-size:13px;">
+          <select id="ep-feeling" class="twin-select" style="width:auto;padding:6px 12px;font-size:13px;">
             <option value="">Không có cảm xúc</option>
             <option value="hạnh phúc 😊">Hạnh phúc 😊</option>
             <option value="hào hứng 🤩">Hào hứng 🤩</option>
@@ -395,8 +395,8 @@ export function renderPostCard(post, currentUser) {
           .join("")}
       </div>
       <form class="twin-comment-form">
-        <input class="twin-input" type="text" placeholder="Viết bình luận..." required maxlength="1000" style="border-radius:999px;padding:8px 14px;" />
-        <button class="twin-btn twin-btn-primary twin-btn-sm" type="submit" style="border-radius:999px;">Gửi</button>
+        <input class="twin-input" type="text" placeholder="Viết bình luận..." required maxlength="1000" style="padding:8px 14px;" />
+        <button class="twin-btn twin-btn-primary twin-btn-sm" type="submit">Gửi</button>
       </form>
     </div>
   `;

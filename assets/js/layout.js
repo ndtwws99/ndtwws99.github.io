@@ -67,15 +67,15 @@ const searchDirectory = {
 const openChats = new Map();
 
 export function applySavedTheme() {
-  const saved = localStorage.getItem("twin_theme") || "light";
+  const saved = localStorage.getItem("twin_theme_ww") || "dark";
   document.documentElement.setAttribute("data-theme", saved);
 }
 
 export function toggleTheme() {
-  const cur = document.documentElement.getAttribute("data-theme") || "light";
+  const cur = document.documentElement.getAttribute("data-theme") || "dark";
   const next = cur === "dark" ? "light" : "dark";
   document.documentElement.setAttribute("data-theme", next);
-  localStorage.setItem("twin_theme", next);
+  localStorage.setItem("twin_theme_ww", next);
   const iconBtn = document.getElementById("twin-theme-btn");
   if (iconBtn) iconBtn.innerHTML = next === "dark" ? ICONS.sun : ICONS.moon;
   const label = document.getElementById("twin-theme-label");
@@ -769,8 +769,8 @@ export function openTwinChat(peer) {
     </div>
     <div class="twin-chat-messages"></div>
     <form class="twin-chat-form">
-      <input class="twin-input" type="text" placeholder="Nhắn tin..." required style="padding:8px 12px;border-radius:999px;" />
-      <button class="twin-btn twin-btn-primary twin-btn-sm" type="submit" style="border-radius:999px;">Gửi</button>
+      <input class="twin-input" type="text" placeholder="Nhắn tin..." required style="padding:8px 12px;" />
+      <button class="twin-btn twin-btn-primary twin-btn-sm" type="submit">Gửi</button>
     </form>
   `;
   dock.appendChild(box);
