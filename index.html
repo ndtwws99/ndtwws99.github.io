@@ -65,19 +65,40 @@
         <!-- Thanh Stories (Tin văn bản màu + Tin ảnh) -->
         <div class="twin-stories-row" id="twin-stories"></div>
 
+        <!-- Thông báo gọn cho chế độ Khách -->
+        <div id="twin-guest-composer-notice" class="twin-card twin-guest-card" style="display:none;">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+            <div>
+              <div style="font-weight:700;font-size:15px;">Bạn đang duyệt Twin ở chế độ Khách</div>
+              <p class="twin-post-meta" style="margin-top:2px;">Đăng nhập tài khoản để đăng bài, tạo tin, bình luận, thả cảm xúc và nhắn tin.</p>
+            </div>
+            <a href="./login.html" class="twin-btn twin-btn-primary twin-btn-sm">Đăng nhập ngay</a>
+          </div>
+        </div>
+
         <!-- Khung đăng bài gọn (tự động nhận diện văn bản & mã HTML) -->
         <div id="twin-composer-card" class="twin-card twin-composer-card">
           <div class="twin-composer-bar">
-            <div class="twin-feeling-pill" title="Chọn cảm xúc hiện tại">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M8.5 14.5s1.4 2 3.5 2 3.5-2 3.5-2"/><circle cx="9.2" cy="10" r="1" fill="currentColor" stroke="none"/><circle cx="14.8" cy="10" r="1" fill="currentColor" stroke="none"/></svg>
-              <select id="post-feeling" class="twin-feeling-select" aria-label="Chọn cảm xúc">
-                <option value="">Cảm xúc...</option>
-                <option value="hạnh phúc 😊">Hạnh phúc 😊</option>
-                <option value="hào hứng 🤩">Hào hứng 🤩</option>
-                <option value="thư giãn 😌">Thư giãn 😌</option>
-                <option value="tự hào 💪">Tự hào 💪</option>
-                <option value="buồn nhẹ 😔">Buồn nhẹ 😔</option>
-              </select>
+            <div class="twin-composer-pills">
+              <div class="twin-feeling-pill twin-privacy-pill" title="Quyền xem bài đăng">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M2.5 12h19"/><path d="M12 2.5a14.5 14.5 0 0 1 0 19 14.5 14.5 0 0 1 0-19Z"/></svg>
+                <select id="post-privacy" class="twin-feeling-select" aria-label="Quyền xem bài đăng">
+                  <option value="public">Công khai</option>
+                  <option value="friends">Bạn bè</option>
+                  <option value="private">Riêng tư</option>
+                </select>
+              </div>
+              <div class="twin-feeling-pill" title="Chọn cảm xúc hiện tại">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M8.5 14.5s1.4 2 3.5 2 3.5-2 3.5-2"/><circle cx="9.2" cy="10" r="1" fill="currentColor" stroke="none"/><circle cx="14.8" cy="10" r="1" fill="currentColor" stroke="none"/></svg>
+                <select id="post-feeling" class="twin-feeling-select" aria-label="Chọn cảm xúc">
+                  <option value="">Cảm xúc...</option>
+                  <option value="hạnh phúc 😊">Hạnh phúc 😊</option>
+                  <option value="hào hứng 🤩">Hào hứng 🤩</option>
+                  <option value="thư giãn 😌">Thư giãn 😌</option>
+                  <option value="tự hào 💪">Tự hào 💪</option>
+                  <option value="buồn nhẹ 😔">Buồn nhẹ 😔</option>
+                </select>
+              </div>
             </div>
             <div class="twin-composer-bar-right">
               <button type="button" id="comp-html-preview-btn" class="twin-btn twin-btn-secondary twin-btn-sm" style="display:none;">Xem trước HTML</button>
@@ -174,12 +195,22 @@
   <!-- Modal Tạo Tin (Tin văn bản + Tin ảnh + Video ngắn) -->
   <div class="twin-modal-backdrop" id="create-story-modal">
     <div class="twin-modal" style="max-width:470px;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-        <div>
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:12px;">
+        <div style="min-width:0;">
           <h2 style="font-size:19px;font-weight:800;line-height:1.2;">Tạo tin mới</h2>
-          <p id="cs-policy-hint" class="twin-post-meta" style="margin-top:2px;">Tin hiển thị trong 24 giờ · Video ngắn tối đa 60 giây</p>
+          <p id="cs-policy-hint" class="twin-post-meta" style="margin-top:3px;">Tin hiển thị trong 24 giờ · Video ngắn tối đa 60 giây</p>
         </div>
-        <button type="button" id="cs-close-btn" class="twin-icon-btn" style="width:32px;height:32px;">✕</button>
+        <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+          <div class="twin-feeling-pill twin-privacy-pill" title="Quyền xem tin">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M2.5 12h19"/><path d="M12 2.5a14.5 14.5 0 0 1 0 19 14.5 14.5 0 0 1 0-19Z"/></svg>
+            <select id="cs-privacy-select" class="twin-feeling-select" aria-label="Quyền xem tin">
+              <option value="public">Công khai</option>
+              <option value="friends">Bạn bè</option>
+              <option value="private">Riêng tư</option>
+            </select>
+          </div>
+          <button type="button" id="cs-close-btn" class="twin-icon-btn" style="width:32px;height:32px;">✕</button>
+        </div>
       </div>
 
       <div class="twin-seg-tabs" style="margin-bottom:14px;width:100%;display:grid;grid-template-columns:1fr 1fr 1fr;">
@@ -301,14 +332,33 @@
       </div>
       <div id="story-modal-caption" style="padding:12px 14px 4px;font-size:14px;display:none;"></div>
       <div class="twin-story-footer">
-        <div id="story-modal-like-summary" class="twin-post-meta" style="font-weight:600;min-width:0;">Hãy là người đầu tiên thả tim</div>
-        <button type="button" id="story-modal-like-btn" class="twin-story-like-btn" title="Thả tim tin này">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-          </svg>
-          <span id="story-modal-like-count">0</span>
-        </button>
+        <div id="story-modal-like-summary" class="twin-post-meta twin-story-stats-line" style="font-weight:600;min-width:0;flex:1;">0 tim · 0 chia sẻ · 0 lượt lưu</div>
+        <div class="twin-story-footer-actions">
+          <button type="button" id="story-replies-toggle" class="twin-btn twin-btn-secondary twin-btn-sm" style="display:none;">0 phản hồi</button>
+          <button type="button" id="story-modal-like-btn" class="twin-story-like-btn" title="Thả tim tin này" aria-label="Thả tim">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+            </svg>
+            <span id="story-modal-like-count">0</span>
+          </button>
+          <button type="button" id="story-modal-share-btn" class="twin-story-act-pill" title="Chia sẻ tin" aria-label="Chia sẻ tin">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7.5 7.5 4.5-4.5 4.5 4.5"/><path d="M5 13.5V18a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4.5"/></svg>
+            <span id="story-modal-share-count">0</span>
+          </button>
+          <button type="button" id="story-modal-save-btn" class="twin-story-act-pill" title="Lưu tin" aria-label="Lưu tin">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 4h11A1.5 1.5 0 0 1 19 5.5v15l-7-4-7 4v-15A1.5 1.5 0 0 1 6.5 4Z"/></svg>
+            <span id="story-modal-save-count">0</span>
+          </button>
+        </div>
       </div>
+      <form id="story-reply-form" class="twin-story-reply-form" style="display:none;">
+        <input id="story-reply-input" class="twin-input" type="text" maxlength="400" placeholder="Trả lời tin ngắn này..." />
+        <button type="submit" id="story-reply-send" class="twin-btn twin-btn-primary twin-btn-sm">Gửi</button>
+      </form>
+      <div id="story-guest-reply-hint" class="twin-guest-inline-note" style="display:none;margin:0 14px 12px;">
+        Chế độ Khách không thể thả tim hoặc trả lời tin. <a href="./login.html">Đăng nhập</a>
+      </div>
+      <div id="story-replies-drawer" class="twin-story-replies-drawer" style="display:none;"></div>
     </div>
   </div>
 
@@ -325,6 +375,7 @@
       deleteDoc,
       arrayUnion,
       arrayRemove,
+      increment,
       query,
       orderBy,
       limit,
@@ -339,7 +390,15 @@
       sanitizeHtml,
       containsHtmlMarkup,
       isUserAdmin,
+      isGuestUser,
+      requireMemberAction,
       renderAdminIconHtml,
+      getChatId,
+      getUserPresence,
+      renderPresenceBadgeHtml,
+      getStoryPrivacyMeta,
+      canViewStory,
+      canViewPost,
       STORY_BACKGROUNDS,
       getStoryBgCss,
       DEFAULT_AVATAR,
@@ -366,10 +425,13 @@
     let pendingFocusPost = null;
     let feedSnapshotLoaded = false;
     let storiesSnapshotLoaded = false;
+    let contactsList = [];
+    let storyPausedByReply = false;
 
     // ---- Collapsible & Unified Auto-HTML Post Composer ----
     const composerCard = document.getElementById("twin-composer-card");
     const compCollapseBtn = document.getElementById("comp-collapse-btn");
+    const postPrivacyEl = document.getElementById("post-privacy");
     const postFeelingEl = document.getElementById("post-feeling");
     const postContentEl = document.getElementById("post-content");
     const htmlPrevBtn = document.getElementById("comp-html-preview-btn");
@@ -528,6 +590,7 @@
     // ---- Story Creator Modal (Text, Image & Video ngắn max 60s) ----
     const createStoryModal = document.getElementById("create-story-modal");
     const csPolicyHint = document.getElementById("cs-policy-hint");
+    const csPrivacySelect = document.getElementById("cs-privacy-select");
     const csTabText = document.getElementById("cs-tab-text");
     const csTabImage = document.getElementById("cs-tab-image");
     const csTabVideo = document.getElementById("cs-tab-video");
@@ -715,6 +778,17 @@
     const storyImgEl = document.getElementById("story-modal-img");
     const storyVideoEl = document.getElementById("story-modal-video");
     const storyTextStageEl = document.getElementById("story-modal-text-stage");
+    const storyReplyForm = document.getElementById("story-reply-form");
+    const storyReplyInput = document.getElementById("story-reply-input");
+    const storyReplySendBtn = document.getElementById("story-reply-send");
+    const storyRepliesToggle = document.getElementById("story-replies-toggle");
+    const storyRepliesDrawer = document.getElementById("story-replies-drawer");
+    const storyGuestReplyHint = document.getElementById("story-guest-reply-hint");
+    const storyShareBtn = document.getElementById("story-modal-share-btn");
+    const storyShareCountEl = document.getElementById("story-modal-share-count");
+    const storySaveBtn = document.getElementById("story-modal-save-btn");
+    const storySaveCountEl = document.getElementById("story-modal-save-count");
+    let storySaveBusy = false;
 
     let storyTimerRaf = null;
     let storyStartPerf = 0;
@@ -760,7 +834,7 @@
     }
 
     function updateStoryPauseButton() {
-      const paused = storyPaused || storyHeldPaused;
+      const paused = storyPaused || storyHeldPaused || storyPausedByReply;
       storyPauseBtn.innerHTML = paused ? STORY_PLAY_SVG : STORY_PAUSE_SVG;
       storyPauseBtn.title = paused ? "Tiếp tục" : "Tạm dừng";
       storyPauseBtn.setAttribute("aria-label", paused ? "Tiếp tục" : "Tạm dừng");
@@ -795,8 +869,10 @@
       stopStoryTimer();
       stopStoryVideoPlayback();
       storyPaused = false;
+      storyPausedByReply = false;
       storyElapsedMs = 0;
       viewingStory = null;
+      if (storyRepliesDrawer) storyRepliesDrawer.style.display = "none";
       storyModal.classList.remove("open");
     }
 
@@ -828,7 +904,7 @@
       updateStoryPauseButton();
 
       if (isVideoStory(viewingStory)) {
-        if (storyPaused || storyHeldPaused) {
+        if (storyPaused || storyHeldPaused || storyPausedByReply) {
           try { storyVideoEl.pause(); } catch {}
           return;
         }
@@ -842,7 +918,7 @@
             stopStoryTimer();
             return;
           }
-          if (storyPaused || storyHeldPaused) {
+          if (storyPaused || storyHeldPaused || storyPausedByReply) {
             storyTimerRaf = null;
             return;
           }
@@ -855,7 +931,7 @@
         return;
       }
 
-      if (storyPaused || storyHeldPaused) {
+      if (storyPaused || storyHeldPaused || storyPausedByReply) {
         updateActiveProgressFill(storyElapsedMs / STORY_AUTO_ADVANCE_MS);
         return;
       }
@@ -866,7 +942,7 @@
           stopStoryTimer();
           return;
         }
-        if (storyPaused || storyHeldPaused) {
+        if (storyPaused || storyHeldPaused || storyPausedByReply) {
           storyTimerRaf = null;
           return;
         }
@@ -1021,7 +1097,10 @@
     function renderStoryLikeState(s) {
       if (!s) return;
       const likes = Array.isArray(s.likes) ? s.likes : [];
-      const liked = Boolean(me && likes.includes(me.uid));
+      const savedBy = Array.isArray(s.savedBy) ? s.savedBy : [];
+      const sharesCount = Number(s.sharesCount) || 0;
+      const liked = Boolean(me && !isGuestUser(me) && likes.includes(me.uid));
+      const saved = Boolean(me && !isGuestUser(me) && savedBy.includes(me.uid));
       const count = likes.length;
 
       storyLikeBtn.classList.toggle("liked", liked);
@@ -1029,15 +1108,15 @@
       storyLikeBtn.title = liked ? "Bỏ thả tim" : "Thả tim tin này";
       storyLikeCountEl.textContent = String(count);
 
-      if (count === 0) {
-        storyLikeSummaryEl.textContent = "Hãy là người đầu tiên thả tim";
-      } else if (count === 1) {
-        storyLikeSummaryEl.textContent = liked ? "Bạn đã thả tim tin này" : "1 người đã thả tim";
-      } else {
-        storyLikeSummaryEl.textContent = liked
-          ? `Bạn và ${count - 1} người khác đã thả tim`
-          : `${count} người đã thả tim`;
+      if (storyShareCountEl) storyShareCountEl.textContent = String(sharesCount);
+      if (storySaveBtn) {
+        storySaveBtn.classList.toggle("saved", saved);
+        storySaveBtn.setAttribute("aria-pressed", saved ? "true" : "false");
+        storySaveBtn.title = saved ? "Bỏ lưu tin" : "Lưu tin";
       }
+      if (storySaveCountEl) storySaveCountEl.textContent = String(savedBy.length);
+
+      storyLikeSummaryEl.textContent = `${count} tim · ${sharesCount} chia sẻ · ${savedBy.length} lượt lưu`;
     }
 
     function playStoryHeartEffect() {
@@ -1051,7 +1130,8 @@
     }
 
     async function toggleStoryLike({ onlyLike = false } = {}) {
-      if (!viewingStory || !me || storyLikeBusy) return;
+      if (!viewingStory || storyLikeBusy) return;
+      if (!requireMemberAction(me, "thả tim tin")) return;
       const prevLikes = Array.isArray(viewingStory.likes) ? [...viewingStory.likes] : [];
       const alreadyLiked = prevLikes.includes(me.uid);
 
@@ -1098,12 +1178,208 @@
     storyVideoEl.ondblclick = () => toggleStoryLike({ onlyLike: true });
     storyTextStageEl.ondblclick = () => toggleStoryLike({ onlyLike: true });
 
+    if (storyShareBtn) {
+      storyShareBtn.onclick = async (e) => {
+        e.stopPropagation();
+        if (!viewingStory) return;
+        const url = new URL("./index.html", window.location.href);
+        url.search = `?story=${encodeURIComponent(viewingStory.id)}`;
+        try {
+          await navigator.clipboard.writeText(url.href);
+          showToast("Đã sao chép liên kết tin!");
+        } catch {
+          window.prompt("Sao chép liên kết tin:", url.href);
+        }
+        if (me && !isGuestUser(me)) {
+          const nextShares = (Number(viewingStory.sharesCount) || 0) + 1;
+          viewingStory = { ...viewingStory, sharesCount: nextShares };
+          renderStoryLikeState(viewingStory);
+          updateDoc(doc(db, "stories", viewingStory.id), { sharesCount: increment(1) }).catch(() => {});
+        }
+      };
+    }
+
+    if (storySaveBtn) {
+      storySaveBtn.onclick = async (e) => {
+        e.stopPropagation();
+        if (!viewingStory || storySaveBusy) return;
+        if (!requireMemberAction(me, "lưu tin")) return;
+        const prevSavedBy = Array.isArray(viewingStory.savedBy) ? [...viewingStory.savedBy] : [];
+        const alreadySaved = prevSavedBy.includes(me.uid);
+        const nextSavedBy = alreadySaved
+          ? prevSavedBy.filter((uid) => uid !== me.uid)
+          : [...prevSavedBy, me.uid];
+        viewingStory = { ...viewingStory, savedBy: nextSavedBy };
+        renderStoryLikeState(viewingStory);
+        storySaveBusy = true;
+        try {
+          await updateDoc(doc(db, "stories", viewingStory.id), {
+            savedBy: alreadySaved ? arrayRemove(me.uid) : arrayUnion(me.uid)
+          });
+          updateDoc(doc(db, "users", me.uid), {
+            savedStories: alreadySaved ? arrayRemove(viewingStory.id) : arrayUnion(viewingStory.id)
+          }).catch(() => {});
+          showToast(alreadySaved ? "Đã bỏ lưu tin." : "Đã lưu tin!");
+        } catch (err) {
+          viewingStory = { ...viewingStory, savedBy: prevSavedBy };
+          renderStoryLikeState(viewingStory);
+          showToast(friendlyError(err));
+        } finally {
+          storySaveBusy = false;
+        }
+      };
+    }
+
+    function renderStoryRepliesUi(s) {
+      if (!s) return;
+      const guest = isGuestUser(me);
+      const isOwn = Boolean(!guest && me && s.authorUid === me.uid);
+      const canSeeReplies = Boolean(!guest && me && (isOwn || isUserAdmin(me)));
+      const replies = Array.isArray(s.replies) ? s.replies : [];
+
+      if (storyReplyForm) {
+        storyReplyForm.style.display = !guest && me && !isOwn ? "flex" : "none";
+      }
+      if (storyGuestReplyHint) {
+        storyGuestReplyHint.style.display = guest ? "block" : "none";
+      }
+      if (storyRepliesToggle) {
+        if (canSeeReplies && replies.length > 0) {
+          storyRepliesToggle.style.display = "inline-flex";
+          storyRepliesToggle.textContent = `${replies.length} phản hồi`;
+        } else {
+          storyRepliesToggle.style.display = "none";
+          if (storyRepliesDrawer) storyRepliesDrawer.style.display = "none";
+        }
+      }
+      if (storyRepliesDrawer && canSeeReplies) {
+        const sorted = [...replies].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+        storyRepliesDrawer.innerHTML = sorted.length
+          ? sorted
+              .map(
+                (r) => `
+              <div class="twin-story-reply-item">
+                <a href="./profile.html?uid=${encodeURIComponent(r.authorUid || "")}" class="twin-avatar-link" title="Xem trang cá nhân">
+                  <img class="twin-avatar twin-avatar-sm" src="${escapeHtml(r.authorAvatar || DEFAULT_AVATAR)}" alt="" />
+                </a>
+                <div style="min-width:0;flex:1;">
+                  <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;">
+                    <a href="./profile.html?uid=${encodeURIComponent(r.authorUid || "")}" class="twin-name-with-badge" style="font-weight:700;font-size:13px;"><span>${escapeHtml(r.authorName || "Thành viên")}</span>${renderAdminIconHtml(r.authorUid)}</a>
+                    <span class="twin-post-meta" style="font-size:11px;">${escapeHtml(formatTime(r.createdAt || Date.now()))}</span>
+                  </div>
+                  <div style="font-size:13.5px;margin-top:2px;word-break:break-word;">${escapeHtml(r.text || "")}</div>
+                </div>
+                ${r.authorUid && r.authorUid !== me.uid ? `<a href="./messages.html?uid=${encodeURIComponent(r.authorUid)}" class="twin-btn twin-btn-secondary twin-btn-sm" style="flex-shrink:0;">Nhắn tin</a>` : ""}
+              </div>`
+              )
+              .join("")
+          : '<div class="twin-post-meta" style="padding:6px 2px;">Chưa có phản hồi nào.</div>';
+      }
+    }
+
+    if (storyRepliesToggle) {
+      storyRepliesToggle.onclick = (e) => {
+        e.stopPropagation();
+        if (!storyRepliesDrawer) return;
+        const willOpen = storyRepliesDrawer.style.display === "none";
+        storyRepliesDrawer.style.display = willOpen ? "flex" : "none";
+        storyPausedByReply = willOpen;
+        if (willOpen) {
+          if (storyTimerRaf !== null) {
+            cancelAnimationFrame(storyTimerRaf);
+            storyTimerRaf = null;
+          }
+          if (isVideoStory(viewingStory)) try { storyVideoEl.pause(); } catch {}
+          updateStoryPauseButton();
+        } else if (!storyPaused && storyModal.classList.contains("open") && viewingStory) {
+          startStoryTimer(false);
+        }
+      };
+    }
+
+    if (storyReplyInput) {
+      storyReplyInput.addEventListener("focus", () => {
+        storyPausedByReply = true;
+        if (storyTimerRaf !== null) {
+          cancelAnimationFrame(storyTimerRaf);
+          storyTimerRaf = null;
+        }
+        if (isVideoStory(viewingStory)) try { storyVideoEl.pause(); } catch {}
+        updateStoryPauseButton();
+      });
+      storyReplyInput.addEventListener("blur", () => {
+        if (storyRepliesDrawer && storyRepliesDrawer.style.display !== "none") return;
+        storyPausedByReply = false;
+        updateStoryPauseButton();
+        if (!storyPaused && storyModal.classList.contains("open") && viewingStory) {
+          startStoryTimer(false);
+        }
+      });
+    }
+
+    if (storyReplyForm) {
+      storyReplyForm.onsubmit = async (e) => {
+        e.preventDefault();
+        if (!viewingStory) return;
+        if (!requireMemberAction(me, "trả lời tin ngắn")) return;
+        const text = storyReplyInput.value.trim();
+        if (!text) return;
+        storyReplySendBtn.disabled = true;
+        const targetStory = viewingStory;
+        const previewText = (targetStory.text || targetStory.caption || "").trim().slice(0, 80);
+        const replyItem = {
+          id: `${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+          authorUid: me.uid,
+          authorName: me.name,
+          authorAvatar: me.avatar || DEFAULT_AVATAR,
+          text,
+          createdAt: Date.now()
+        };
+        try {
+          if (targetStory.authorUid && targetStory.authorUid !== me.uid) {
+            const chatId = getChatId(me.uid, targetStory.authorUid);
+            await addDoc(collection(db, "messages", chatId, "items"), {
+              senderUid: me.uid,
+              text,
+              storyReply: {
+                storyId: targetStory.id,
+                type: targetStory.type || (isVideoStory(targetStory) ? "video" : "image"),
+                previewText
+              },
+              createdAt: serverTimestamp()
+            });
+            pushNotification(targetStory.authorUid, {
+              fromUid: me.uid,
+              fromName: me.name,
+              fromAvatar: me.avatar || DEFAULT_AVATAR,
+              type: "message",
+              storyId: targetStory.id,
+              text: `đã trả lời tin ngắn của bạn: "${text.slice(0, 45)}"`,
+              link: `./messages.html?uid=${encodeURIComponent(me.uid)}`
+            }).catch(() => {});
+          }
+          await updateDoc(doc(db, "stories", targetStory.id), {
+            replies: arrayUnion(replyItem)
+          }).catch(() => {});
+          storyReplyInput.value = "";
+          storyReplyInput.blur();
+          showToast("Đã gửi phản hồi tin ngắn!");
+        } catch (err) {
+          showToast(friendlyError(err));
+        } finally {
+          storyReplySendBtn.disabled = false;
+        }
+      };
+    }
+
     function openStoryViewer(s) {
       stopStoryTimer();
       stopStoryVideoPlayback();
+      storyPausedByReply = false;
       viewingStory = s;
       const capEl = document.getElementById("story-modal-caption");
       const delBtn = document.getElementById("story-modal-del");
+      if (storyRepliesDrawer) storyRepliesDrawer.style.display = "none";
 
       const authorLink = document.getElementById("story-modal-author-link");
       if (authorLink) {
@@ -1111,8 +1387,9 @@
       }
       document.getElementById("story-modal-avatar").src = s.authorAvatar || DEFAULT_AVATAR;
       document.getElementById("story-modal-author").innerHTML = `<span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(s.authorName || "Thành viên")}</span>${renderAdminIconHtml(s.authorUid)}`;
-      document.getElementById("story-modal-time").textContent = formatTime(s.createdAt);
-      delBtn.style.display = me && (s.authorUid === me.uid || isUserAdmin(me)) ? "grid" : "none";
+      const privMeta = getStoryPrivacyMeta(s.privacy);
+      document.getElementById("story-modal-time").textContent = `${formatTime(s.createdAt)} · ${privMeta.label}`;
+      delBtn.style.display = me && !isGuestUser(me) && (s.authorUid === me.uid || isUserAdmin(me)) ? "grid" : "none";
       storyHeartBurstEl.classList.remove("burst");
 
       if (isVideoStory(s)) {
@@ -1152,6 +1429,7 @@
         }
       }
       renderStoryLikeState(s);
+      renderStoryRepliesUi(s);
       const activeIdx = getCurrentStoryIndex();
       renderStoryProgressBars(activeIdx, 0);
       updateStoryNavButtons(activeIdx);
@@ -1217,6 +1495,7 @@
 
       const filtered = allPosts
         .filter((p) => {
+          if (!canViewPost(p, me)) return false;
           if (activeFilter === "pinned" && !p.pinned) return false;
           if (activeFilter === "photo" && !p.imageUrl) return false;
           if (activeFilter === "video" && !p.videoUrl) return false;
@@ -1401,6 +1680,7 @@
     });
 
     function canPublishStoryNow() {
+      if (!requireMemberAction(me, "đăng tin")) return false;
       const cfg = getSiteSettings();
       if (isUserAdmin(me)) return true;
       if (cfg.readOnlyMode) {
@@ -1414,33 +1694,47 @@
       return true;
     }
 
+    function getSelectedStoryPrivacyPayload() {
+      const privacy = csPrivacySelect?.value || "public";
+      return {
+        privacy,
+        allowedFriendUids: privacy === "friends" && Array.isArray(me?.friends) ? me.friends : []
+      };
+    }
+
     function renderStoriesRow() {
       const row = document.getElementById("twin-stories");
       if (!row || !me) return;
+      const guest = isGuestUser(me);
       const cfg = getSiteSettings();
       const expiryHours = cfg.storyDurationHours || 24;
       const cutoffMs = Date.now() - expiryHours * 60 * 60 * 1000;
 
-      row.innerHTML = `
-        <div class="twin-story-card" id="btn-add-story">
-          <img class="story-bg" src="${escapeHtml(me.avatar || DEFAULT_AVATAR)}" alt="" />
-          <div class="twin-story-overlay">
-            <div class="twin-story-plus"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
-            <div class="twin-story-name">Tạo tin</div>
+      if (!guest) {
+        row.innerHTML = `
+          <div class="twin-story-card" id="btn-add-story">
+            <img class="story-bg" src="${escapeHtml(me.avatar || DEFAULT_AVATAR)}" alt="" />
+            <div class="twin-story-overlay">
+              <div class="twin-story-plus"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
+              <div class="twin-story-name">Tạo tin</div>
+            </div>
           </div>
-        </div>
-      `;
-      document.getElementById("btn-add-story").onclick = () => {
-        if (!canPublishStoryNow()) return;
-        syncSitePolicyUI({ skipStories: true });
-        createStoryModal.classList.add("open");
-      };
+        `;
+        document.getElementById("btn-add-story").onclick = () => {
+          if (!canPublishStoryNow()) return;
+          syncSitePolicyUI({ skipStories: true });
+          createStoryModal.classList.add("open");
+        };
+      } else {
+        row.innerHTML = "";
+      }
 
       const prevViewingIdx = viewingStory ? getCurrentStoryIndex() : -1;
       storiesById.clear();
       storyOrder = [];
       rawStoriesList.forEach((s) => {
         if (s.createdAt && toMillis(s.createdAt) < cutoffMs) return;
+        if (!canViewStory(s, me)) return;
         const vidStory = isVideoStory(s);
         const isTextStory = !vidStory && (s.type === "text" || (!s.imageUrl && s.text));
         if (!vidStory && !isTextStory && !s.imageUrl) return;
@@ -1450,6 +1744,10 @@
         const likesCount = Array.isArray(s.likes) ? s.likes.length : 0;
         const likesBadge = likesCount > 0
           ? `<span class="twin-story-likes-badge">❤️ ${likesCount}</span>`
+          : "";
+        const privMode = s.privacy || "public";
+        const privBadge = privMode !== "public"
+          ? `<span class="twin-story-privacy-badge">${escapeHtml(getStoryPrivacyMeta(privMode).label)}</span>`
           : "";
 
         const authorHref = s.authorUid ? `./profile.html?uid=${encodeURIComponent(s.authorUid)}` : "./profile.html";
@@ -1467,6 +1765,7 @@
                 : `<video class="story-bg" src="${escapeHtml(s.videoUrl)}" muted playsinline preload="metadata"></video>`
             }
             <span class="twin-story-video-pill"><svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 4 20 12 6 20 6 4"/></svg>${escapeHtml(durLabel)}</span>
+            ${privBadge}
             ${likesBadge}
             <div class="twin-story-overlay">
               ${avatarAnchorHtml}
@@ -1477,6 +1776,7 @@
           card.style.background = getStoryBgCss(s.bgId || s.bgCss);
           card.innerHTML = `
             <div class="twin-story-text-thumb ${escapeHtml(s.fontClass || "")}">${escapeHtml((s.text || "").slice(0, 75))}</div>
+            ${privBadge}
             ${likesBadge}
             <div class="twin-story-overlay">
               ${avatarAnchorHtml}
@@ -1486,6 +1786,7 @@
         } else {
           card.innerHTML = `
             <img class="story-bg" src="${escapeHtml(s.imageUrl)}" alt="" />
+            ${privBadge}
             ${likesBadge}
             <div class="twin-story-overlay">
               ${avatarAnchorHtml}
@@ -1500,11 +1801,18 @@
         row.appendChild(card);
       });
 
+      if (guest && storyOrder.length === 0) {
+        row.style.display = "none";
+      } else {
+        row.style.display = "";
+      }
+
       if (storyModal.classList.contains("open") && viewingStory) {
         const latest = storiesById.get(viewingStory.id);
         if (latest) {
           viewingStory = latest;
           renderStoryLikeState(latest);
+          renderStoryRepliesUi(latest);
           const idx = getCurrentStoryIndex();
           if (!isVideoStory(latest)) {
             renderStoryProgressBars(idx, storyElapsedMs / STORY_AUTO_ADVANCE_MS);
@@ -1531,16 +1839,75 @@
       }
     }
 
+    function renderContactsList() {
+      const contactsEl = document.getElementById("twin-contacts");
+      if (!contactsEl || !me) return;
+      const list = contactsList
+        .filter((u) => u && u.uid && u.uid !== me.uid)
+        .sort((a, b) => {
+          const pa = getUserPresence(a);
+          const pb = getUserPresence(b);
+          if (pb.online !== pa.online) return pb.online ? 1 : -1;
+          return (pb.lastActiveMs || 0) - (pa.lastActiveMs || 0);
+        });
+      contactsEl.innerHTML = "";
+      if (!list.length) {
+        contactsEl.innerHTML = '<div class="twin-post-meta" style="padding:8px 10px;">Chưa có người liên hệ.</div>';
+        return;
+      }
+      list.forEach((u) => {
+        const p = getUserPresence(u);
+        const row = document.createElement("div");
+        row.className = "twin-side-item";
+        row.setAttribute("role", "button");
+        row.tabIndex = 0;
+        row.style.cursor = "pointer";
+        row.innerHTML = `
+          <a class="twin-avatar-link twin-presence-wrap" href="./profile.html?uid=${encodeURIComponent(u.uid)}" title="Xem trang cá nhân">
+            <img class="twin-avatar twin-avatar-sm" src="${escapeHtml(u.avatar || DEFAULT_AVATAR)}" alt="" />
+            ${renderPresenceBadgeHtml(u)}
+          </a>
+          <div class="twin-contact-meta">
+            <span class="twin-name-with-badge" style="min-width:0;">
+              <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(u.name)}</span>${renderAdminIconHtml(u)}
+            </span>
+            ${p.label ? `<span class="twin-presence-text ${p.online ? "online" : ""}">${escapeHtml(p.label)}</span>` : ""}
+          </div>
+        `;
+        row.querySelector(".twin-avatar-link")?.addEventListener("click", (e) => {
+          e.stopPropagation();
+        });
+        row.onclick = () => openTwinChat(u);
+        row.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            openTwinChat(u);
+          }
+        });
+        contactsEl.appendChild(row);
+      });
+    }
+
     initTwinPage({
       requireAuth: true,
       onReady: (user) => {
         me = user;
         if (!me) return;
+        const guest = isGuestUser(me);
 
         const sideMeName = document.getElementById("side-me-name");
         if (sideMeName) {
           sideMeName.classList.add("twin-name-with-badge");
-          sideMeName.innerHTML = `<span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(me.name)}</span>${renderAdminIconHtml(me)}`;
+          sideMeName.innerHTML = guest
+            ? `<span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Khách (Đăng nhập)</span>`
+            : `<span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(me.name)}</span>${renderAdminIconHtml(me)}`;
+        }
+        if (guest) {
+          const sideProfileLink = document.querySelector(".twin-left-col a[href='./profile.html']");
+          if (sideProfileLink) sideProfileLink.setAttribute("href", "./login.html");
+          composerCard.style.display = "none";
+          const guestNotice = document.getElementById("twin-guest-composer-notice");
+          if (guestNotice) guestNotice.style.display = "block";
         }
         document.getElementById("side-me-avatar").src = me.avatar || DEFAULT_AVATAR;
         document.getElementById("composer-avatar").src = me.avatar || DEFAULT_AVATAR;
@@ -1554,6 +1921,7 @@
 
         // Publish Post (auto-detect plain text vs HTML markup + image / video)
         document.getElementById("btn-publish-post").onclick = async () => {
+          if (!requireMemberAction(me, "đăng bài viết")) return;
           const cfg = getSiteSettings();
           if (cfg.readOnlyMode && !isUserAdmin(me)) {
             return showToast("Hệ thống đang ở chế độ chỉ đọc. Chỉ Admin được đăng bài mới.");
@@ -1596,6 +1964,7 @@
               videoPoster = uploaded.poster || "";
             }
             const isHtml = canUseHtmlPosts() && containsHtmlMarkup(content);
+            const privacy = postPrivacyEl?.value || "public";
             await addDoc(collection(db, "posts"), {
               authorUid: me.uid,
               authorName: me.name,
@@ -1603,6 +1972,8 @@
               content,
               isHtml,
               feeling,
+              privacy,
+              allowedFriendUids: privacy === "friends" && Array.isArray(me.friends) ? me.friends : [],
               imageUrl,
               videoUrl,
               videoType,
@@ -1611,10 +1982,13 @@
               pinned: false,
               reactions: {},
               comments: [],
+              savedBy: [],
+              sharesCount: 0,
               createdAt: serverTimestamp()
             });
             postContentEl.value = "";
             postFeelingEl.value = "";
+            if (postPrivacyEl) postPrivacyEl.value = "public";
             syncComposerHtmlPreview();
             htmlPrevWrap.style.display = "none";
             clearComposerMedia();
@@ -1649,7 +2023,11 @@
               fontClass: csFontSelect.value,
               imageUrl: "",
               caption: "",
+              ...getSelectedStoryPrivacyPayload(),
               likes: [],
+              replies: [],
+              savedBy: [],
+              sharesCount: 0,
               createdAt: serverTimestamp()
             });
             csTextInput.value = "";
@@ -1680,7 +2058,11 @@
               authorAvatar: me.avatar || DEFAULT_AVATAR,
               imageUrl,
               caption: csImgCaption.value.trim(),
+              ...getSelectedStoryPrivacyPayload(),
               likes: [],
+              replies: [],
+              savedBy: [],
+              sharesCount: 0,
               createdAt: serverTimestamp()
             });
             selectedStoryFile = null;
@@ -1737,7 +2119,11 @@
               duration: finalDur,
               imageUrl: "",
               caption: csVidCaption.value.trim(),
+              ...getSelectedStoryPrivacyPayload(),
               likes: [],
+              replies: [],
+              savedBy: [],
+              sharesCount: 0,
               createdAt: serverTimestamp()
             });
             csVidCaption.value = "";
@@ -1755,12 +2141,19 @@
         };
 
         // Stories realtime
-        onSnapshot(query(collection(db, "stories"), orderBy("createdAt", "desc"), limit(30)), (snap) => {
+        onSnapshot(query(collection(db, "stories"), orderBy("createdAt", "desc"), limit(40)), (snap) => {
           rawStoriesList = [];
           snap.forEach((d) => rawStoriesList.push({ id: d.id, ...d.data() }));
           storiesSnapshotLoaded = true;
           renderStoriesRow();
-        }, (err) => showToast(friendlyError(err)));
+        }, (err) => {
+          if (guest && err?.code === "permission-denied") {
+            storiesSnapshotLoaded = true;
+            renderStoriesRow();
+            return;
+          }
+          showToast(friendlyError(err));
+        });
 
         const initialPostId = getUrlTargetPostId();
         if (initialPostId) {
@@ -1780,41 +2173,33 @@
             const { postId, openComments } = pendingFocusPost;
             focusPostById(postId, { openComments });
           }
-        }, (err) => showToast(friendlyError(err)));
+        }, (err) => {
+          if (guest && err?.code === "permission-denied") {
+            const feed = document.getElementById("twin-feed");
+            if (feed) {
+              feed.innerHTML = `
+                <div class="twin-card" style="text-align:center;padding:32px 20px;">
+                  <h3 style="font-size:16px;font-weight:700;margin-bottom:6px;">Cần đăng nhập để xem bảng tin đầy đủ</h3>
+                  <p class="twin-post-meta" style="margin-bottom:14px;">Máy chủ hiện yêu cầu tài khoản (hoặc bật Anonymous Auth trong Firebase) để tải bài viết.</p>
+                  <a href="./login.html" class="twin-btn twin-btn-primary twin-btn-sm">Đăng nhập / Tạo tài khoản</a>
+                </div>
+              `;
+            }
+            return;
+          }
+          showToast(friendlyError(err));
+        });
 
         onSnapshot(query(collection(db, "users"), limit(100)), (snap) => {
-          const contactsEl = document.getElementById("twin-contacts");
-          contactsEl.innerHTML = "";
+          contactsList = [];
           document.getElementById("stat-users-count").textContent = String(snap.size);
-          snap.forEach((d) => {
-            const u = d.data();
-            if (u.uid === me.uid) return;
-            const row = document.createElement("div");
-            row.className = "twin-side-item";
-            row.setAttribute("role", "button");
-            row.tabIndex = 0;
-            row.style.cursor = "pointer";
-            row.innerHTML = `
-              <a class="twin-avatar-link" href="./profile.html?uid=${encodeURIComponent(u.uid)}" title="Xem trang cá nhân">
-                <img class="twin-avatar twin-avatar-sm" src="${escapeHtml(u.avatar || DEFAULT_AVATAR)}" alt="" />
-              </a>
-              <span class="twin-name-with-badge" style="min-width:0;flex:1;">
-                <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(u.name)}</span>${renderAdminIconHtml(u)}
-              </span>
-            `;
-            row.querySelector(".twin-avatar-link")?.addEventListener("click", (e) => {
-              e.stopPropagation();
-            });
-            row.onclick = () => openTwinChat(u);
-            row.addEventListener("keydown", (e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                openTwinChat(u);
-              }
-            });
-            contactsEl.appendChild(row);
-          });
+          snap.forEach((d) => contactsList.push(d.data()));
+          renderContactsList();
         }, (err) => console.warn("Contacts:", err));
+
+        setInterval(() => {
+          if (contactsList.length) renderContactsList();
+        }, 30 * 1000);
       }
     });
   </script>

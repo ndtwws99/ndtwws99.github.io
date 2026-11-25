@@ -61,6 +61,17 @@
         </svg>
         <span>Tiếp tục với Google</span>
       </button>
+
+      <button id="btn-guest-login" type="button" class="twin-btn twin-btn-secondary twin-btn-guest" style="margin-top:10px;width:100%;padding:10px 14px;">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="8" r="4"/>
+          <path d="M5 20a7 7 0 0 1 14 0"/>
+        </svg>
+        <span>Vào nhanh với tư cách Khách</span>
+      </button>
+      <p class="twin-post-meta" style="text-align:center;margin-top:8px;font-size:12px;line-height:1.45;">
+        Chế độ Khách chỉ xem nội dung công khai, không thể đăng bài, bình luận, nhắn tin hay kết bạn.
+      </p>
     </div>
   </main>
 
@@ -94,6 +105,9 @@
       signInWithEmailAndPassword,
       createUserWithEmailAndPassword,
       signInWithGoogle,
+      signInAsGuest,
+      isGuestUser,
+      clearGuestSessionFlag,
       resetPassword,
       updateProfile,
       ensureUserDoc,
@@ -128,7 +142,7 @@
       chrome: false,
       ensureProfile: false,
       onReady: (user) => {
-        if (user && !busy) window.location.href = "./index.html";
+        if (user && !isGuestUser(user) && !busy) window.location.href = "./index.html";
       }
     });
 
@@ -139,6 +153,7 @@
       const submitBtn = loginForm.querySelector('button[type="submit"]');
       submitBtn.disabled = true;
       try {
+        clearGuestSessionFlag();
         await signInWithEmailAndPassword(
           auth,
           document.getElementById("login-email").value.trim(),
@@ -159,6 +174,7 @@
       const submitBtn = regForm.querySelector('button[type="submit"]');
       submitBtn.disabled = true;
       try {
+        clearGuestSessionFlag();
         const name = document.getElementById("reg-name").value.trim();
         const email = document.getElementById("reg-email").value.trim();
         const pass = document.getElementById("reg-pass").value;
@@ -188,6 +204,21 @@
         window.location.href = "./index.html";
       } catch (err) {
         showToast("Đăng nhập Google thất bại: " + friendlyError(err));
+        busy = false;
+        btn.disabled = false;
+      }
+    };
+
+    document.getElementById("btn-guest-login").onclick = async () => {
+      if (busy) return;
+      busy = true;
+      const btn = document.getElementById("btn-guest-login");
+      btn.disabled = true;
+      try {
+        await signInAsGuest();
+        window.location.href = "./index.html";
+      } catch (err) {
+        showToast("Không thể vào chế độ Khách: " + friendlyError(err));
         busy = false;
         btn.disabled = false;
       }

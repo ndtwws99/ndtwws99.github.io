@@ -53,6 +53,7 @@
           </div>
           <div class="twin-profile-meta-block">
             <h1 id="pf-name" class="twin-profile-name">Đang tải...</h1>
+            <div id="pf-presence" class="twin-presence-line" style="display:none;"></div>
             <div class="twin-profile-stats" id="pf-stats">
               <div class="twin-profile-stat">
                 <strong id="pf-posts-count">0</strong>
@@ -216,8 +217,12 @@
       uploadToCloudinary,
       pushNotification,
       isUserAdmin,
+      isGuestUser,
       renderAdminIconHtml,
+      getUserPresence,
+      canViewPost,
       unfriendUser,
+      twinConfirm,
       DEFAULT_AVATAR,
       escapeHtml,
       toMillis,
@@ -348,15 +353,79 @@
       requireAuth: true,
       onReady: async (me) => {
         if (!me) return;
-        const targetUid = new URLSearchParams(window.location.search).get("uid") || me.uid;
-        const isMe = targetUid === me.uid;
+        const guest = isGuestUser(me);
+        const queryUid = new URLSearchParams(window.location.search).get("uid");
 
-        const snap = await getDoc(doc(db, "users", targetUid));
+        if (guest && !queryUid) {
+          const mainEl = document.querySelector("main.twin-main");
+          if (mainEl) {
+            mainEl.style.maxWidth = "640px";
+            mainEl.innerHTML = `
+              <section class="twin-card twin-guest-gate">
+                <div class="twin-guest-gate-icon" aria-hidden="true">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.5" r="3.5"/><path d="M5 19.5c.8-3.6 3.5-5.5 7-5.5s6.2 1.9 7 5.5"/></svg>
+                </div>
+                <h2>Bạn đang ở chế độ Khách</h2>
+                <p class="twin-post-meta">Đăng nhập để tạo hồ sơ cá nhân, đăng bài viết và kết nối với bạn bè trên Twin.</p>
+                <a href="./login.html" class="twin-btn twin-btn-primary">Đăng nhập / Tạo tài khoản</a>
+              </section>
+            `;
+          }
+          return;
+        }
+
+        const targetUid = queryUid || me.uid;
+        const isMe = !guest && targetUid === me.uid;
+
+        let snap;
+        try {
+          snap = await getDoc(doc(db, "users", targetUid));
+        } catch (err) {
+          document.getElementById("pf-name").textContent = "Không thể tải hồ sơ";
+          if (!guest || err?.code !== "permission-denied") showToast(friendlyError(err));
+          return;
+        }
         if (!snap.exists()) {
           document.getElementById("pf-name").textContent = "Không tìm thấy người dùng";
           return;
         }
         const profile = snap.data();
+
+        const renderPresenceLine = (pData) => {
+          const el = document.getElementById("pf-presence");
+          if (!el) return;
+          const pres = getUserPresence(pData);
+          if (pres.hidden) {
+            el.style.display = "none";
+            return;
+          }
+          el.style.display = "inline-flex";
+          el.className = `twin-presence-line ${pres.online ? "online" : ""}`;
+          const dotTitle = pres.online ? "Đang trực tuyến" : (pres.agoText ? `Truy cập ${pres.agoText}` : "Ngoại tuyến");
+          el.innerHTML = `<span class="twin-status-dot ${pres.online ? "online" : "offline"}" title="${escapeHtml(dotTitle)}" aria-label="${escapeHtml(dotTitle)}"></span>${pres.agoText ? `<span>${escapeHtml(pres.agoText)}</span>` : ""}`;
+        };
+        renderPresenceLine(profile);
+        onSnapshot(doc(db, "users", targetUid), (liveSnap) => {
+          if (!liveSnap.exists()) return;
+          const liveData = liveSnap.data();
+          profile.isOnline = liveData.isOnline;
+          profile.lastActiveAt = liveData.lastActiveAt;
+          profile.showActivity = liveData.showActivity;
+          if (typeof liveData.cover === "string" && liveData.cover !== profile.cover) {
+            profile.cover = liveData.cover;
+            const c = document.getElementById("pf-cover");
+            const rm = document.getElementById("pf-cover-remove-btn");
+            if (liveData.cover) {
+              if (c) { c.src = liveData.cover; c.style.display = "block"; }
+              if (rm && isMe) rm.style.display = "inline-flex";
+            } else {
+              if (c) { c.removeAttribute("src"); c.style.display = "none"; }
+              if (rm) rm.style.display = "none";
+            }
+          }
+          renderPresenceLine(profile);
+        }, () => {});
+        setInterval(() => renderPresenceLine(profile), 30 * 1000);
 
         const avatarEl = document.getElementById("pf-avatar");
         avatarEl.src = profile.avatar || DEFAULT_AVATAR;
@@ -512,7 +581,12 @@
 
           coverRemoveBtn.onclick = async () => {
             if (!profile.cover) return;
-            if (!confirm("Gỡ ảnh bìa hiện tại?")) return;
+            const ok = await twinConfirm({
+              title: "Gỡ ảnh bìa",
+              message: "Bạn có chắc muốn gỡ ảnh bìa hiện tại khỏi trang cá nhân?",
+              confirmText: "Gỡ ảnh bìa"
+            });
+            if (!ok) return;
             coverRemoveBtn.disabled = true;
             try {
               await updateDoc(doc(db, "users", me.uid), { cover: "" });
@@ -528,6 +602,10 @@
               coverRemoveBtn.disabled = false;
             }
           };
+        } else if (guest) {
+          actions.innerHTML = `
+            <a href="./login.html" class="twin-btn twin-btn-primary twin-btn-sm">Đăng nhập để kết bạn &amp; nhắn tin</a>
+          `;
         } else {
           let state = (me.friends || []).includes(targetUid)
             ? "friend"
@@ -561,8 +639,13 @@
               showToast("Người dùng này đã tắt nhận lời mời kết bạn.");
               return;
             }
-            if (state === "friend" && !confirm(`Bạn có chắc muốn hủy kết bạn với ${profile.name || "người này"}?`)) {
-              return;
+            if (state === "friend") {
+              const ok = await twinConfirm({
+                title: "Hủy kết bạn",
+                message: `Bạn có chắc muốn hủy kết bạn với ${profile.name || "người này"}?`,
+                confirmText: "Hủy kết bạn"
+              });
+              if (!ok) return;
             }
             frBtn.disabled = true;
             try {
@@ -617,7 +700,10 @@
         onSnapshot(q, (snap) => {
           const box = document.getElementById("pf-posts");
           const items = [];
-          snap.forEach((d) => items.push({ id: d.id, ...d.data() }));
+          snap.forEach((d) => {
+            const p = { id: d.id, ...d.data() };
+            if (canViewPost(p, me)) items.push(p);
+          });
           document.getElementById("pf-posts-count").textContent = String(items.length);
           items.sort((a, b) => ((b.pinned ? 1 : 0) - (a.pinned ? 1 : 0)) || ((b.pinned && a.pinned) ? ((b.pinnedAt || 0) - (a.pinnedAt || 0)) : 0) || (toMillis(b.createdAt) - toMillis(a.createdAt)));
           renderPostList(
@@ -626,7 +712,10 @@
             me,
             '<div class="twin-card" style="color:var(--text-3);text-align:center;padding:28px;">Chưa có bài viết nào.</div>'
           );
-        }, (err) => showToast(friendlyError(err)));
+        }, (err) => {
+          if (guest && err?.code === "permission-denied") return;
+          showToast(friendlyError(err));
+        });
       }
     });
   </script>

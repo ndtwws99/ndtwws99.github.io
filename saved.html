@@ -23,52 +23,187 @@
 <body class="">
   <header id="twin-header" class="twin-header"></header>
 
-  <main class="twin-main" style="max-width:680px;">
-    <div class="twin-page-head"><h1>Bài viết đã lưu</h1></div>
+  <main id="saved-main" class="twin-main" style="max-width:680px;">
+    <div class="twin-page-head">
+      <h1>Đã lưu</h1>
+      <div class="twin-seg-tabs" id="saved-tabs" role="tablist">
+        <button type="button" class="twin-seg-tab active" data-tab="posts" role="tab" aria-selected="true">Bài viết <span id="saved-posts-count" class="twin-tabular">0</span></button>
+        <button type="button" class="twin-seg-tab" data-tab="stories" role="tab" aria-selected="false">Tin ngắn <span id="saved-stories-count" class="twin-tabular">0</span></button>
+      </div>
+    </div>
     <div id="saved-posts-list"></div>
+    <div id="saved-stories-list" style="display:none;"></div>
   </main>
 
   <script type="module">
     import { initTwinPage } from "./assets/js/layout.js";
     import { renderPostList } from "./assets/js/post-ui.js";
-    import { db, doc, collection, onSnapshot, showToast, friendlyError, toMillis } from "./assets/js/firebase-service.js";
+    import {
+      db,
+      doc,
+      collection,
+      onSnapshot,
+      updateDoc,
+      arrayRemove,
+      isGuestUser,
+      getStoryBgCss,
+      getVideoPosterUrl,
+      renderAdminIconHtml,
+      DEFAULT_AVATAR,
+      escapeHtml,
+      formatTime,
+      showToast,
+      friendlyError
+    } from "./assets/js/firebase-service.js";
 
     initTwinPage({
       requireAuth: true,
       onReady: (me) => {
         if (!me) return;
+        const mainEl = document.getElementById("saved-main");
+
+        if (isGuestUser(me)) {
+          mainEl.innerHTML = `
+            <section class="twin-card twin-guest-gate">
+              <div class="twin-guest-gate-icon" aria-hidden="true">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 4h11A1.5 1.5 0 0 1 19 5.5v15l-7-4-7 4v-15A1.5 1.5 0 0 1 6.5 4Z"/></svg>
+              </div>
+              <h2>Chế độ Khách không hỗ trợ lưu nội dung</h2>
+              <p class="twin-post-meta">Đăng nhập tài khoản Twin để lưu bài viết và tin ngắn yêu thích của bạn.</p>
+              <a href="./login.html" class="twin-btn twin-btn-primary">Đăng nhập ngay</a>
+            </section>
+          `;
+          return;
+        }
+
+        let activeTab = "posts";
         let savedIds = me.savedPosts || [];
+        let savedStoryIds = me.savedStories || [];
         let postsMap = [];
+        let storiesMap = [];
         let userLoaded = false;
         let postsLoaded = false;
+        let storiesLoaded = false;
 
-        const draw = () => {
-          if (!userLoaded || !postsLoaded) return; // chờ cả 2 nguồn dữ liệu, tránh nháy "chưa lưu"
-          const box = document.getElementById("saved-posts-list");
-          // giữ đúng thứ tự mới lưu gần nhất lên đầu
+        const postsBox = document.getElementById("saved-posts-list");
+        const storiesBox = document.getElementById("saved-stories-list");
+
+        document.querySelectorAll("#saved-tabs .twin-seg-tab").forEach((btn) => {
+          btn.onclick = () => {
+            activeTab = btn.dataset.tab;
+            document.querySelectorAll("#saved-tabs .twin-seg-tab").forEach((b) => {
+              const active = b === btn;
+              b.classList.toggle("active", active);
+              b.setAttribute("aria-selected", active ? "true" : "false");
+            });
+            postsBox.style.display = activeTab === "posts" ? "block" : "none";
+            storiesBox.style.display = activeTab === "stories" ? "block" : "none";
+          };
+        });
+
+        const drawPosts = () => {
+          if (!userLoaded || !postsLoaded) return;
           const order = new Map(savedIds.map((id, i) => [id, i]));
           const list = postsMap
             .filter((p) => order.has(p.id))
             .sort((a, b) => order.get(b.id) - order.get(a.id));
+          document.getElementById("saved-posts-count").textContent = String(list.length);
           renderPostList(
-            box,
+            postsBox,
             list,
             { ...me, savedPosts: savedIds },
             '<div class="twin-card" style="color:var(--text-3);text-align:center;padding:32px;">Bạn chưa lưu bài viết nào.</div>'
           );
         };
 
+        const drawStories = () => {
+          if (!userLoaded || !storiesLoaded) return;
+          const order = new Map(savedStoryIds.map((id, i) => [id, i]));
+          const list = storiesMap
+            .filter((s) => order.has(s.id) || (Array.isArray(s.savedBy) && s.savedBy.includes(me.uid)))
+            .sort((a, b) => (order.get(b.id) ?? -1) - (order.get(a.id) ?? -1));
+          document.getElementById("saved-stories-count").textContent = String(list.length);
+
+          if (!list.length) {
+            storiesBox.innerHTML = '<div class="twin-card" style="color:var(--text-3);text-align:center;padding:32px;">Bạn chưa lưu tin ngắn nào.</div>';
+            return;
+          }
+
+          storiesBox.innerHTML = '<div class="twin-card twin-friends-list-card"><div class="twin-friends-list" id="saved-stories-rows"></div></div>';
+          const rowsEl = document.getElementById("saved-stories-rows");
+          list.forEach((s) => {
+            const isVid = Boolean(s.type === "video" || s.videoUrl);
+            const isText = !isVid && (s.type === "text" || (!s.imageUrl && s.text));
+            const thumb = isVid
+              ? `<img class="twin-saved-story-thumb" src="${escapeHtml(s.videoPoster || getVideoPosterUrl(s.videoUrl) || DEFAULT_AVATAR)}" alt="" />`
+              : isText
+                ? `<div class="twin-saved-story-thumb" style="background:${getStoryBgCss(s.bgId || s.bgCss)};display:grid;place-items:center;color:#fff;font-size:10px;font-weight:700;padding:4px;text-align:center;">Tin</div>`
+                : `<img class="twin-saved-story-thumb" src="${escapeHtml(s.imageUrl)}" alt="" />`;
+            const openHref = isVid ? `./reels.html?id=${encodeURIComponent(s.id)}` : `./index.html?story=${encodeURIComponent(s.id)}`;
+            const likesCount = Array.isArray(s.likes) ? s.likes.length : 0;
+            const sharesCount = Number(s.sharesCount) || 0;
+            const savesCount = Array.isArray(s.savedBy) ? s.savedBy.length : 0;
+
+            const row = document.createElement("div");
+            row.className = "twin-friend-row";
+            row.innerHTML = `
+              <a href="${openHref}" style="flex-shrink:0;">${thumb}</a>
+              <div class="twin-friend-info">
+                <a href="${openHref}" class="twin-name-with-badge twin-friend-name">
+                  <span>${escapeHtml(s.authorName || "Thành viên Twin")}</span>${renderAdminIconHtml(s.authorUid)}
+                </a>
+                <div class="twin-post-meta" style="margin-top:2px;">
+                  ${escapeHtml((s.caption || s.text || (isVid ? "Tin video ngắn" : "Tin ảnh")).slice(0, 70))}
+                </div>
+                <div class="twin-post-meta twin-tabular" style="font-size:12px;margin-top:2px;">
+                  ${escapeHtml(formatTime(s.createdAt))} · ${likesCount} tim · ${sharesCount} chia sẻ · ${savesCount} lượt lưu
+                </div>
+              </div>
+              <div class="twin-friend-row-actions">
+                <a href="${openHref}" class="twin-btn twin-btn-primary twin-btn-sm">Xem tin</a>
+                <button type="button" class="twin-btn twin-btn-secondary twin-btn-sm btn-unsave-story">Bỏ lưu</button>
+              </div>
+            `;
+            row.querySelector(".btn-unsave-story").onclick = async () => {
+              try {
+                await updateDoc(doc(db, "stories", s.id), { savedBy: arrayRemove(me.uid) });
+                await updateDoc(doc(db, "users", me.uid), { savedStories: arrayRemove(s.id) });
+                showToast("Đã bỏ lưu tin.");
+              } catch (err) {
+                showToast(friendlyError(err));
+              }
+            };
+            rowsEl.appendChild(row);
+          });
+        };
+
         onSnapshot(doc(db, "users", me.uid), (snap) => {
-          if (snap.exists()) savedIds = snap.data().savedPosts || [];
+          if (snap.exists()) {
+            const d = snap.data();
+            savedIds = d.savedPosts || [];
+            savedStoryIds = d.savedStories || [];
+          }
           userLoaded = true;
-          draw();
+          drawPosts();
+          drawStories();
         }, (err) => showToast(friendlyError(err)));
+
         onSnapshot(collection(db, "posts"), (snap) => {
           postsMap = [];
           snap.forEach((d) => postsMap.push({ id: d.id, ...d.data() }));
           postsLoaded = true;
-          draw();
+          drawPosts();
         }, (err) => showToast(friendlyError(err)));
+
+        onSnapshot(collection(db, "stories"), (snap) => {
+          storiesMap = [];
+          snap.forEach((d) => storiesMap.push({ id: d.id, ...d.data() }));
+          storiesLoaded = true;
+          drawStories();
+        }, () => {
+          storiesLoaded = true;
+          drawStories();
+        });
       }
     });
   </script>

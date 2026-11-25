@@ -6,8 +6,12 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    function isMember() {
+      return signedIn() && request.auth.token.firebase.sign_in_provider != 'anonymous';
+    }
+
     function isAdmin() {
-      return signedIn() && (
+      return isMember() && (
         (request.auth.token.email == 'ndtwws99@gmail.com' && request.auth.token.email_verified == true)
         || (exists(/databases/$(database)/documents/users/$(request.auth.uid))
             && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('role', 'member') == 'admin')
@@ -27,10 +31,10 @@ service cloud.firestore {
 
     match /users/{userId} {
       allow read: if signedIn();
-      allow create: if signedIn() && request.auth.uid == userId
+      allow create: if isMember() && request.auth.uid == userId
                     && request.resource.data.uid == userId
                     && (isAdmin() || !('role' in request.resource.data) || request.resource.data.role == 'member');
-      allow update: if isAdmin() || (signedIn() && (
+      allow update: if isAdmin() || (isMember() && (
         (request.auth.uid == userId
           && request.resource.data.get('role', 'member') == resource.data.get('role', 'member'))
         || (onlyChanges(['friends', 'friendRequests'])
@@ -42,56 +46,68 @@ service cloud.firestore {
 
     match /posts/{postId} {
       allow read: if signedIn();
-      allow create: if signedIn() && request.resource.data.authorUid == request.auth.uid;
-      allow update: if isAdmin() || (signedIn() && (
+      allow create: if isMember() && request.resource.data.authorUid == request.auth.uid;
+      allow update: if isAdmin() || (isMember() && (
         resource.data.authorUid == request.auth.uid
         || onlyChanges(['reactions', 'comments'])
+        || (onlyChanges(['savedBy']) && onlyTouchesSelfIn('savedBy'))
+        || (onlyChanges(['sharesCount'])
+            && request.resource.data.sharesCount is int
+            && request.resource.data.sharesCount >= resource.data.get('sharesCount', 0))
       ));
-      allow delete: if isAdmin() || (signedIn() && resource.data.authorUid == request.auth.uid);
+      allow delete: if isAdmin() || (isMember() && resource.data.authorUid == request.auth.uid);
     }
 
     match /stories/{storyId} {
       allow read: if signedIn();
-      allow create: if signedIn() && request.resource.data.authorUid == request.auth.uid;
-      allow update: if isAdmin() || (signedIn() && (
+      allow create: if isMember() && request.resource.data.authorUid == request.auth.uid;
+      allow update: if isAdmin() || (isMember() && (
         resource.data.authorUid == request.auth.uid
         || (onlyChanges(['likes']) && onlyTouchesSelfIn('likes'))
+        || (onlyChanges(['savedBy']) && onlyTouchesSelfIn('savedBy'))
+        || (onlyChanges(['sharesCount'])
+            && request.resource.data.sharesCount is int
+            && request.resource.data.sharesCount >= resource.data.get('sharesCount', 0))
+        || onlyChanges(['replies'])
       ));
-      allow delete: if isAdmin() || (signedIn() && resource.data.authorUid == request.auth.uid);
+      allow delete: if isAdmin() || (isMember() && resource.data.authorUid == request.auth.uid);
     }
 
     match /groups/{groupId} {
       allow read: if signedIn();
-      allow create: if signedIn() && request.resource.data.ownerUid == request.auth.uid;
-      allow update: if isAdmin() || (signedIn() && (
+      allow create: if isMember() && request.resource.data.ownerUid == request.auth.uid;
+      allow update: if isAdmin() || (isMember() && (
         resource.data.ownerUid == request.auth.uid
         || (onlyChanges(['pendingMembers']) && onlyTouchesSelfIn('pendingMembers'))
-        || (onlyChanges(['members']) && request.resource.data.get('members', []).toSet().difference(resource.data.get('members', []).toSet()).size() == 0 && onlyTouchesSelfIn('members'))
+        || (onlyChanges(['members']) && onlyTouchesSelfIn('members') && (
+             resource.data.get('privacy', 'private') == 'public'
+             || request.resource.data.get('members', []).toSet().difference(resource.data.get('members', []).toSet()).size() == 0
+           ))
       ));
-      allow delete: if isAdmin() || (signedIn() && resource.data.ownerUid == request.auth.uid);
+      allow delete: if isAdmin() || (isMember() && resource.data.ownerUid == request.auth.uid);
     }
 
     match /pages/{pageId} {
       allow read: if signedIn();
-      allow create: if signedIn() && request.resource.data.ownerUid == request.auth.uid;
-      allow update: if isAdmin() || (signedIn() && (
+      allow create: if isMember() && request.resource.data.ownerUid == request.auth.uid;
+      allow update: if isAdmin() || (isMember() && (
         resource.data.ownerUid == request.auth.uid
         || (onlyChanges(['followers']) && onlyTouchesSelfIn('followers'))
       ));
-      allow delete: if isAdmin() || (signedIn() && resource.data.ownerUid == request.auth.uid);
+      allow delete: if isAdmin() || (isMember() && resource.data.ownerUid == request.auth.uid);
     }
 
     match /notifications/{notifId} {
-      allow read: if isAdmin() || (signedIn() && resource.data.toUid == request.auth.uid);
-      allow create: if signedIn() && request.resource.data.fromUid == request.auth.uid;
-      allow update: if isAdmin() || (signedIn() && resource.data.toUid == request.auth.uid
+      allow read: if isAdmin() || (isMember() && resource.data.toUid == request.auth.uid);
+      allow create: if isMember() && request.resource.data.fromUid == request.auth.uid;
+      allow update: if isAdmin() || (isMember() && resource.data.toUid == request.auth.uid
                     && onlyChanges(['read']));
-      allow delete: if isAdmin() || (signedIn() && resource.data.toUid == request.auth.uid);
+      allow delete: if isAdmin() || (isMember() && resource.data.toUid == request.auth.uid);
     }
 
     match /messages/{chatId}/items/{msgId} {
-      allow read: if isAdmin() || (signedIn() && request.auth.uid in chatId.split('_'));
-      allow create: if signedIn() && request.auth.uid in chatId.split('_')
+      allow read: if isAdmin() || (isMember() && request.auth.uid in chatId.split('_'));
+      allow create: if isMember() && request.auth.uid in chatId.split('_')
                     && request.resource.data.senderUid == request.auth.uid;
       allow delete: if isAdmin();
     }

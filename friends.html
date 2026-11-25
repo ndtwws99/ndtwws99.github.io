@@ -22,27 +22,52 @@
 <body class="">
   <header id="twin-header" class="twin-header"></header>
 
-  <main class="twin-main" style="max-width:1080px;">
-    <div class="twin-page-head"><h1>Bạn bè</h1></div>
+  <main id="friends-main" class="twin-main" style="max-width:860px;">
+    <div class="twin-friends-shell">
+      <div class="twin-friends-top">
+        <div>
+          <h1 style="font-size:24px;font-weight:800;letter-spacing:-0.02em;">Bạn bè</h1>
+          <div id="friends-summary" class="twin-post-meta twin-tabular" style="margin-top:3px;">Đang tải danh sách...</div>
+        </div>
+        <div class="twin-friends-search-wrap">
+          <input id="friends-search" class="twin-input" type="search" placeholder="Tìm theo tên..." />
+        </div>
+      </div>
 
-    <section class="twin-card">
-      <h2 style="font-size:17px;margin-bottom:14px;">Lời mời kết bạn</h2>
-      <div id="friend-requests-grid" class="twin-cards-grid"></div>
-    </section>
+      <div class="twin-friends-toolbar">
+        <div class="twin-seg-tabs" role="tablist" aria-label="Danh mục bạn bè">
+          <button type="button" class="twin-seg-tab active" data-tab="friends" role="tab" aria-selected="true">
+            Bạn bè <span id="tab-count-friends" class="twin-tabular">0</span>
+          </button>
+          <button type="button" class="twin-seg-tab" data-tab="requests" role="tab" aria-selected="false">
+            Lời mời <span id="tab-count-requests" class="twin-tabular">0</span>
+          </button>
+          <button type="button" class="twin-seg-tab" data-tab="suggestions" role="tab" aria-selected="false">
+            Gợi ý <span id="tab-count-suggestions" class="twin-tabular">0</span>
+          </button>
+        </div>
 
-    <section class="twin-card">
-      <h2 style="font-size:17px;margin-bottom:14px;">Bạn bè của bạn</h2>
-      <div id="my-friends-grid" class="twin-cards-grid"></div>
-    </section>
+        <div id="friends-presence-filter" class="twin-presence-filter" role="group" aria-label="Lọc trạng thái hoạt động">
+          <button type="button" class="twin-pf-btn active" data-status="all">Tất cả <span id="pf-count-all" class="twin-tabular">0</span></button>
+          <button type="button" class="twin-pf-btn" data-status="online" title="Đang trực tuyến">
+            <span class="twin-status-dot online" aria-hidden="true"></span>
+            <span id="pf-count-online" class="twin-tabular">0</span>
+          </button>
+          <button type="button" class="twin-pf-btn" data-status="offline" title="Ngoại tuyến">
+            <span class="twin-status-dot offline" aria-hidden="true"></span>
+            <span id="pf-count-offline" class="twin-tabular">0</span>
+          </button>
+        </div>
+      </div>
 
-    <section class="twin-card">
-      <h2 style="font-size:17px;margin-bottom:14px;">Gợi ý kết bạn</h2>
-      <div id="suggest-friends-grid" class="twin-cards-grid"></div>
-    </section>
+      <section class="twin-card twin-friends-list-card">
+        <div id="friends-list-body" class="twin-friends-list"></div>
+      </section>
+    </div>
   </main>
 
   <script type="module">
-    import { initTwinPage } from "./assets/js/layout.js";
+    import { initTwinPage, openTwinChat } from "./assets/js/layout.js";
     import {
       db,
       doc,
@@ -53,6 +78,9 @@
       arrayRemove,
       pushNotification,
       renderAdminIconHtml,
+      getUserPresence,
+      renderPresenceBadgeHtml,
+      isGuestUser,
       unfriendUser,
       DEFAULT_AVATAR,
       escapeHtml,
@@ -73,121 +101,232 @@
       requireAuth: true,
       onReady: (me) => {
         if (!me) return;
+        const mainEl = document.getElementById("friends-main");
+
+        if (isGuestUser(me)) {
+          mainEl.innerHTML = `
+            <section class="twin-card twin-guest-gate">
+              <div class="twin-guest-gate-icon" aria-hidden="true">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8.5" r="3.2"/><path d="M3 19c.6-3.2 3-5 6-5s5.4 1.8 6 5"/><circle cx="17" cy="9.5" r="2.5"/><path d="M16.5 14.3c2.1.4 3.8 1.9 4.4 4.7"/></svg>
+              </div>
+              <h2>Tính năng Bạn bè yêu cầu tài khoản Twin</h2>
+              <p class="twin-post-meta">Chế độ Khách không hỗ trợ kết bạn, quản lý danh sách bạn bè hoặc nhắn tin trực tiếp.</p>
+              <a href="./login.html" class="twin-btn twin-btn-primary">Đăng nhập / Tạo tài khoản</a>
+            </section>
+          `;
+          return;
+        }
+
+        let latestMe = me;
+        let allOthers = [];
+        let activeTab = "friends";
+        let statusFilter = "all";
+        let searchQuery = "";
+
+        const summaryEl = document.getElementById("friends-summary");
+        const listBody = document.getElementById("friends-list-body");
+        const searchInput = document.getElementById("friends-search");
+        const presenceFilterWrap = document.getElementById("friends-presence-filter");
+
+        function sortByPresence(list) {
+          return [...list].sort((a, b) => {
+            const pa = getUserPresence(a);
+            const pb = getUserPresence(b);
+            if (pb.online !== pa.online) return pb.online ? 1 : -1;
+            const timeDiff = (pb.lastActiveMs || 0) - (pa.lastActiveMs || 0);
+            if (timeDiff !== 0) return timeDiff;
+            return (a.name || "").localeCompare(b.name || "", "vi");
+          });
+        }
+
+        function renderSubtitle(u) {
+          const p = getUserPresence(u);
+          if (p.hidden) return "";
+          if (p.online) {
+            return `<span class="twin-friend-status"><span class="twin-status-dot online" title="Đang trực tuyến" aria-label="Đang trực tuyến"></span></span>`;
+          }
+          if (p.agoText) {
+            return `<span class="twin-friend-status"><span class="twin-status-dot offline" title="Ngoại tuyến" aria-label="Ngoại tuyến"></span><span>${escapeHtml(p.agoText)}</span></span>`;
+          }
+          return `<span class="twin-friend-status"><span class="twin-status-dot offline" title="Ngoại tuyến" aria-label="Ngoại tuyến"></span></span>`;
+        }
+
+        function renderList() {
+          const reqIds = latestMe.friendRequests || [];
+          const friendIds = latestMe.friends || [];
+
+          const reqUsers = sortByPresence(allOthers.filter((u) => reqIds.includes(u.uid)));
+          const frUsers = sortByPresence(allOthers.filter((u) => friendIds.includes(u.uid)));
+          const sugUsers = sortByPresence(allOthers.filter((u) => !reqIds.includes(u.uid) && !friendIds.includes(u.uid)));
+
+          const onlineFriendsCount = frUsers.filter((u) => getUserPresence(u).online).length;
+          const offlineFriendsCount = frUsers.length - onlineFriendsCount;
+
+          document.getElementById("tab-count-friends").textContent = String(frUsers.length);
+          document.getElementById("tab-count-requests").textContent = String(reqUsers.length);
+          document.getElementById("tab-count-suggestions").textContent = String(sugUsers.length);
+
+          document.getElementById("pf-count-all").textContent = String(frUsers.length);
+          document.getElementById("pf-count-online").textContent = String(onlineFriendsCount);
+          document.getElementById("pf-count-offline").textContent = String(offlineFriendsCount);
+
+          summaryEl.innerHTML = `${frUsers.length} bạn bè · <span class="twin-status-dot online" style="vertical-align:middle;margin-right:4px;" title="Đang trực tuyến"></span>${onlineFriendsCount} · ${reqUsers.length} lời mời`;
+          presenceFilterWrap.style.display = activeTab === "friends" ? "inline-flex" : "none";
+
+          const q = searchQuery.trim().toLowerCase();
+          let source = activeTab === "friends" ? frUsers : activeTab === "requests" ? reqUsers : sugUsers;
+          if (activeTab === "friends") {
+            if (statusFilter === "online") source = source.filter((u) => getUserPresence(u).online);
+            else if (statusFilter === "offline") source = source.filter((u) => !getUserPresence(u).online);
+          }
+          if (q) {
+            source = source.filter((u) => (u.name || "").toLowerCase().includes(q));
+          }
+
+          listBody.innerHTML = "";
+          if (!source.length) {
+            const emptyMsg = q
+              ? "Không tìm thấy người dùng phù hợp."
+              : activeTab === "friends"
+                ? (statusFilter === "online" ? "Hiện chưa có bạn bè nào đang trực tuyến." : statusFilter === "offline" ? "Không có bạn bè nào đang ngoại tuyến." : "Chưa có bạn bè. Hãy gửi lời mời ở mục Gợi ý.")
+                : activeTab === "requests"
+                  ? "Không có lời mời kết bạn nào."
+                  : "Không còn gợi ý kết bạn mới.";
+            listBody.innerHTML = `<div class="twin-friends-empty">${escapeHtml(emptyMsg)}</div>`;
+            return;
+          }
+
+          source.forEach((u) => {
+            const row = document.createElement("div");
+            row.className = "twin-friend-row";
+
+            let actionsHtml = "";
+            if (activeTab === "friends") {
+              actionsHtml = `
+                <button type="button" class="twin-btn twin-btn-primary twin-btn-sm btn-quick-chat">Nhắn tin</button>
+                <button type="button" class="twin-btn twin-btn-secondary twin-btn-sm twin-btn-unfriend btn-unfriend">Hủy bạn bè</button>
+              `;
+            } else if (activeTab === "requests") {
+              actionsHtml = `
+                <button type="button" class="twin-btn twin-btn-primary twin-btn-sm btn-accept">Xác nhận</button>
+                <button type="button" class="twin-btn twin-btn-secondary twin-btn-sm btn-decline">Xóa</button>
+              `;
+            } else {
+              const sent = (u.friendRequests || []).includes(me.uid);
+              actionsHtml = `
+                <button type="button" class="twin-btn ${sent ? "twin-btn-secondary" : "twin-btn-primary"} twin-btn-sm btn-add">${sent ? "Hủy lời mời" : "Thêm bạn bè"}</button>
+              `;
+            }
+
+            row.innerHTML = `
+              <a href="./profile.html?uid=${encodeURIComponent(u.uid)}" class="twin-avatar-link twin-presence-wrap twin-friend-avatar-wrap" title="Xem trang cá nhân">
+                <img class="twin-avatar twin-avatar-lg" src="${escapeHtml(u.avatar || DEFAULT_AVATAR)}" alt="" />
+                ${renderPresenceBadgeHtml(u)}
+              </a>
+              <div class="twin-friend-info">
+                <a href="./profile.html?uid=${encodeURIComponent(u.uid)}" class="twin-name-with-badge twin-friend-name">
+                  <span>${escapeHtml(u.name || "Thành viên Twin")}</span>${renderAdminIconHtml(u)}
+                </a>
+                <div class="twin-friend-sub">
+                  ${renderSubtitle(u)}
+                  ${u.bio ? `<span class="twin-friend-bio-sep" aria-hidden="true">·</span><span class="twin-friend-bio">${escapeHtml(u.bio)}</span>` : ""}
+                </div>
+              </div>
+              <div class="twin-friend-row-actions">
+                ${actionsHtml}
+              </div>
+            `;
+
+            if (activeTab === "friends") {
+              row.querySelector(".btn-quick-chat").onclick = () => openTwinChat(u);
+              row.querySelector(".btn-unfriend").onclick = () => {
+                if (!confirm(`Bạn có chắc muốn hủy kết bạn với ${u.name || "người này"}?`)) return;
+                run(async () => {
+                  await unfriendUser(me.uid, u.uid);
+                  showToast(`Đã hủy kết bạn với ${u.name || "người dùng"}.`);
+                });
+              };
+            } else if (activeTab === "requests") {
+              row.querySelector(".btn-accept").onclick = () => run(async () => {
+                await updateDoc(doc(db, "users", me.uid), { friendRequests: arrayRemove(u.uid), friends: arrayUnion(u.uid) });
+                await updateDoc(doc(db, "users", u.uid), { friends: arrayUnion(me.uid), friendRequests: arrayRemove(me.uid) });
+                showToast(`Bạn và ${u.name} đã là bạn bè!`);
+                pushNotification(u.uid, {
+                  fromUid: me.uid,
+                  fromName: latestMe.name,
+                  fromAvatar: latestMe.avatar,
+                  text: "đã chấp nhận lời mời kết bạn.",
+                  link: `./profile.html?uid=${encodeURIComponent(me.uid)}`
+                }).catch(() => {});
+              });
+              row.querySelector(".btn-decline").onclick = () => run(() =>
+                updateDoc(doc(db, "users", me.uid), { friendRequests: arrayRemove(u.uid) })
+              );
+            } else {
+              const sent = (u.friendRequests || []).includes(me.uid);
+              row.querySelector(".btn-add").onclick = () => run(async () => {
+                if (sent) {
+                  await updateDoc(doc(db, "users", u.uid), { friendRequests: arrayRemove(me.uid) });
+                  showToast("Đã hủy lời mời.");
+                  return;
+                }
+                await updateDoc(doc(db, "users", u.uid), { friendRequests: arrayUnion(me.uid) });
+                showToast(`Đã gửi lời mời tới ${u.name}!`);
+                pushNotification(u.uid, {
+                  fromUid: me.uid,
+                  fromName: latestMe.name,
+                  fromAvatar: latestMe.avatar,
+                  text: "đã gửi lời mời kết bạn.",
+                  link: "./friends.html"
+                }).catch(() => {});
+              });
+            }
+
+            listBody.appendChild(row);
+          });
+        }
+
+        document.querySelectorAll(".twin-seg-tab[data-tab]").forEach((btn) => {
+          btn.onclick = () => {
+            activeTab = btn.dataset.tab;
+            document.querySelectorAll(".twin-seg-tab[data-tab]").forEach((b) => {
+              const active = b === btn;
+              b.classList.toggle("active", active);
+              b.setAttribute("aria-selected", active ? "true" : "false");
+            });
+            renderList();
+          };
+        });
+
+        document.querySelectorAll(".twin-pf-btn[data-status]").forEach((btn) => {
+          btn.onclick = () => {
+            statusFilter = btn.dataset.status;
+            document.querySelectorAll(".twin-pf-btn[data-status]").forEach((b) => {
+              b.classList.toggle("active", b === btn);
+            });
+            renderList();
+          };
+        });
+
+        searchInput.addEventListener("input", () => {
+          searchQuery = searchInput.value;
+          renderList();
+        });
+
         onSnapshot(collection(db, "users"), (snap) => {
           const all = [];
-          let latestMe = me;
           snap.forEach((d) => {
             const u = d.data();
             if (u.uid === me.uid) latestMe = u;
             else all.push(u);
           });
-
-          const reqIds = latestMe.friendRequests || [];
-          const friendIds = latestMe.friends || [];
-
-          const reqGrid = document.getElementById("friend-requests-grid");
-          const frGrid = document.getElementById("my-friends-grid");
-          const sugGrid = document.getElementById("suggest-friends-grid");
-          reqGrid.innerHTML = "";
-          frGrid.innerHTML = "";
-          sugGrid.innerHTML = "";
-
-          const reqUsers = all.filter((u) => reqIds.includes(u.uid));
-          const frUsers = all.filter((u) => friendIds.includes(u.uid));
-          const sugUsers = all.filter((u) => !reqIds.includes(u.uid) && !friendIds.includes(u.uid));
-
-          if (!reqUsers.length) reqGrid.innerHTML = '<p class="twin-post-meta">Không có lời mời nào.</p>';
-          reqUsers.forEach((u) => {
-            const card = document.createElement("div");
-            card.className = "twin-entity-card";
-            card.innerHTML = `
-              <a href="./profile.html?uid=${encodeURIComponent(u.uid)}" class="twin-entity-cover-link" title="Xem trang cá nhân">
-                <img class="twin-entity-cover" src="${escapeHtml(u.avatar || DEFAULT_AVATAR)}" alt="" />
-              </a>
-              <div class="twin-entity-body">
-                <a href="./profile.html?uid=${encodeURIComponent(u.uid)}" class="twin-name-with-badge" style="font-weight:700;"><span>${escapeHtml(u.name)}</span>${renderAdminIconHtml(u)}</a>
-                <button class="twin-btn twin-btn-primary twin-btn-sm btn-accept">Xác nhận</button>
-                <button class="twin-btn twin-btn-secondary twin-btn-sm btn-decline">Xóa</button>
-              </div>
-            `;
-            card.querySelector(".btn-accept").onclick = () => run(async () => {
-              await updateDoc(doc(db, "users", me.uid), { friendRequests: arrayRemove(u.uid), friends: arrayUnion(u.uid) });
-              // dọn luôn lời mời chiều ngược lại (nếu 2 người cùng gửi cho nhau)
-              await updateDoc(doc(db, "users", u.uid), { friends: arrayUnion(me.uid), friendRequests: arrayRemove(me.uid) });
-              showToast(`Bạn và ${u.name} đã là bạn bè!`);
-              pushNotification(u.uid, {
-                fromUid: me.uid,
-                fromName: latestMe.name,
-                fromAvatar: latestMe.avatar,
-                text: "đã chấp nhận lời mời kết bạn.",
-                link: `./profile.html?uid=${encodeURIComponent(me.uid)}`
-              }).catch(() => {});
-            });
-            card.querySelector(".btn-decline").onclick = () => run(() =>
-              updateDoc(doc(db, "users", me.uid), { friendRequests: arrayRemove(u.uid) })
-            );
-            reqGrid.appendChild(card);
-          });
-
-          if (!frUsers.length) frGrid.innerHTML = '<p class="twin-post-meta">Chưa có bạn bè.</p>';
-          frUsers.forEach((u) => {
-            const card = document.createElement("div");
-            card.className = "twin-entity-card";
-            card.innerHTML = `
-              <a href="./profile.html?uid=${encodeURIComponent(u.uid)}" class="twin-entity-cover-link" title="Xem trang cá nhân">
-                <img class="twin-entity-cover" src="${escapeHtml(u.avatar || DEFAULT_AVATAR)}" alt="" />
-              </a>
-              <div class="twin-entity-body">
-                <a href="./profile.html?uid=${encodeURIComponent(u.uid)}" class="twin-name-with-badge" style="font-weight:700;"><span>${escapeHtml(u.name)}</span>${renderAdminIconHtml(u)}</a>
-                <div class="twin-friend-actions">
-                  <a href="./messages.html?uid=${encodeURIComponent(u.uid)}" class="twin-btn twin-btn-primary twin-btn-sm" style="flex:1;">Nhắn tin</a>
-                  <button type="button" class="twin-btn twin-btn-secondary twin-btn-sm twin-btn-unfriend btn-unfriend">Hủy bạn bè</button>
-                </div>
-              </div>
-            `;
-            card.querySelector(".btn-unfriend").onclick = () => {
-              if (!confirm(`Bạn có chắc muốn hủy kết bạn với ${u.name || "người này"}?`)) return;
-              run(async () => {
-                await unfriendUser(me.uid, u.uid);
-                showToast(`Đã hủy kết bạn với ${u.name || "người dùng"}.`);
-              });
-            };
-            frGrid.appendChild(card);
-          });
-
-          if (!sugUsers.length) sugGrid.innerHTML = '<p class="twin-post-meta">Không còn gợi ý mới.</p>';
-          sugUsers.forEach((u) => {
-            const sent = (u.friendRequests || []).includes(me.uid);
-            const card = document.createElement("div");
-            card.className = "twin-entity-card";
-            card.innerHTML = `
-              <a href="./profile.html?uid=${encodeURIComponent(u.uid)}" class="twin-entity-cover-link" title="Xem trang cá nhân">
-                <img class="twin-entity-cover" src="${escapeHtml(u.avatar || DEFAULT_AVATAR)}" alt="" />
-              </a>
-              <div class="twin-entity-body">
-                <a href="./profile.html?uid=${encodeURIComponent(u.uid)}" class="twin-name-with-badge" style="font-weight:700;"><span>${escapeHtml(u.name)}</span>${renderAdminIconHtml(u)}</a>
-                <button class="twin-btn ${sent ? "twin-btn-ghost" : "twin-btn-secondary"} twin-btn-sm btn-add">${sent ? "Hủy lời mời" : "Thêm bạn bè"}</button>
-              </div>
-            `;
-            card.querySelector(".btn-add").onclick = () => run(async () => {
-              if (sent) {
-                await updateDoc(doc(db, "users", u.uid), { friendRequests: arrayRemove(me.uid) });
-                showToast("Đã hủy lời mời.");
-                return;
-              }
-              await updateDoc(doc(db, "users", u.uid), { friendRequests: arrayUnion(me.uid) });
-              showToast(`Đã gửi lời mời tới ${u.name}!`);
-              pushNotification(u.uid, {
-                fromUid: me.uid,
-                fromName: latestMe.name,
-                fromAvatar: latestMe.avatar,
-                text: "đã gửi lời mời kết bạn.",
-                link: "./friends.html"
-              }).catch(() => {});
-            });
-            sugGrid.appendChild(card);
-          });
+          allOthers = all;
+          renderList();
         }, (err) => showToast(friendlyError(err)));
+
+        setInterval(() => {
+          if (allOthers.length) renderList();
+        }, 30 * 1000);
       }
     });
   </script>

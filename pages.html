@@ -35,37 +35,49 @@
     <div id="pages-grid" class="twin-cards-grid"></div>
 
     <section id="page-feed-section" style="display:none;margin-top:24px;">
-      <div class="twin-card">
-        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
-          <div style="display:flex;align-items:center;gap:12px;">
-            <img id="pf-page-avatar" class="twin-avatar twin-avatar-lg" alt="" />
-            <div>
-              <h2 id="pf-page-name" style="font-size:20px;"></h2>
-              <p id="pf-page-meta" class="twin-post-meta"></p>
-            </div>
-          </div>
-          <button id="pf-page-close" class="twin-btn twin-btn-secondary twin-btn-sm">Đóng</button>
-        </div>
-
-        <div id="pf-page-composer" style="display:none;border-top:1px solid var(--border);padding-top:12px;">
-          <div class="twin-composer-bar" style="justify-content:flex-end;">
-            <button type="button" id="pg-prev-btn" class="twin-btn twin-btn-secondary twin-btn-sm" style="display:none;">Xem trước HTML</button>
-          </div>
-          <textarea id="page-post-content" class="twin-textarea" placeholder="Đăng tin mới từ Trang này... (Hỗ trợ văn bản &amp; mã HTML)"></textarea>
-          <div id="pg-html-preview" class="twin-html-preview" style="display:none;">
-            <div class="twin-html-preview-label">Xem trước tin Trang (HTML)</div>
-            <div id="pg-html-preview-body" class="twin-post-body twin-post-html" style="margin-bottom:0;"></div>
-          </div>
-          <div id="page-post-preview-wrap" style="margin-top:10px;display:none;position:relative;">
-            <img id="page-post-preview-img" class="twin-post-image" alt="Xem trước" />
-            <button id="page-post-preview-remove" type="button" class="twin-icon-btn" style="position:absolute;top:8px;right:8px;width:30px;height:30px;">✕</button>
-          </div>
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;gap:8px;flex-wrap:wrap;">
-            <label class="twin-btn twin-btn-secondary twin-btn-sm" style="cursor:pointer;">
-              <span>Thêm ảnh</span>
-              <input id="page-post-file" type="file" accept="image/*" hidden />
+      <div class="twin-card" style="padding:0;overflow:hidden;">
+        <div class="twin-entity-hero-cover" id="pf-page-cover-wrap">
+          <img id="pf-page-cover" alt="Ảnh bìa Trang" style="display:none;" />
+          <div class="twin-entity-hero-actions" id="pf-page-cover-controls" style="display:none;">
+            <label class="twin-cover-glass-btn" style="cursor:pointer;">
+              <span id="pf-page-cover-btn-text">Thêm / Đổi ảnh bìa</span>
+              <input id="pf-page-cover-input" type="file" accept="image/*" hidden />
             </label>
-            <button id="btn-publish-page-post" class="twin-btn twin-btn-primary twin-btn-sm">Đăng tin Trang</button>
+            <button type="button" id="pf-page-cover-remove" class="twin-cover-glass-btn" style="display:none;">Gỡ bìa</button>
+          </div>
+        </div>
+        <div style="padding:16px 18px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
+            <div style="display:flex;align-items:center;gap:12px;">
+              <img id="pf-page-avatar" class="twin-avatar twin-avatar-lg" alt="" />
+              <div>
+                <h2 id="pf-page-name" style="font-size:20px;"></h2>
+                <p id="pf-page-meta" class="twin-post-meta"></p>
+              </div>
+            </div>
+            <button id="pf-page-close" class="twin-btn twin-btn-secondary twin-btn-sm">Đóng</button>
+          </div>
+
+          <div id="pf-page-composer" style="display:none;border-top:1px solid var(--border);padding-top:12px;">
+            <div class="twin-composer-bar" style="justify-content:flex-end;">
+              <button type="button" id="pg-prev-btn" class="twin-btn twin-btn-secondary twin-btn-sm" style="display:none;">Xem trước HTML</button>
+            </div>
+            <textarea id="page-post-content" class="twin-textarea" placeholder="Đăng tin mới từ Trang này... (Hỗ trợ văn bản &amp; mã HTML)"></textarea>
+            <div id="pg-html-preview" class="twin-html-preview" style="display:none;">
+              <div class="twin-html-preview-label">Xem trước tin Trang (HTML)</div>
+              <div id="pg-html-preview-body" class="twin-post-body twin-post-html" style="margin-bottom:0;"></div>
+            </div>
+            <div id="page-post-preview-wrap" style="margin-top:10px;display:none;position:relative;">
+              <img id="page-post-preview-img" class="twin-post-image" alt="Xem trước" />
+              <button id="page-post-preview-remove" type="button" class="twin-icon-btn" style="position:absolute;top:8px;right:8px;width:30px;height:30px;">✕</button>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;gap:8px;flex-wrap:wrap;">
+              <label class="twin-btn twin-btn-secondary twin-btn-sm" style="cursor:pointer;">
+                <span>Thêm ảnh</span>
+                <input id="page-post-file" type="file" accept="image/*" hidden />
+              </label>
+              <button id="btn-publish-page-post" class="twin-btn twin-btn-primary twin-btn-sm">Đăng tin Trang</button>
+            </div>
           </div>
         </div>
       </div>
@@ -113,6 +125,9 @@
       sanitizeHtml,
       containsHtmlMarkup,
       isUserAdmin,
+      isGuestUser,
+      requireMemberAction,
+      twinConfirm,
       DEFAULT_AVATAR,
       escapeHtml,
       toMillis,
@@ -127,12 +142,15 @@
     let initialOpened = false;
 
     const modal = document.getElementById("page-modal");
-    document.getElementById("btn-open-create-page").onclick = () => modal.classList.add("open");
+    document.getElementById("btn-open-create-page").onclick = () => {
+      if (!requireMemberAction(me, "tạo Trang mới")) return;
+      modal.classList.add("open");
+    };
     document.getElementById("cp-cancel").onclick = () => modal.classList.remove("open");
     document.getElementById("cp-cover").onchange = (e) => {
       document.getElementById("cp-cover-label").textContent = e.target.files[0]
         ? "Đã chọn: " + e.target.files[0].name
-        : "Ảnh đại diện Trang (tùy chọn)";
+        : "Ảnh bìa / đại diện Trang (tùy chọn)";
     };
 
     const pgContentEl = document.getElementById("page-post-content");
@@ -181,15 +199,75 @@
       activePage = null;
     };
 
-    function openPageStream(p) {
-      activePage = p;
-      const isOwner = p.ownerUid === me.uid;
-      const sec = document.getElementById("page-feed-section");
-      sec.style.display = "block";
+    function canManagePage(p) {
+      return Boolean(me && !isGuestUser(me) && p && (p.ownerUid === me.uid || isUserAdmin(me)));
+    }
+
+    function renderActivePageHeader(p) {
+      const canManage = canManagePage(p);
+      const coverEl = document.getElementById("pf-page-cover");
+      const coverControls = document.getElementById("pf-page-cover-controls");
+      const coverRemove = document.getElementById("pf-page-cover-remove");
+      const coverBtnText = document.getElementById("pf-page-cover-btn-text");
+      if (p.coverUrl) {
+        coverEl.src = p.coverUrl;
+        coverEl.style.display = "block";
+        coverBtnText.textContent = "Đổi ảnh bìa";
+        coverRemove.style.display = canManage ? "inline-flex" : "none";
+      } else {
+        coverEl.removeAttribute("src");
+        coverEl.style.display = "none";
+        coverBtnText.textContent = "Thêm ảnh bìa";
+        coverRemove.style.display = "none";
+      }
+      coverControls.style.display = canManage ? "flex" : "none";
+
       document.getElementById("pf-page-avatar").src = p.coverUrl || DEFAULT_AVATAR;
       document.getElementById("pf-page-name").textContent = p.name;
       document.getElementById("pf-page-meta").textContent = `${p.category} · ${(p.followers || []).length} theo dõi`;
-      document.getElementById("pf-page-composer").style.display = isOwner ? "block" : "none";
+      document.getElementById("pf-page-composer").style.display = !isGuestUser(me) && p.ownerUid === me.uid ? "block" : "none";
+    }
+
+    document.getElementById("pf-page-cover-input").onchange = async (e) => {
+      const file = e.target.files[0];
+      e.target.value = "";
+      if (!file || !activePage || !canManagePage(activePage)) return;
+      showToast("Đang tải ảnh bìa Trang...");
+      try {
+        const coverUrl = await uploadToCloudinary(file);
+        await updateDoc(doc(db, "pages", activePage.id), { coverUrl });
+        activePage.coverUrl = coverUrl;
+        renderActivePageHeader(activePage);
+        showToast("Đã cập nhật ảnh bìa Trang!");
+      } catch (err) {
+        showToast(friendlyError(err));
+      }
+    };
+
+    document.getElementById("pf-page-cover-remove").onclick = async () => {
+      if (!activePage || !canManagePage(activePage)) return;
+      const ok = await twinConfirm({
+        title: "Gỡ ảnh bìa Trang",
+        message: "Bạn có chắc muốn gỡ ảnh bìa Trang này?",
+        confirmText: "Gỡ ảnh bìa"
+      });
+      if (!ok) return;
+      try {
+        await updateDoc(doc(db, "pages", activePage.id), { coverUrl: "" });
+        activePage.coverUrl = "";
+        renderActivePageHeader(activePage);
+        showToast("Đã gỡ ảnh bìa Trang.");
+      } catch (err) {
+        showToast(friendlyError(err));
+      }
+    };
+
+    function openPageStream(p) {
+      activePage = p;
+      const guest = isGuestUser(me);
+      const sec = document.getElementById("page-feed-section");
+      sec.style.display = "block";
+      renderActivePageHeader(p);
       sec.scrollIntoView({ behavior: "smooth" });
 
       if (unsubPagePosts) unsubPagePosts();
@@ -205,7 +283,13 @@
           me,
           '<div class="twin-card" style="color:var(--text-3);text-align:center;">Trang chưa có tin đăng nào.</div>'
         );
-      }, (err) => showToast(friendlyError(err)));
+      }, (err) => {
+        if (guest && err?.code === "permission-denied") {
+          list.innerHTML = '<div class="twin-card" style="color:var(--text-3);text-align:center;">Đăng nhập để xem bài viết của Trang này.</div>';
+          return;
+        }
+        showToast(friendlyError(err));
+      });
     }
 
     initTwinPage({
@@ -213,11 +297,16 @@
       onReady: (user) => {
         me = user;
         if (!me) return;
+        const guest = isGuestUser(me);
+        if (guest) {
+          document.getElementById("btn-open-create-page").style.display = "none";
+        }
 
         const targetId = new URLSearchParams(window.location.search).get("id");
 
         document.getElementById("create-page-form").onsubmit = async (e) => {
           e.preventDefault();
+          if (!requireMemberAction(me, "tạo Trang mới")) return;
           const name = document.getElementById("cp-name").value.trim();
           const category = document.getElementById("cp-cat").value.trim();
           const description = document.getElementById("cp-desc").value.trim();
@@ -300,8 +389,8 @@
           snap.forEach((d) => {
             const p = { id: d.id, ...d.data() };
             pagesList.push(p);
-            const following = (p.followers || []).includes(me.uid);
-            const isOwner = p.ownerUid === me.uid;
+            const following = !guest && (p.followers || []).includes(me.uid);
+            const isOwner = !guest && p.ownerUid === me.uid;
             const card = document.createElement("div");
             card.className = "twin-entity-card";
             card.innerHTML = `
@@ -314,25 +403,32 @@
                 <div class="twin-post-meta">${escapeHtml(p.category)} · ${(p.followers || []).length} theo dõi</div>
                 <p style="font-size:13px;color:var(--text-2);flex:1;">${escapeHtml(p.description || "")}</p>
                 <div style="display:flex;gap:6px;">
-                  <button class="twin-btn ${following ? "twin-btn-secondary" : "twin-btn-primary"} twin-btn-sm btn-follow">
-                    ${following ? "Đang theo dõi" : "Theo dõi"}
-                  </button>
+                  ${guest ? "" : `<button class="twin-btn ${following ? "twin-btn-secondary" : "twin-btn-primary"} twin-btn-sm btn-follow">${following ? "Đang theo dõi" : "Theo dõi"}</button>`}
                   <button class="twin-btn twin-btn-secondary twin-btn-sm btn-open-page" style="flex:1;">
                     ${isOwner ? "Đăng tin" : "Xem tin"}
                   </button>
                 </div>
               </div>
             `;
-            card.querySelector(".btn-follow").onclick = async () => {
+            card.querySelector(".btn-follow")?.addEventListener("click", async () => {
+              if (!requireMemberAction(me, "theo dõi Trang")) return;
               try {
                 await updateDoc(doc(db, "pages", p.id), { followers: following ? arrayRemove(me.uid) : arrayUnion(me.uid) });
               } catch (err) {
                 showToast(friendlyError(err));
               }
-            };
+            });
             card.querySelector(".btn-open-page").onclick = () => openPageStream(p);
             grid.appendChild(card);
           });
+
+          if (activePage) {
+            const refreshed = pagesList.find((item) => item.id === activePage.id);
+            if (refreshed) {
+              activePage = refreshed;
+              renderActivePageHeader(refreshed);
+            }
+          }
 
           if (!initialOpened && targetId) {
             const found = pagesList.find((item) => item.id === targetId);
@@ -341,7 +437,13 @@
               openPageStream(found);
             }
           }
-        }, (err) => showToast(friendlyError(err)));
+        }, (err) => {
+          if (guest && err?.code === "permission-denied") {
+            document.getElementById("pages-grid").innerHTML = '<div class="twin-card" style="color:var(--text-3);">Đăng nhập để xem danh sách Trang.</div>';
+            return;
+          }
+          showToast(friendlyError(err));
+        });
       }
     });
   </script>

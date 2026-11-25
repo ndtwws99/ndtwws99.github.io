@@ -11,6 +11,7 @@ import {
   arrayUnion,
   arrayRemove,
   deleteField,
+  increment,
   serverTimestamp,
   pushNotification,
   uploadToCloudinary,
@@ -27,7 +28,10 @@ import {
   showToast,
   friendlyError,
   isUserAdmin,
-  renderAdminIconHtml
+  isGuestUser,
+  requireMemberAction,
+  renderAdminIconHtml,
+  getStoryPrivacyMeta
 } from "./firebase-service.js";
 import { getSiteSettings } from "./layout.js";
 
@@ -138,16 +142,26 @@ function ensureEditModal() {
       </div>
       <form id="ep-form" style="display:flex;flex-direction:column;gap:12px;">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
-          <div class="twin-feeling-pill">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><path d="M8.5 14.5s1.3 2 3.5 2 3.5-2 3.5-2"/><circle cx="9" cy="10" r="1" fill="currentColor" stroke="none"/><circle cx="15" cy="10" r="1" fill="currentColor" stroke="none"/></svg>
-            <select id="ep-feeling" class="twin-feeling-select" aria-label="Cảm xúc bài viết">
-              <option value="">Cảm xúc...</option>
-              <option value="hạnh phúc 😊">Hạnh phúc 😊</option>
-              <option value="hào hứng 🤩">Hào hứng 🤩</option>
-              <option value="thư giãn 😌">Thư giãn 😌</option>
-              <option value="tự hào 💪">Tự hào 💪</option>
-              <option value="buồn nhẹ 😔">Buồn nhẹ 😔</option>
-            </select>
+          <div class="twin-composer-pills">
+            <div class="twin-feeling-pill twin-privacy-pill" title="Quyền xem bài viết">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M2.5 12h19"/><path d="M12 2.5a14.5 14.5 0 0 1 0 19 14.5 14.5 0 0 1 0-19Z"/></svg>
+              <select id="ep-privacy" class="twin-feeling-select" aria-label="Quyền xem bài viết">
+                <option value="public">Công khai</option>
+                <option value="friends">Bạn bè</option>
+                <option value="private">Riêng tư</option>
+              </select>
+            </div>
+            <div class="twin-feeling-pill">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><path d="M8.5 14.5s1.3 2 3.5 2 3.5-2 3.5-2"/><circle cx="9" cy="10" r="1" fill="currentColor" stroke="none"/><circle cx="15" cy="10" r="1" fill="currentColor" stroke="none"/></svg>
+              <select id="ep-feeling" class="twin-feeling-select" aria-label="Cảm xúc bài viết">
+                <option value="">Cảm xúc...</option>
+                <option value="hạnh phúc 😊">Hạnh phúc 😊</option>
+                <option value="hào hứng 🤩">Hào hứng 🤩</option>
+                <option value="thư giãn 😌">Thư giãn 😌</option>
+                <option value="tự hào 💪">Tự hào 💪</option>
+                <option value="buồn nhẹ 😔">Buồn nhẹ 😔</option>
+              </select>
+            </div>
           </div>
           <button type="button" id="ep-toggle-preview" class="twin-btn twin-btn-secondary twin-btn-sm" style="display:none;">Xem trước HTML</button>
         </div>
@@ -275,10 +289,13 @@ function ensureEditModal() {
       }
 
       const detectedHtml = canHtmlNow() && containsHtmlMarkup(content);
+      const nextPrivacy = backdrop.querySelector("#ep-privacy")?.value || "public";
       const patch = {
         content,
         isHtml: detectedHtml,
         feeling,
+        privacy: nextPrivacy,
+        allowedFriendUids: nextPrivacy === "friends" && Array.isArray(editingUser?.friends) ? editingUser.friends : [],
         imageUrl: nextImageUrl,
         editedAt: Date.now()
       };
@@ -313,6 +330,8 @@ export function openEditPostModal(post, currentUser = null) {
 
   backdrop.querySelector("#ep-content").value = post.content || "";
   backdrop.querySelector("#ep-feeling").value = post.feeling || "";
+  const epPriv = backdrop.querySelector("#ep-privacy");
+  if (epPriv) epPriv.value = post.privacy || "public";
   backdrop.querySelector("#ep-file-input").value = "";
   backdrop.querySelector("#ep-html-preview-box").style.display = "none";
   backdrop._syncHtmlAutoUi();
@@ -351,12 +370,13 @@ export function renderPostCard(post, currentUser) {
 
   const reactions = post.reactions || {};
   const reactionValues = Object.values(reactions);
-  const myReactionKey = currentUser ? reactions[currentUser.uid] : null;
+  const guest = isGuestUser(currentUser);
+  const myReactionKey = !guest && currentUser ? reactions[currentUser.uid] : null;
   const myReactionObj = REACTIONS.find((r) => r.key === myReactionKey);
   const comments = post.comments || [];
-  const isOwner = Boolean(currentUser && currentUser.uid === post.authorUid);
-  const canManage = Boolean(isOwner || isUserAdmin(currentUser));
-  let isSaved = !!(currentUser && (currentUser.savedPosts || []).includes(post.id));
+  const isOwner = Boolean(!guest && currentUser && currentUser.uid === post.authorUid);
+  const canManage = Boolean(!guest && (isOwner || isUserAdmin(currentUser)));
+  let isSaved = Boolean(!guest && currentUser && (currentUser.savedPosts || []).includes(post.id));
   const isPinned = Boolean(post.pinned);
 
   const uniqueReactionBadges = [...new Set(reactionValues)]
@@ -389,7 +409,7 @@ export function renderPostCard(post, currentUser) {
             ${post.groupName ? `<span style="font-weight:400;color:var(--text-3)"> trong <strong>${escapeHtml(post.groupName)}</strong></span>` : ""}
           </div>
           <div class="twin-post-meta">
-            ${post.pageName ? `Đăng bởi ${escapeHtml(post.authorName)}${renderAdminIconHtml(post.authorUid)} · ` : ""}${formatTime(post.createdAt)}${post.editedAt ? " · Đã chỉnh sửa" : ""} · Công khai
+            ${post.pageName ? `Đăng bởi ${escapeHtml(post.authorName)}${renderAdminIconHtml(post.authorUid)} · ` : ""}${formatTime(post.createdAt)}${post.editedAt ? " · Đã chỉnh sửa" : ""} · ${escapeHtml(getStoryPrivacyMeta(post.privacy).label)}
           </div>
         </div>
       </a>
@@ -442,7 +462,13 @@ export function renderPostCard(post, currentUser) {
 
     <div class="twin-post-stats">
       <div class="twin-stats-reacts">${reactionValues.length > 0 ? `<span class="twin-rx-stack">${uniqueReactionBadges}</span><span>${reactionValues.length}</span>` : "Chưa có cảm xúc"}</div>
-      <div>${comments.length} bình luận</div>
+      <div class="twin-stats-metrics">
+        <span>${comments.length} bình luận</span>
+        <span aria-hidden="true">·</span>
+        <span class="post-shares-count">${Number(post.sharesCount) || 0} chia sẻ</span>
+        <span aria-hidden="true">·</span>
+        <span class="post-saves-count">${Array.isArray(post.savedBy) ? post.savedBy.length : 0} lượt lưu</span>
+      </div>
     </div>
 
     <div class="twin-post-actions twin-post-actions-icons">
@@ -476,17 +502,21 @@ export function renderPostCard(post, currentUser) {
           )
           .join("")}
       </div>
-      <form class="twin-comment-form">
-        <input class="twin-input" type="text" placeholder="Viết bình luận..." required maxlength="1000" style="padding:8px 14px;" />
-        <button class="twin-btn twin-btn-primary twin-btn-sm" type="submit">Gửi</button>
-      </form>
+      ${
+        guest
+          ? `<div class="twin-guest-inline-note">Chế độ Khách chỉ xem bình luận. <a href="./login.html">Đăng nhập</a> để bình luận.</div>`
+          : `<form class="twin-comment-form">
+              <input class="twin-input" type="text" placeholder="Viết bình luận..." required maxlength="1000" style="padding:8px 14px;" />
+              <button class="twin-btn twin-btn-primary twin-btn-sm" type="submit">Gửi</button>
+            </form>`
+      }
     </div>
   `;
 
   const postLink = `./index.html#post-${post.id}`;
 
   async function setReaction(key) {
-    if (!currentUser) return showToast("Vui lòng đăng nhập để tương tác.");
+    if (!requireMemberAction(currentUser, "thả cảm xúc")) return;
     const ref = doc(db, "posts", post.id);
     if (reactions[currentUser.uid] === key) {
       await safe(() => updateDoc(ref, { [`reactions.${currentUser.uid}`]: deleteField() }));
@@ -539,9 +569,10 @@ export function renderPostCard(post, currentUser) {
     if (box.style.display !== "none") box.querySelector("input")?.focus();
   };
 
-  card.querySelector(".twin-comment-form").onsubmit = async (e) => {
+  const cmtForm = card.querySelector(".twin-comment-form");
+  if (cmtForm) cmtForm.onsubmit = async (e) => {
     e.preventDefault();
-    if (!currentUser) return showToast("Vui lòng đăng nhập để bình luận.");
+    if (!requireMemberAction(currentUser, "bình luận")) return;
     const input = e.target.querySelector("input");
     const text = input.value.trim();
     if (!text) return;
@@ -594,6 +625,11 @@ export function renderPostCard(post, currentUser) {
     });
   };
 
+  let localSharesCount = Number(post.sharesCount) || 0;
+  let localSavesCount = Array.isArray(post.savedBy) ? post.savedBy.length : 0;
+  const sharesCountEl = card.querySelector(".post-shares-count");
+  const savesCountEl = card.querySelector(".post-saves-count");
+
   card.querySelector(".btn-share-post").onclick = async () => {
     const base = new URL("./index.html", window.location.href);
     base.search = "";
@@ -604,11 +640,16 @@ export function renderPostCard(post, currentUser) {
     } catch {
       window.prompt("Sao chép liên kết bài viết:", base.href);
     }
+    if (!guest && currentUser?.uid) {
+      localSharesCount += 1;
+      if (sharesCountEl) sharesCountEl.textContent = `${localSharesCount} chia sẻ`;
+      updateDoc(doc(db, "posts", post.id), { sharesCount: increment(1) }).catch(() => {});
+    }
   };
 
   const saveBtn = card.querySelector(".btn-save-post");
   saveBtn.onclick = async () => {
-    if (!currentUser) return showToast("Vui lòng đăng nhập.");
+    if (!requireMemberAction(currentUser, "lưu bài viết")) return;
     const wasSaved = isSaved;
     const paint = () => {
       saveBtn.classList.toggle("reacted", isSaved);
@@ -616,14 +657,19 @@ export function renderPostCard(post, currentUser) {
       const tip = isSaved ? "Bỏ lưu bài viết" : "Lưu bài viết";
       saveBtn.title = tip;
       saveBtn.setAttribute("aria-label", tip);
+      if (savesCountEl) savesCountEl.textContent = `${Math.max(0, localSavesCount)} lượt lưu`;
     };
     isSaved = !wasSaved;
+    localSavesCount = Math.max(0, localSavesCount + (isSaved ? 1 : -1));
     paint();
     const list = Array.isArray(currentUser.savedPosts) ? currentUser.savedPosts : (currentUser.savedPosts = []);
     try {
       await updateDoc(doc(db, "users", currentUser.uid), {
         savedPosts: wasSaved ? arrayRemove(post.id) : arrayUnion(post.id)
       });
+      updateDoc(doc(db, "posts", post.id), {
+        savedBy: wasSaved ? arrayRemove(currentUser.uid) : arrayUnion(currentUser.uid)
+      }).catch(() => {});
       if (wasSaved) {
         const i = list.indexOf(post.id);
         if (i >= 0) list.splice(i, 1);
@@ -634,6 +680,7 @@ export function renderPostCard(post, currentUser) {
     } catch (err) {
       console.error(err);
       isSaved = wasSaved;
+      localSavesCount = Math.max(0, localSavesCount + (wasSaved ? 1 : -1));
       paint();
       showToast(friendlyError(err));
     }
@@ -679,9 +726,10 @@ function postSignature(p, currentUser) {
   const saved = !!(currentUser && (currentUser.savedPosts || []).includes(p.id));
   const canManage = Boolean(currentUser && (currentUser.uid === p.authorUid || isUserAdmin(currentUser)));
   return JSON.stringify([
-    p.content, Boolean(p.isHtml), p.imageUrl, p.videoUrl || "", p.videoType || "", p.videoDuration || 0,
+    p.content, Boolean(p.isHtml), p.privacy || "public", p.imageUrl, p.videoUrl || "", p.videoType || "", p.videoDuration || 0,
     p.feeling, p.groupName, p.pageName, p.authorName, p.authorAvatar,
     Boolean(p.pinned), p.pinnedAt || 0, p.editedAt || 0,
+    Number(p.sharesCount) || 0, Array.isArray(p.savedBy) ? p.savedBy.length : 0,
     p.reactions || {}, (p.comments || []).map((c) => c.id), toMillis(p.createdAt), saved, canManage
   ]);
 }
@@ -748,21 +796,31 @@ export function renderPostList(container, posts, currentUser, emptyHtml = "") {
 // Reusable Full-Featured Post Composer (dùng trên Trang cá nhân giống Bảng tin)
 // ==========================================================================
 export function mountPostComposer(container, currentUser, { isProfilePage = false, onAvatarClick = null } = {}) {
-  if (!container || !currentUser) return null;
+  if (!container || !currentUser || isGuestUser(currentUser)) return null;
 
   container.innerHTML = `
     <section class="twin-card twin-composer-card" id="pf-composer-card">
       <div class="twin-composer-bar">
-        <div class="twin-feeling-pill">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><path d="M8.5 14.5s1.3 2 3.5 2 3.5-2 3.5-2"/><circle cx="9" cy="10" r="1" fill="currentColor" stroke="none"/><circle cx="15" cy="10" r="1" fill="currentColor" stroke="none"/></svg>
-          <select id="pfc-feeling" class="twin-feeling-select" aria-label="Cảm xúc bài viết">
-            <option value="">Cảm xúc...</option>
-            <option value="hạnh phúc 😊">Hạnh phúc 😊</option>
-            <option value="hào hứng 🤩">Hào hứng 🤩</option>
-            <option value="thư giãn 😌">Thư giãn 😌</option>
-            <option value="tự hào 💪">Tự hào 💪</option>
-            <option value="buồn nhẹ 😔">Buồn nhẹ 😔</option>
-          </select>
+        <div class="twin-composer-pills">
+          <div class="twin-feeling-pill twin-privacy-pill" title="Quyền xem bài đăng">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M2.5 12h19"/><path d="M12 2.5a14.5 14.5 0 0 1 0 19 14.5 14.5 0 0 1 0-19Z"/></svg>
+            <select id="pfc-privacy" class="twin-feeling-select" aria-label="Quyền xem bài đăng">
+              <option value="public">Công khai</option>
+              <option value="friends">Bạn bè</option>
+              <option value="private">Riêng tư</option>
+            </select>
+          </div>
+          <div class="twin-feeling-pill">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><path d="M8.5 14.5s1.3 2 3.5 2 3.5-2 3.5-2"/><circle cx="9" cy="10" r="1" fill="currentColor" stroke="none"/><circle cx="15" cy="10" r="1" fill="currentColor" stroke="none"/></svg>
+            <select id="pfc-feeling" class="twin-feeling-select" aria-label="Cảm xúc bài viết">
+              <option value="">Cảm xúc...</option>
+              <option value="hạnh phúc 😊">Hạnh phúc 😊</option>
+              <option value="hào hứng 🤩">Hào hứng 🤩</option>
+              <option value="thư giãn 😌">Thư giãn 😌</option>
+              <option value="tự hào 💪">Tự hào 💪</option>
+              <option value="buồn nhẹ 😔">Buồn nhẹ 😔</option>
+            </select>
+          </div>
         </div>
         <div class="twin-composer-bar-right">
           <button type="button" id="pfc-html-preview-btn" class="twin-btn twin-btn-secondary twin-btn-sm" style="display:none;">Xem trước HTML</button>
@@ -830,6 +888,7 @@ export function mountPostComposer(container, currentUser, { isProfilePage = fals
 
   const card = container.querySelector("#pf-composer-card");
   const contentEl = container.querySelector("#pfc-content");
+  const privacyEl = container.querySelector("#pfc-privacy");
   const feelingEl = container.querySelector("#pfc-feeling");
   const htmlBtn = container.querySelector("#pfc-html-preview-btn");
   const htmlWrap = container.querySelector("#pfc-html-preview-wrap");
@@ -1005,6 +1064,7 @@ export function mountPostComposer(container, currentUser, { isProfilePage = fals
       }
 
       const isHtml = canUseHtml() && containsHtmlMarkup(content);
+      const privacy = privacyEl?.value || "public";
       await addDoc(collection(db, "posts"), {
         authorUid: currentUser.uid,
         authorName: currentUser.name,
@@ -1012,6 +1072,8 @@ export function mountPostComposer(container, currentUser, { isProfilePage = fals
         content,
         isHtml,
         feeling,
+        privacy,
+        allowedFriendUids: privacy === "friends" && Array.isArray(currentUser.friends) ? currentUser.friends : [],
         imageUrl,
         videoUrl,
         videoType,
@@ -1020,11 +1082,14 @@ export function mountPostComposer(container, currentUser, { isProfilePage = fals
         pinned: false,
         reactions: {},
         comments: [],
+        savedBy: [],
+        sharesCount: 0,
         createdAt: serverTimestamp()
       });
 
       contentEl.value = "";
       feelingEl.value = "";
+      if (privacyEl) privacyEl.value = "public";
       syncHtml();
       htmlWrap.style.display = "none";
       clearMedia();

@@ -27,7 +27,7 @@
     <div class="twin-page-head">
       <div>
         <h1>Nhóm</h1>
-        <p class="twin-post-meta" style="font-size:13.5px;">Yêu cầu tham gia cần được người tạo nhóm phê duyệt.</p>
+        <p class="twin-post-meta" style="font-size:13.5px;">Tham gia nhóm công khai ngay lập tức hoặc gửi yêu cầu vào nhóm riêng tư.</p>
       </div>
       <button id="btn-open-create-group" class="twin-btn twin-btn-primary">Tạo nhóm mới</button>
     </div>
@@ -40,29 +40,61 @@
     <div id="groups-grid" class="twin-cards-grid"></div>
 
     <section id="group-detail-section" style="display:none;margin-top:24px;">
-      <div class="twin-card">
-        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
-          <div>
-            <h2 id="gd-name" style="font-size:20px;"></h2>
-            <p id="gd-desc" class="twin-post-meta"></p>
+      <div class="twin-card" style="padding:0;overflow:hidden;">
+        <div class="twin-entity-hero-cover" id="gd-cover-wrap">
+          <img id="gd-cover-img" alt="Ảnh bìa nhóm" style="display:none;" />
+          <div class="twin-entity-hero-actions" id="gd-cover-controls" style="display:none;">
+            <label class="twin-cover-glass-btn" style="cursor:pointer;">
+              <span id="gd-cover-btn-text">Thêm / Đổi ảnh bìa</span>
+              <input id="gd-cover-input" type="file" accept="image/*" hidden />
+            </label>
+            <button type="button" id="gd-cover-remove" class="twin-cover-glass-btn" style="display:none;">Gỡ bìa</button>
           </div>
-          <button id="gd-close" class="twin-btn twin-btn-secondary twin-btn-sm">Đóng</button>
         </div>
-        <div id="gd-composer" style="margin-top:14px;display:flex;gap:8px;">
-          <input id="gd-post-input" class="twin-input" placeholder="Viết bài thảo luận trong nhóm..." />
-          <button id="gd-post-btn" class="twin-btn twin-btn-primary">Đăng</button>
+        <div style="padding:16px 18px;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;">
+            <div>
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                <h2 id="gd-name" style="font-size:20px;"></h2>
+                <span id="gd-privacy-pill" class="twin-privacy-pill"></span>
+              </div>
+              <p id="gd-desc" class="twin-post-meta" style="margin-top:4px;"></p>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <button id="gd-manage-btn" class="twin-btn twin-btn-primary twin-btn-sm" style="display:none;">Quản lý nhóm</button>
+              <button id="gd-close" class="twin-btn twin-btn-secondary twin-btn-sm">Đóng</button>
+            </div>
+          </div>
+          <div id="gd-composer" style="margin-top:14px;display:flex;gap:8px;">
+            <input id="gd-post-input" class="twin-input" placeholder="Viết bài thảo luận trong nhóm..." />
+            <button id="gd-post-btn" class="twin-btn twin-btn-primary">Đăng</button>
+          </div>
         </div>
       </div>
       <div id="gd-posts"></div>
     </section>
   </main>
 
+  <!-- Modal Tạo Nhóm -->
   <div class="twin-modal-backdrop" id="group-modal">
     <div class="twin-modal">
       <h2 style="margin-bottom:14px;font-size:19px;">Tạo nhóm mới</h2>
       <form id="create-group-form" style="display:flex;flex-direction:column;gap:12px;">
         <input id="cg-name" class="twin-input" placeholder="Tên nhóm" required />
         <textarea id="cg-desc" class="twin-textarea" placeholder="Mô tả ngắn về nhóm..."></textarea>
+        <div class="twin-form-grid-2">
+          <div>
+            <label class="twin-field-label" for="cg-privacy">Quyền riêng tư</label>
+            <select id="cg-privacy" class="twin-select">
+              <option value="public">Công khai · Ai cũng xem &amp; tham gia</option>
+              <option value="private">Riêng tư · Cần chủ nhóm duyệt</option>
+            </select>
+          </div>
+          <div>
+            <label class="twin-field-label" for="cg-max-members">Giới hạn thành viên</label>
+            <input id="cg-max-members" class="twin-input" type="number" min="0" max="10000" placeholder="0 = Không giới hạn" />
+          </div>
+        </div>
         <label class="twin-btn twin-btn-secondary twin-btn-sm" style="cursor:pointer;">
           <span id="cg-cover-label">Chọn ảnh bìa nhóm (tùy chọn)</span>
           <input id="cg-cover" type="file" accept="image/*" hidden />
@@ -72,6 +104,56 @@
           <button type="submit" class="twin-btn twin-btn-primary">Tạo nhóm</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- Modal Quản Lý Nhóm (Cài đặt + Thành viên + Duyệt yêu cầu) -->
+  <div class="twin-modal-backdrop" id="group-manage-modal">
+    <div class="twin-modal" style="max-width:560px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <h2 style="font-size:19px;">Quản lý nhóm</h2>
+        <button type="button" id="gm-close" class="twin-icon-btn" style="width:32px;height:32px;" aria-label="Đóng">✕</button>
+      </div>
+
+      <form id="gm-settings-form" style="display:flex;flex-direction:column;gap:10px;padding-bottom:14px;border-bottom:1px solid var(--border);">
+        <input id="gm-name" class="twin-input" placeholder="Tên nhóm" required />
+        <textarea id="gm-desc" class="twin-textarea" rows="2" placeholder="Mô tả nhóm..."></textarea>
+        <div class="twin-form-grid-2">
+          <div>
+            <label class="twin-field-label" for="gm-privacy">Chế độ nhóm</label>
+            <select id="gm-privacy" class="twin-select">
+              <option value="public">Công khai</option>
+              <option value="private">Riêng tư</option>
+            </select>
+          </div>
+          <div>
+            <label class="twin-field-label" for="gm-max-members">Số thành viên tối đa (0 = không giới hạn)</label>
+            <input id="gm-max-members" class="twin-input" type="number" min="0" max="10000" />
+          </div>
+        </div>
+        <div style="display:flex;justify-content:flex-end;">
+          <button type="submit" id="gm-save-btn" class="twin-btn twin-btn-primary twin-btn-sm">Lưu cài đặt nhóm</button>
+        </div>
+      </form>
+
+      <div id="gm-pending-wrap" style="display:none;padding:12px 0;border-bottom:1px solid var(--border);">
+        <div style="font-weight:700;font-size:14px;margin-bottom:8px;">Yêu cầu chờ duyệt (<span id="gm-pending-count">0</span>)</div>
+        <div id="gm-pending-list" class="twin-member-list"></div>
+      </div>
+
+      <div style="padding-top:12px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;">
+          <div style="font-weight:700;font-size:14px;">Thành viên (<span id="gm-member-count">0</span>)</div>
+        </div>
+        <input id="gm-member-search" class="twin-input" type="search" placeholder="Tìm thành viên trong nhóm..." style="margin-bottom:8px;" />
+        <div id="gm-members-list" class="twin-member-list"></div>
+      </div>
+
+      <div style="padding-top:14px;margin-top:14px;border-top:1px solid var(--border);">
+        <div style="font-weight:700;font-size:14px;margin-bottom:8px;">Thêm thành viên vào nhóm</div>
+        <input id="gm-add-search" class="twin-input" type="search" placeholder="Tìm tên thành viên Twin để thêm..." style="margin-bottom:8px;" />
+        <div id="gm-add-list" class="twin-member-list"></div>
+      </div>
     </div>
   </div>
 
@@ -93,7 +175,11 @@
       serverTimestamp,
       uploadToCloudinary,
       pushNotification,
+      isUserAdmin,
+      isGuestUser,
+      requireMemberAction,
       renderAdminIconHtml,
+      twinConfirm,
       DEFAULT_AVATAR,
       escapeHtml,
       toMillis,
@@ -109,8 +195,13 @@
     let initialOpened = false;
 
     const modal = document.getElementById("group-modal");
-    document.getElementById("btn-open-create-group").onclick = () => modal.classList.add("open");
+    const manageModal = document.getElementById("group-manage-modal");
+    document.getElementById("btn-open-create-group").onclick = () => {
+      if (!requireMemberAction(me, "tạo nhóm mới")) return;
+      modal.classList.add("open");
+    };
     document.getElementById("cg-cancel").onclick = () => modal.classList.remove("open");
+    document.getElementById("gm-close").onclick = () => manageModal.classList.remove("open");
     document.getElementById("cg-cover").onchange = (e) => {
       document.getElementById("cg-cover-label").textContent = e.target.files[0]
         ? "Đã chọn: " + e.target.files[0].name
@@ -122,14 +213,37 @@
       activeGroup = null;
     };
 
+    function isGroupPublic(g) {
+      return g && g.privacy === "public";
+    }
+    function getGroupMax(g) {
+      const n = Number(g?.maxMembers || 0);
+      return Number.isFinite(n) && n > 0 ? Math.floor(n) : 0;
+    }
+    function isGroupFull(g) {
+      const max = getGroupMax(g);
+      return max > 0 && (g?.members || []).length >= max;
+    }
+    function formatMemberCap(g) {
+      const count = (g?.members || []).length;
+      const max = getGroupMax(g);
+      return max > 0 ? `${count} / ${max} thành viên` : `${count} thành viên`;
+    }
+    function canManageGroup(g) {
+      return Boolean(me && !isGuestUser(me) && g && (g.ownerUid === me.uid || isUserAdmin(me)));
+    }
+
     function renderApprovals() {
       const card = document.getElementById("group-approvals-card");
       const listEl = document.getElementById("group-approvals-list");
-      if (!me) return;
+      if (!me || isGuestUser(me)) {
+        card.style.display = "none";
+        return;
+      }
 
       const rows = [];
       groupsList.forEach((g) => {
-        if (g.ownerUid === me.uid && Array.isArray(g.pendingMembers) && g.pendingMembers.length) {
+        if (canManageGroup(g) && Array.isArray(g.pendingMembers) && g.pendingMembers.length) {
           g.pendingMembers.forEach((reqUid) => {
             const u = usersMap.get(reqUid) || { uid: reqUid, name: "Thành viên", avatar: DEFAULT_AVATAR };
             rows.push({ group: g, user: u });
@@ -163,6 +277,9 @@
           </div>
         `;
         div.querySelector(".btn-approve").onclick = async () => {
+          if (isGroupFull(group)) {
+            return showToast(`Nhóm đã đạt giới hạn tối đa ${getGroupMax(group)} thành viên.`);
+          }
           try {
             await updateDoc(doc(db, "groups", group.id), {
               pendingMembers: arrayRemove(user.uid),
@@ -172,6 +289,7 @@
               fromUid: me.uid,
               fromName: me.name,
               fromAvatar: me.avatar,
+              groupId: group.id,
               text: `đã duyệt bạn vào nhóm "${group.name}".`,
               link: `./groups.html?id=${encodeURIComponent(group.id)}`
             });
@@ -194,18 +312,56 @@
       });
     }
 
-    function openGroupDetail(g) {
+    function renderGroupDetailHeader(g) {
+      const guest = isGuestUser(me);
+      const isPub = isGroupPublic(g);
+      const isMember = !guest && ((g.members || []).includes(me.uid) || g.ownerUid === me.uid);
+      const canManage = canManageGroup(g);
+
+      const coverImg = document.getElementById("gd-cover-img");
+      const coverControls = document.getElementById("gd-cover-controls");
+      const coverRemoveBtn = document.getElementById("gd-cover-remove");
+      const coverBtnText = document.getElementById("gd-cover-btn-text");
+      if (g.coverUrl) {
+        coverImg.src = g.coverUrl;
+        coverImg.style.display = "block";
+        coverBtnText.textContent = "Đổi ảnh bìa";
+        coverRemoveBtn.style.display = canManage ? "inline-flex" : "none";
+      } else {
+        coverImg.removeAttribute("src");
+        coverImg.style.display = "none";
+        coverBtnText.textContent = "Thêm ảnh bìa";
+        coverRemoveBtn.style.display = "none";
+      }
+      coverControls.style.display = canManage ? "flex" : "none";
+
+      document.getElementById("gd-name").textContent = g.name;
+      const privPill = document.getElementById("gd-privacy-pill");
+      privPill.textContent = isPub ? "Công khai" : "Riêng tư";
+      privPill.className = `twin-privacy-pill ${isPub ? "public" : "private"}`;
+      document.getElementById("gd-desc").textContent = `${formatMemberCap(g)}${g.description ? " · " + g.description : ""}`;
+      document.getElementById("gd-manage-btn").style.display = canManage ? "inline-flex" : "none";
+      document.getElementById("gd-composer").style.display = isMember ? "flex" : "none";
+    }
+
+    function openGroupDetail(g, { scroll = true } = {}) {
       activeGroup = g;
-      const isMember = (g.members || []).includes(me.uid) || g.ownerUid === me.uid;
+      const guest = isGuestUser(me);
+      const isPub = isGroupPublic(g);
+      const isMember = !guest && ((g.members || []).includes(me.uid) || g.ownerUid === me.uid);
+      const canViewPosts = isPub || isMember || (!guest && isUserAdmin(me));
+
       const sec = document.getElementById("group-detail-section");
       sec.style.display = "block";
-      document.getElementById("gd-name").textContent = g.name;
-      document.getElementById("gd-desc").textContent = `${(g.members || []).length} thành viên${g.description ? " · " + g.description : ""}`;
-      document.getElementById("gd-composer").style.display = isMember ? "flex" : "none";
-      sec.scrollIntoView({ behavior: "smooth" });
+      renderGroupDetailHeader(g);
+      if (scroll) sec.scrollIntoView({ behavior: "smooth" });
 
       if (unsubGroupPosts) unsubGroupPosts();
       const list = document.getElementById("gd-posts");
+      if (!canViewPosts) {
+        list.innerHTML = `<div class="twin-card" style="color:var(--text-3);text-align:center;padding:30px 18px;">Đây là nhóm <strong>Riêng tư</strong>. Bạn cần được chủ nhóm duyệt tham gia để xem và đăng bài viết.</div>`;
+        return;
+      }
       const q = query(collection(db, "posts"), where("groupId", "==", g.id));
       unsubGroupPosts = onSnapshot(q, (snap) => {
         const items = [];
@@ -213,13 +369,224 @@
         items.sort((a, b) => ((b.pinned ? 1 : 0) - (a.pinned ? 1 : 0)) || ((b.pinned && a.pinned) ? ((b.pinnedAt || 0) - (a.pinnedAt || 0)) : 0) || (toMillis(b.createdAt) - toMillis(a.createdAt)));
         const empty = isMember
           ? '<div class="twin-card" style="color:var(--text-3);text-align:center;">Chưa có bài viết nào trong nhóm này.</div>'
-          : '<div class="twin-card" style="color:var(--text-3);text-align:center;">Bạn cần được người tạo nhóm duyệt tham gia để đăng bài trong nhóm.</div>';
+          : '<div class="twin-card" style="color:var(--text-3);text-align:center;">Chưa có bài viết công khai nào trong nhóm này.</div>';
         renderPostList(list, items, me, empty);
-      }, (err) => showToast(friendlyError(err)));
+      }, (err) => {
+        if (guest && err?.code === "permission-denied") {
+          list.innerHTML = '<div class="twin-card" style="color:var(--text-3);text-align:center;">Đăng nhập để xem bài viết trong nhóm này.</div>';
+          return;
+        }
+        showToast(friendlyError(err));
+      });
     }
+
+    function renderGroupManageModal() {
+      if (!activeGroup || !canManageGroup(activeGroup)) return;
+      const g = activeGroup;
+      document.getElementById("gm-name").value = g.name || "";
+      document.getElementById("gm-desc").value = g.description || "";
+      document.getElementById("gm-privacy").value = isGroupPublic(g) ? "public" : "private";
+      document.getElementById("gm-max-members").value = String(getGroupMax(g));
+
+      // Pending requests
+      const pending = Array.isArray(g.pendingMembers) ? g.pendingMembers : [];
+      const pendingWrap = document.getElementById("gm-pending-wrap");
+      const pendingList = document.getElementById("gm-pending-list");
+      document.getElementById("gm-pending-count").textContent = String(pending.length);
+      pendingWrap.style.display = pending.length ? "block" : "none";
+      pendingList.innerHTML = "";
+      pending.forEach((uid) => {
+        const u = usersMap.get(uid) || { uid, name: "Thành viên", avatar: DEFAULT_AVATAR };
+        const row = document.createElement("div");
+        row.className = "twin-member-row";
+        row.innerHTML = `
+          <a href="./profile.html?uid=${encodeURIComponent(u.uid)}" class="twin-avatar-link"><img class="twin-avatar twin-avatar-sm" src="${escapeHtml(u.avatar || DEFAULT_AVATAR)}" alt="" /></a>
+          <a href="./profile.html?uid=${encodeURIComponent(u.uid)}" class="twin-name-with-badge" style="font-weight:600;font-size:13.5px;flex:1;min-width:0;"><span>${escapeHtml(u.name)}</span>${renderAdminIconHtml(u)}</a>
+          <button type="button" class="twin-btn twin-btn-primary twin-btn-sm btn-gm-app">Duyệt</button>
+          <button type="button" class="twin-btn twin-btn-secondary twin-btn-sm btn-gm-rej">Từ chối</button>
+        `;
+        row.querySelector(".btn-gm-app").onclick = async () => {
+          if (isGroupFull(g)) return showToast(`Nhóm đã đạt giới hạn tối đa ${getGroupMax(g)} thành viên.`);
+          try {
+            await updateDoc(doc(db, "groups", g.id), { pendingMembers: arrayRemove(uid), members: arrayUnion(uid) });
+            pushNotification(uid, {
+              fromUid: me.uid,
+              fromName: me.name,
+              fromAvatar: me.avatar,
+              groupId: g.id,
+              text: `đã duyệt bạn vào nhóm "${g.name}".`,
+              link: `./groups.html?id=${encodeURIComponent(g.id)}`
+            }).catch(() => {});
+            showToast(`Đã duyệt ${u.name}!`);
+          } catch (err) { showToast(friendlyError(err)); }
+        };
+        row.querySelector(".btn-gm-rej").onclick = async () => {
+          try {
+            await updateDoc(doc(db, "groups", g.id), { pendingMembers: arrayRemove(uid) });
+            showToast("Đã từ chối yêu cầu.");
+          } catch (err) { showToast(friendlyError(err)); }
+        };
+        pendingList.appendChild(row);
+      });
+
+      renderGroupMembersList(document.getElementById("gm-member-search").value);
+      renderAddMemberCandidates(document.getElementById("gm-add-search").value);
+    }
+
+    function renderGroupMembersList(filter = "") {
+      if (!activeGroup) return;
+      const g = activeGroup;
+      const members = Array.isArray(g.members) ? g.members : [];
+      document.getElementById("gm-member-count").textContent = formatMemberCap(g);
+      const q = filter.trim().toLowerCase();
+      const listEl = document.getElementById("gm-members-list");
+      listEl.innerHTML = "";
+      const matched = members
+        .map((uid) => usersMap.get(uid) || { uid, name: "Thành viên", avatar: DEFAULT_AVATAR })
+        .filter((u) => !q || (u.name || "").toLowerCase().includes(q));
+      if (!matched.length) {
+        listEl.innerHTML = '<div class="twin-post-meta" style="padding:6px;">Không tìm thấy thành viên nào.</div>';
+        return;
+      }
+      matched.forEach((u) => {
+        const isGroupOwner = u.uid === g.ownerUid;
+        const row = document.createElement("div");
+        row.className = "twin-member-row";
+        row.innerHTML = `
+          <a href="./profile.html?uid=${encodeURIComponent(u.uid)}" class="twin-avatar-link"><img class="twin-avatar twin-avatar-sm" src="${escapeHtml(u.avatar || DEFAULT_AVATAR)}" alt="" /></a>
+          <div style="flex:1;min-width:0;">
+            <a href="./profile.html?uid=${encodeURIComponent(u.uid)}" class="twin-name-with-badge" style="font-weight:600;font-size:13.5px;"><span>${escapeHtml(u.name)}</span>${renderAdminIconHtml(u)}</a>
+          </div>
+          ${isGroupOwner ? '<span class="twin-pill-tag">Chủ nhóm</span>' : '<button type="button" class="twin-btn twin-btn-secondary twin-btn-sm twin-btn-unfriend btn-gm-kick">Xóa</button>'}
+        `;
+        row.querySelector(".btn-gm-kick")?.addEventListener("click", async () => {
+          const ok = await twinConfirm({
+            title: "Xóa thành viên",
+            message: `Xóa ${u.name} khỏi nhóm "${g.name}"?`,
+            confirmText: "Xóa"
+          });
+          if (!ok) return;
+          try {
+            await updateDoc(doc(db, "groups", g.id), { members: arrayRemove(u.uid) });
+            showToast(`Đã xóa ${u.name} khỏi nhóm.`);
+          } catch (err) { showToast(friendlyError(err)); }
+        });
+        listEl.appendChild(row);
+      });
+    }
+
+    function renderAddMemberCandidates(filter = "") {
+      if (!activeGroup) return;
+      const g = activeGroup;
+      const memberSet = new Set(g.members || []);
+      const q = filter.trim().toLowerCase();
+      const listEl = document.getElementById("gm-add-list");
+      listEl.innerHTML = "";
+      const candidates = [...usersMap.values()]
+        .filter((u) => u && u.uid && !memberSet.has(u.uid) && (!q || (u.name || "").toLowerCase().includes(q)))
+        .slice(0, 12);
+      if (!candidates.length) {
+        listEl.innerHTML = '<div class="twin-post-meta" style="padding:6px;">Không có thành viên phù hợp để thêm.</div>';
+        return;
+      }
+      candidates.forEach((u) => {
+        const row = document.createElement("div");
+        row.className = "twin-member-row";
+        row.innerHTML = `
+          <a href="./profile.html?uid=${encodeURIComponent(u.uid)}" class="twin-avatar-link"><img class="twin-avatar twin-avatar-sm" src="${escapeHtml(u.avatar || DEFAULT_AVATAR)}" alt="" /></a>
+          <a href="./profile.html?uid=${encodeURIComponent(u.uid)}" class="twin-name-with-badge" style="font-weight:600;font-size:13.5px;flex:1;min-width:0;"><span>${escapeHtml(u.name)}</span>${renderAdminIconHtml(u)}</a>
+          <button type="button" class="twin-btn twin-btn-primary twin-btn-sm btn-gm-add">Thêm</button>
+        `;
+        row.querySelector(".btn-gm-add").onclick = async () => {
+          if (isGroupFull(g)) return showToast(`Nhóm đã đạt giới hạn tối đa ${getGroupMax(g)} thành viên.`);
+          try {
+            await updateDoc(doc(db, "groups", g.id), {
+              members: arrayUnion(u.uid),
+              pendingMembers: arrayRemove(u.uid)
+            });
+            pushNotification(u.uid, {
+              fromUid: me.uid,
+              fromName: me.name,
+              fromAvatar: me.avatar,
+              groupId: g.id,
+              text: `đã thêm bạn vào nhóm "${g.name}".`,
+              link: `./groups.html?id=${encodeURIComponent(g.id)}`
+            }).catch(() => {});
+            showToast(`Đã thêm ${u.name} vào nhóm!`);
+          } catch (err) { showToast(friendlyError(err)); }
+        };
+        listEl.appendChild(row);
+      });
+    }
+
+    document.getElementById("gm-member-search").addEventListener("input", (e) => renderGroupMembersList(e.target.value));
+    document.getElementById("gm-add-search").addEventListener("input", (e) => renderAddMemberCandidates(e.target.value));
+
+    document.getElementById("gd-manage-btn").onclick = () => {
+      if (!activeGroup || !canManageGroup(activeGroup)) return;
+      renderGroupManageModal();
+      manageModal.classList.add("open");
+    };
+
+    document.getElementById("gm-settings-form").onsubmit = async (e) => {
+      e.preventDefault();
+      if (!activeGroup || !canManageGroup(activeGroup)) return;
+      const name = document.getElementById("gm-name").value.trim();
+      const description = document.getElementById("gm-desc").value.trim();
+      const privacy = document.getElementById("gm-privacy").value === "public" ? "public" : "private";
+      const maxMembers = Math.max(0, Math.floor(Number(document.getElementById("gm-max-members").value) || 0));
+      if (maxMembers > 0 && maxMembers < (activeGroup.members || []).length) {
+        return showToast(`Giới hạn không thể nhỏ hơn số thành viên hiện có (${(activeGroup.members || []).length}).`);
+      }
+      const btn = document.getElementById("gm-save-btn");
+      btn.disabled = true;
+      try {
+        await updateDoc(doc(db, "groups", activeGroup.id), { name, description, privacy, maxMembers });
+        showToast("Đã lưu cài đặt nhóm!");
+      } catch (err) {
+        showToast(friendlyError(err));
+      } finally {
+        btn.disabled = false;
+      }
+    };
+
+    document.getElementById("gd-cover-input").onchange = async (e) => {
+      const file = e.target.files[0];
+      e.target.value = "";
+      if (!file || !activeGroup || !canManageGroup(activeGroup)) return;
+      showToast("Đang tải ảnh bìa nhóm...");
+      try {
+        const coverUrl = await uploadToCloudinary(file);
+        await updateDoc(doc(db, "groups", activeGroup.id), { coverUrl });
+        activeGroup.coverUrl = coverUrl;
+        renderGroupDetail(activeGroup);
+        showToast("Đã cập nhật ảnh bìa nhóm!");
+      } catch (err) {
+        showToast(friendlyError(err));
+      }
+    };
+
+    document.getElementById("gd-cover-remove").onclick = async () => {
+      if (!activeGroup || !canManageGroup(activeGroup)) return;
+      const ok = await twinConfirm({
+        title: "Gỡ ảnh bìa nhóm",
+        message: "Bạn có chắc muốn gỡ ảnh bìa nhóm này?",
+        confirmText: "Gỡ ảnh bìa"
+      });
+      if (!ok) return;
+      try {
+        await updateDoc(doc(db, "groups", activeGroup.id), { coverUrl: "" });
+        activeGroup.coverUrl = "";
+        renderGroupDetail(activeGroup);
+        showToast("Đã gỡ ảnh bìa nhóm.");
+      } catch (err) {
+        showToast(friendlyError(err));
+      }
+    };
 
     function renderGroupsGrid() {
       const grid = document.getElementById("groups-grid");
+      const guest = isGuestUser(me);
       grid.innerHTML = "";
       if (!groupsList.length) {
         grid.innerHTML = '<div class="twin-card" style="color:var(--text-3);">Chưa có nhóm nào. Hãy tạo nhóm đầu tiên!</div>';
@@ -229,13 +596,17 @@
       groupsList.forEach((g) => {
         const members = g.members || [];
         const pending = g.pendingMembers || [];
-        const isOwner = g.ownerUid === me.uid;
-        const isMember = members.includes(me.uid);
-        const isPending = pending.includes(me.uid);
+        const isPub = isGroupPublic(g);
+        const full = isGroupFull(g);
+        const isOwner = !guest && g.ownerUid === me.uid;
+        const isMember = !guest && members.includes(me.uid);
+        const isPending = !guest && pending.includes(me.uid);
 
         let actionHtml = "";
-        if (isOwner) {
-          actionHtml = `<button class="twin-btn twin-btn-secondary twin-btn-sm btn-view" style="flex:1;">Quản lý &amp; Xem (${pending.length} chờ)</button>`;
+        if (guest) {
+          actionHtml = `<button class="twin-btn twin-btn-secondary twin-btn-sm btn-view" style="flex:1;">${isPub ? "Xem nhóm công khai" : "Xem thông tin"}</button>`;
+        } else if (isOwner || isUserAdmin(me)) {
+          actionHtml = `<button class="twin-btn twin-btn-secondary twin-btn-sm btn-view" style="flex:1;">Quản lý &amp; Xem${pending.length ? ` (${pending.length} chờ)` : ""}</button>`;
         } else if (isMember) {
           actionHtml = `
             <button class="twin-btn twin-btn-secondary twin-btn-sm btn-leave">Rời nhóm</button>
@@ -245,9 +616,14 @@
           actionHtml = `
             <button class="twin-btn twin-btn-secondary twin-btn-sm btn-cancel-req" style="flex:1;">Đang chờ duyệt (Hủy)</button>
           `;
+        } else if (isPub) {
+          actionHtml = `
+            <button class="twin-btn twin-btn-primary twin-btn-sm btn-join-public" style="flex:1;" ${full ? "disabled" : ""}>${full ? "Đã đủ thành viên" : "Tham gia nhóm"}</button>
+            <button class="twin-btn twin-btn-secondary twin-btn-sm btn-view">Xem</button>
+          `;
         } else {
           actionHtml = `
-            <button class="twin-btn twin-btn-primary twin-btn-sm btn-request" style="flex:1;">Xin tham gia</button>
+            <button class="twin-btn twin-btn-primary twin-btn-sm btn-request" style="flex:1;" ${full ? "disabled" : ""}>${full ? "Đã đủ thành viên" : "Xin tham gia"}</button>
             <button class="twin-btn twin-btn-secondary twin-btn-sm btn-view">Xem</button>
           `;
         }
@@ -259,21 +635,42 @@
           <div class="twin-entity-body">
             <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;">
               <div style="font-weight:700;font-size:15.5px;">${escapeHtml(g.name)}</div>
-              ${isOwner ? '<span class="twin-pill-tag">Chủ nhóm</span>' : isPending ? '<span class="twin-pill-tag twin-pill-warn">Chờ duyệt</span>' : ""}
+              ${isOwner ? '<span class="twin-pill-tag">Chủ nhóm</span>' : isPending ? '<span class="twin-pill-tag twin-pill-warn">Chờ duyệt</span>' : `<span class="twin-privacy-pill ${isPub ? "public" : "private"}">${isPub ? "Công khai" : "Riêng tư"}</span>`}
             </div>
-            <div class="twin-post-meta">${members.length} thành viên · Cần duyệt</div>
+            <div class="twin-post-meta">${escapeHtml(formatMemberCap(g))} · ${isPub ? "Công khai" : "Cần duyệt"}</div>
             <p style="font-size:13px;color:var(--text-2);flex:1;">${escapeHtml(g.description || "")}</p>
             <div style="display:flex;gap:6px;flex-wrap:wrap;">${actionHtml}</div>
           </div>
         `;
 
+        card.querySelector(".btn-join-public")?.addEventListener("click", async () => {
+          if (!requireMemberAction(me, "tham gia nhóm")) return;
+          if (isGroupFull(g)) return showToast(`Nhóm đã đạt giới hạn tối đa ${getGroupMax(g)} thành viên.`);
+          try {
+            await updateDoc(doc(db, "groups", g.id), { members: arrayUnion(me.uid) });
+            showToast(`Đã tham gia nhóm "${g.name}"!`);
+          } catch (err) {
+            if (err?.code === "permission-denied") {
+              try {
+                await updateDoc(doc(db, "groups", g.id), { pendingMembers: arrayUnion(me.uid) });
+                showToast("Đã gửi yêu cầu tham gia nhóm!");
+              } catch (e2) { showToast(friendlyError(e2)); }
+              return;
+            }
+            showToast(friendlyError(err));
+          }
+        });
+
         card.querySelector(".btn-request")?.addEventListener("click", async () => {
+          if (!requireMemberAction(me, "xin tham gia nhóm")) return;
+          if (isGroupFull(g)) return showToast(`Nhóm đã đạt giới hạn tối đa ${getGroupMax(g)} thành viên.`);
           try {
             await updateDoc(doc(db, "groups", g.id), { pendingMembers: arrayUnion(me.uid) });
             await pushNotification(g.ownerUid, {
               fromUid: me.uid,
               fromName: me.name,
               fromAvatar: me.avatar,
+              groupId: g.id,
               text: `xin tham gia nhóm "${g.name}".`,
               link: `./groups.html?id=${encodeURIComponent(g.id)}`
             });
@@ -311,6 +708,10 @@
       onReady: (user) => {
         me = user;
         if (!me) return;
+        const guest = isGuestUser(me);
+        if (guest) {
+          document.getElementById("btn-open-create-group").style.display = "none";
+        }
 
         const targetId = new URLSearchParams(window.location.search).get("id");
 
@@ -318,12 +719,16 @@
           usersMap.clear();
           snap.forEach((d) => usersMap.set(d.id, d.data()));
           renderApprovals();
+          if (manageModal.classList.contains("open")) renderGroupManageModal();
         }, () => {});
 
         document.getElementById("create-group-form").onsubmit = async (e) => {
           e.preventDefault();
+          if (!requireMemberAction(me, "tạo nhóm mới")) return;
           const name = document.getElementById("cg-name").value.trim();
           const description = document.getElementById("cg-desc").value.trim();
+          const privacy = document.getElementById("cg-privacy").value === "public" ? "public" : "private";
+          const maxMembers = Math.max(0, Math.floor(Number(document.getElementById("cg-max-members").value) || 0));
           const coverFile = document.getElementById("cg-cover").files[0];
           const submitBtn = e.target.querySelector('button[type="submit"]');
           if (submitBtn.disabled) return;
@@ -334,6 +739,8 @@
             await addDoc(collection(db, "groups"), {
               name,
               description,
+              privacy,
+              maxMembers,
               coverUrl,
               ownerUid: me.uid,
               members: [me.uid],
@@ -353,6 +760,7 @@
 
         const publishGroupPost = async () => {
           if (!activeGroup) return;
+          if (!requireMemberAction(me, "đăng bài trong nhóm")) return;
           const input = document.getElementById("gd-post-input");
           const content = input.value.trim();
           if (!content) return;
@@ -391,7 +799,11 @@
           renderApprovals();
           if (activeGroup) {
             const refreshed = groupsList.find((item) => item.id === activeGroup.id);
-            if (refreshed) activeGroup = refreshed;
+            if (refreshed) {
+              activeGroup = refreshed;
+              renderGroupDetailHeader(refreshed);
+              if (manageModal.classList.contains("open")) renderGroupManageModal();
+            }
           }
           if (!initialOpened && targetId) {
             const found = groupsList.find((item) => item.id === targetId);
@@ -400,7 +812,13 @@
               openGroupDetail(found);
             }
           }
-        }, (err) => showToast(friendlyError(err)));
+        }, (err) => {
+          if (guest && err?.code === "permission-denied") {
+            document.getElementById("groups-grid").innerHTML = '<div class="twin-card" style="color:var(--text-3);">Đăng nhập để xem danh sách nhóm.</div>';
+            return;
+          }
+          showToast(friendlyError(err));
+        });
 
         window.addEventListener("twin-open-group", (e) => {
           const gid = e.detail?.groupId;

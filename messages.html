@@ -33,16 +33,17 @@
 
     <section class="twin-messenger-main">
       <div id="msg-topbar" class="twin-messenger-topbar" style="display:none;">
-        <div style="display:flex;align-items:center;gap:10px;">
+        <div style="display:flex;align-items:center;gap:10px;min-width:0;">
           <button id="msg-back-btn" class="twin-icon-btn twin-back-btn" style="width:36px;height:36px;" aria-label="Quay lại danh sách">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
           </button>
-          <a id="msg-peer-avatar-link" href="./profile.html" class="twin-avatar-link" title="Xem trang cá nhân">
+          <a id="msg-peer-avatar-link" href="./profile.html" class="twin-avatar-link twin-presence-wrap" title="Xem trang cá nhân">
             <img id="msg-peer-avatar" class="twin-avatar" src="" alt="" />
+            <span id="msg-peer-presence-badge"></span>
           </a>
-          <div>
+          <div style="min-width:0;">
             <div id="msg-peer-name" class="twin-name-with-badge" style="font-weight:700;font-size:15px;"></div>
-            <div class="twin-post-meta">Twin Chat</div>
+            <div id="msg-peer-status" class="twin-post-meta"></div>
           </div>
         </div>
         <a id="msg-peer-profile" href="./profile.html" class="twin-btn twin-btn-secondary twin-btn-sm">Trang cá nhân</a>
@@ -54,17 +55,43 @@
             <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.5 8.5 0 0 1-12.6 7.4L3 20.5l1.6-4.8A8.5 8.5 0 1 1 21 11.5Z"/></svg>
           </div>
           <h3 style="color:var(--text);">Chọn một cuộc trò chuyện</h3>
-          <p style="margin-top:4px;font-size:14px;">Gửi tin nhắn và hình ảnh thời gian thực trên Twin.</p>
+          <p style="margin-top:4px;font-size:14px;">Gửi tin nhắn, ảnh, video, tệp đính kèm và liên kết thời gian thực trên Twin.</p>
         </div>
       </div>
 
-      <form id="msg-send-form" class="twin-chat-form" style="display:none;">
-        <label class="twin-icon-btn" title="Gửi ảnh" aria-label="Gửi ảnh" style="cursor:pointer;flex-shrink:0;">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-4.5-4.5a2 2 0 0 0-2.8 0L5 19"/></svg>
-          <input id="msg-image-input" type="file" accept="image/*" hidden />
-        </label>
-        <input id="msg-text-input" class="twin-input" type="text" placeholder="Nhập tin nhắn..." />
-        <button class="twin-btn twin-btn-primary" type="submit" style="padding:9px 18px;">Gửi</button>
+      <div id="msg-pending-bar" class="twin-chat-pending" style="display:none;"></div>
+
+      <div id="msg-link-bar" class="twin-chat-link-bar" style="display:none;">
+        <input id="msg-link-url" class="twin-input" type="url" placeholder="Dán đường dẫn liên kết (https://...)" />
+        <input id="msg-link-title" class="twin-input" type="text" maxlength="100" placeholder="Tiêu đề liên kết (tùy chọn)" />
+        <div class="twin-chat-link-bar-actions">
+          <button type="button" id="msg-link-cancel" class="twin-btn twin-btn-secondary twin-btn-sm">Hủy</button>
+          <button type="button" id="msg-link-apply" class="twin-btn twin-btn-primary twin-btn-sm">Đính kèm link</button>
+        </div>
+      </div>
+
+      <form id="msg-send-form" class="twin-chat-form twin-chat-form-rich" style="display:none;">
+        <div class="twin-chat-tools">
+          <label class="twin-chat-tool-btn" title="Gửi ảnh" aria-label="Gửi ảnh">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-4.5-4.5a2 2 0 0 0-2.8 0L5 19"/></svg>
+            <input id="msg-image-input" type="file" accept="image/*" hidden />
+          </label>
+          <label class="twin-chat-tool-btn" title="Gửi video" aria-label="Gửi video">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5.5" width="14" height="13" rx="2.5"/><path d="m16.5 10 5-3v10l-5-3"/></svg>
+            <input id="msg-video-input" type="file" accept="video/*" hidden />
+          </label>
+          <label class="twin-chat-tool-btn" title="Gửi tệp đính kèm" aria-label="Gửi tệp đính kèm">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+            <input id="msg-file-input" type="file" hidden />
+          </label>
+          <button type="button" id="msg-link-toggle" class="twin-chat-tool-btn" title="Gửi liên kết" aria-label="Gửi liên kết">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+          </button>
+        </div>
+        <div class="twin-chat-input-row">
+          <input id="msg-text-input" class="twin-input" type="text" placeholder="Nhập tin nhắn hoặc dán liên kết..." />
+          <button id="msg-send-btn" class="twin-btn twin-btn-primary" type="submit" style="padding:9px 18px;">Gửi</button>
+        </div>
       </form>
     </section>
   </div>
@@ -80,10 +107,17 @@
       limit,
       onSnapshot,
       serverTimestamp,
-      uploadToCloudinary,
+      uploadChatAttachmentToCloudinary,
+      normalizeSafeHttpUrl,
+      formatFileSize,
+      formatChatMessagePreview,
+      createChatMessageElement,
       pushNotification,
       isUserAdmin,
+      isGuestUser,
       renderAdminIconHtml,
+      getUserPresence,
+      renderPresenceBadgeHtml,
       getChatId,
       DEFAULT_AVATAR,
       escapeHtml,
@@ -107,7 +141,51 @@
     const topbar = document.getElementById("msg-topbar");
     const sendForm = document.getElementById("msg-send-form");
     const textInput = document.getElementById("msg-text-input");
+    const sendBtn = document.getElementById("msg-send-btn");
     const imgInput = document.getElementById("msg-image-input");
+    const vidInput = document.getElementById("msg-video-input");
+    const fileInput = document.getElementById("msg-file-input");
+    const pendingBar = document.getElementById("msg-pending-bar");
+    const linkBar = document.getElementById("msg-link-bar");
+    const linkUrlInput = document.getElementById("msg-link-url");
+    const linkTitleInput = document.getElementById("msg-link-title");
+
+    let pendingFile = null;
+    let pendingLink = null;
+    let sending = false;
+
+    function clearPending() {
+      pendingFile = null;
+      pendingLink = null;
+      if (imgInput) imgInput.value = "";
+      if (vidInput) vidInput.value = "";
+      if (fileInput) fileInput.value = "";
+      if (pendingBar) {
+        pendingBar.style.display = "none";
+        pendingBar.innerHTML = "";
+      }
+    }
+
+    function renderPending() {
+      if (!pendingFile && !pendingLink) {
+        clearPending();
+        return;
+      }
+      pendingBar.style.display = "flex";
+      if (pendingFile) {
+        const label = pendingFile.type?.startsWith("image/") ? "Ảnh" : pendingFile.type?.startsWith("video/") ? "Video" : "Tệp";
+        pendingBar.innerHTML = `
+          <span class="twin-chat-pending-info"><strong>${label}:</strong> ${escapeHtml(pendingFile.name)} (${escapeHtml(formatFileSize(pendingFile.size))})</span>
+          <button type="button" id="msg-pending-clear" class="twin-chat-pending-clear" aria-label="Bỏ đính kèm">✕</button>
+        `;
+      } else if (pendingLink) {
+        pendingBar.innerHTML = `
+          <span class="twin-chat-pending-info"><strong>Liên kết:</strong> ${escapeHtml(pendingLink.title || pendingLink.url)}</span>
+          <button type="button" id="msg-pending-clear" class="twin-chat-pending-clear" aria-label="Bỏ liên kết">✕</button>
+        `;
+      }
+      document.getElementById("msg-pending-clear").onclick = clearPending;
+    }
 
     document.getElementById("msg-back-btn").onclick = () => {
       shell.classList.remove("chat-open");
@@ -118,16 +196,8 @@
 
     onUnreadChatCountsChange((counts) => {
       unreadByPeer = counts;
-      if (me) renderUsers(document.getElementById("msg-search-user").value);
+      if (me && !isGuestUser(me)) renderUsers(document.getElementById("msg-search-user").value);
     });
-
-    function formatLastMessagePreview(last) {
-      if (!last) return "Chưa có tin nhắn";
-      const prefix = me && last.senderUid === me.uid ? "Bạn: " : "";
-      if (last.text) return `${prefix}${last.text}`;
-      if (last.imageUrl) return `${prefix}Đã gửi một hình ảnh`;
-      return "Chưa có tin nhắn";
-    }
 
     function syncLastMessageListeners() {
       if (!me) return;
@@ -149,10 +219,7 @@
           } else {
             const m = snap.docs[0].data();
             lastMessages.set(u.uid, {
-              text: m.text || "",
-              imageUrl: m.imageUrl || "",
-              senderUid: m.senderUid || "",
-              createdAt: m.createdAt || null,
+              ...m,
               timeMs: toMillis(m.createdAt) || Date.now()
             });
           }
@@ -162,27 +229,50 @@
       });
     }
 
+    function renderActivePeerPresence() {
+      if (!activePeer) return;
+      const p = getUserPresence(activePeer);
+      const statusEl = document.getElementById("msg-peer-status");
+      if (statusEl) {
+        statusEl.textContent = p.agoText || "";
+        statusEl.style.display = p.agoText ? "block" : "none";
+      }
+      const badgeWrap = document.getElementById("msg-peer-presence-badge");
+      if (badgeWrap) {
+        badgeWrap.innerHTML = renderPresenceBadgeHtml(activePeer);
+      }
+    }
+
     function renderUsers(filter = "") {
       convList.innerHTML = "";
       const q = filter.trim().toLowerCase();
       const list = allUsers
         .filter((u) => !q || (u.name || "").toLowerCase().includes(q))
-        .sort((a, b) => (lastMessages.get(b.uid)?.timeMs || 0) - (lastMessages.get(a.uid)?.timeMs || 0));
+        .sort((a, b) => {
+          const msgDiff = (lastMessages.get(b.uid)?.timeMs || 0) - (lastMessages.get(a.uid)?.timeMs || 0);
+          if (msgDiff !== 0) return msgDiff;
+          const pa = getUserPresence(a);
+          const pb = getUserPresence(b);
+          if (pb.online !== pa.online) return pb.online ? 1 : -1;
+          return (pb.lastActiveMs || 0) - (pa.lastActiveMs || 0);
+        });
       if (!list.length) {
         convList.innerHTML = '<p class="twin-post-meta" style="padding:14px;">Chưa có người dùng khác.</p>';
         return;
       }
       list.forEach((u) => {
         const last = lastMessages.get(u.uid);
-        const preview = formatLastMessagePreview(last);
+        const pres = getUserPresence(u);
+        const preview = last ? formatChatMessagePreview(last, me?.uid) : (pres.agoText || "Chưa có tin nhắn");
         const timeLabel = last ? formatTime(last.createdAt) : "";
         const unread = unreadByPeer.get(u.uid) || 0;
         const isActive = Boolean(activePeer && activePeer.uid === u.uid);
         const btn = document.createElement("button");
         btn.className = `twin-conv-item ${isActive ? "active" : ""} ${unread > 0 ? "unread" : ""}`;
         btn.innerHTML = `
-          <div class="twin-conv-avatar-wrap">
+          <div class="twin-conv-avatar-wrap twin-presence-wrap">
             <img class="twin-avatar twin-avatar-md twin-conv-avatar-go" src="${escapeHtml(u.avatar || DEFAULT_AVATAR)}" alt="" title="Xem trang cá nhân" />
+            ${renderPresenceBadgeHtml(u)}
             ${unread > 0 ? '<span class="twin-conv-dot" aria-hidden="true"></span>' : ""}
           </div>
           <div style="min-width:0;flex:1;">
@@ -217,9 +307,10 @@
       document.getElementById("msg-peer-avatar-link").href = `./profile.html?uid=${encodeURIComponent(peer.uid)}`;
       document.getElementById("msg-peer-name").innerHTML = `<span>${escapeHtml(peer.name)}</span>${renderAdminIconHtml(peer)}`;
       document.getElementById("msg-peer-profile").href = `./profile.html?uid=${encodeURIComponent(peer.uid)}`;
+      renderActivePeerPresence();
       renderUsers(document.getElementById("msg-search-user").value);
 
-      if (same && unsubChat) return; // đã đang mở đúng cuộc trò chuyện này
+      if (same && unsubChat) return;
       if (unsubChat) unsubChat();
       const chatId = getChatId(me.uid, peer.uid);
       const q = query(collection(db, "messages", chatId, "items"), orderBy("createdAt", "asc"));
@@ -231,26 +322,7 @@
         }
         snap.forEach((d) => {
           const m = d.data();
-          const div = document.createElement("div");
-          div.className = `twin-msg ${m.senderUid === me.uid ? "me" : "them"}`;
-          if (m.text) {
-            const p = document.createElement("div");
-            p.textContent = m.text;
-            div.appendChild(p);
-          }
-          if (m.imageUrl) {
-            const img = document.createElement("img");
-            img.src = m.imageUrl;
-            img.alt = "Ảnh";
-            div.appendChild(img);
-          }
-          const timeEl = document.createElement("div");
-          timeEl.style.fontSize = "11px";
-          timeEl.style.opacity = "0.7";
-          timeEl.style.marginTop = "4px";
-          timeEl.textContent = formatTime(m.createdAt);
-          div.appendChild(timeEl);
-          feedEl.appendChild(div);
+          feedEl.appendChild(createChatMessageElement(m, m.senderUid === me.uid));
         });
         feedEl.scrollTop = feedEl.scrollHeight;
       }, (err) => {
@@ -268,6 +340,22 @@
         me = user;
         if (!me) return;
 
+        if (isGuestUser(me)) {
+          shell.className = "twin-main";
+          shell.style.maxWidth = "640px";
+          shell.innerHTML = `
+            <section class="twin-card twin-guest-gate">
+              <div class="twin-guest-gate-icon" aria-hidden="true">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.5 8.5 0 0 1-12.6 7.4L3 20.5l1.6-4.8A8.5 8.5 0 1 1 21 11.5Z"/></svg>
+              </div>
+              <h2>Chế độ Khách không thể nhắn tin</h2>
+              <p class="twin-post-meta">Đăng nhập tài khoản Twin để gửi tin nhắn, hình ảnh, video, tệp và liên kết trực tiếp với bạn bè.</p>
+              <a href="./login.html" class="twin-btn twin-btn-primary">Đăng nhập ngay</a>
+            </section>
+          `;
+          return;
+        }
+
         document.getElementById("msg-search-user").addEventListener("input", (e) => renderUsers(e.target.value));
         const preselectUid = new URLSearchParams(window.location.search).get("uid");
 
@@ -277,6 +365,13 @@
             const u = d.data();
             if (u.uid !== me.uid) allUsers.push(u);
           });
+          if (activePeer) {
+            const refreshed = allUsers.find((u) => u.uid === activePeer.uid);
+            if (refreshed) {
+              activePeer = refreshed;
+              renderActivePeerPresence();
+            }
+          }
           syncLastMessageListeners();
           renderUsers(document.getElementById("msg-search-user").value);
           if (preselectUid && !activePeer) {
@@ -285,6 +380,11 @@
           }
         }, (err) => showToast(friendlyError(err)));
 
+        setInterval(() => {
+          if (allUsers.length) renderUsers(document.getElementById("msg-search-user").value);
+          if (activePeer) renderActivePeerPresence();
+        }, 30 * 1000);
+
         function canMessagePeer(peer) {
           if (!peer || !me) return false;
           if (peer.allowMessagesFrom !== "friends") return true;
@@ -292,67 +392,113 @@
           return (me.friends || []).includes(peer.uid);
         }
 
+        const stageFile = (f) => {
+          if (!f) return;
+          pendingFile = f;
+          pendingLink = null;
+          linkBar.style.display = "none";
+          renderPending();
+          textInput.focus();
+        };
+
+        imgInput.onchange = () => stageFile(imgInput.files[0]);
+        vidInput.onchange = () => stageFile(vidInput.files[0]);
+        fileInput.onchange = () => stageFile(fileInput.files[0]);
+
+        document.getElementById("msg-link-toggle").onclick = () => {
+          const opening = linkBar.style.display === "none";
+          linkBar.style.display = opening ? "flex" : "none";
+          if (opening) {
+            linkUrlInput.value = pendingLink?.url || "";
+            linkTitleInput.value = pendingLink?.title || "";
+            linkUrlInput.focus();
+          }
+        };
+        document.getElementById("msg-link-cancel").onclick = () => {
+          linkBar.style.display = "none";
+        };
+        document.getElementById("msg-link-apply").onclick = () => {
+          const safeUrl = normalizeSafeHttpUrl(linkUrlInput.value);
+          if (!safeUrl) return showToast("Vui lòng nhập đường dẫn hợp lệ (ví dụ: https://...).");
+          pendingLink = { url: safeUrl, title: linkTitleInput.value.trim().slice(0, 100) };
+          pendingFile = null;
+          imgInput.value = "";
+          vidInput.value = "";
+          fileInput.value = "";
+          linkBar.style.display = "none";
+          renderPending();
+          textInput.focus();
+        };
+
         sendForm.onsubmit = async (e) => {
           e.preventDefault();
-          if (!activePeer) return;
+          if (!activePeer || sending) return;
           if (!canMessagePeer(activePeer)) {
             showToast("Người này chỉ nhận tin nhắn từ bạn bè.");
             return;
           }
           const text = textInput.value.trim();
-          if (!text) return;
-          textInput.value = "";
+          if (!text && !pendingFile && !pendingLink) return;
+
+          sending = true;
+          sendBtn.disabled = true;
+          const fileToSend = pendingFile;
+          const linkToSend = pendingLink;
           const chatId = getChatId(me.uid, activePeer.uid);
+
           try {
-            await addDoc(collection(db, "messages", chatId, "items"), {
+            const payload = {
               senderUid: me.uid,
               text,
               createdAt: serverTimestamp()
-            });
+            };
+            let notifText = text ? `đã nhắn: "${text.slice(0, 45)}"` : "đã gửi một tin nhắn";
+
+            if (fileToSend) {
+              sendBtn.textContent = "0%";
+              const uploaded = await uploadChatAttachmentToCloudinary(fileToSend, (pct) => {
+                sendBtn.textContent = `${pct}%`;
+              });
+              if (uploaded.kind === "image") {
+                payload.imageUrl = uploaded.url;
+                payload.fileName = uploaded.name;
+                notifText = text ? `đã gửi ảnh: "${text.slice(0, 40)}"` : "đã gửi một hình ảnh";
+              } else if (uploaded.kind === "video") {
+                payload.videoUrl = uploaded.url;
+                payload.videoPoster = uploaded.poster || "";
+                payload.fileName = uploaded.name;
+                notifText = text ? `đã gửi video: "${text.slice(0, 40)}"` : "đã gửi một video";
+              } else {
+                payload.fileUrl = uploaded.url;
+                payload.fileName = uploaded.name;
+                payload.fileSize = uploaded.size;
+                payload.fileMime = uploaded.mime;
+                notifText = `đã gửi tệp: ${uploaded.name}`;
+              }
+            } else if (linkToSend) {
+              payload.linkUrl = linkToSend.url;
+              if (linkToSend.title) payload.linkTitle = linkToSend.title;
+              notifText = `đã gửi liên kết: ${(linkToSend.title || linkToSend.url).slice(0, 45)}`;
+            }
+
+            await addDoc(collection(db, "messages", chatId, "items"), payload);
+            textInput.value = "";
+            clearPending();
+
             pushNotification(activePeer.uid, {
               fromUid: me.uid,
               fromName: me.name,
               fromAvatar: me.avatar || DEFAULT_AVATAR,
               type: "message",
-              text: `đã nhắn: "${text.slice(0, 45)}"`,
+              text: notifText,
               link: `./messages.html?uid=${encodeURIComponent(me.uid)}`
             }).catch((err) => console.warn("Message notification:", err));
           } catch (err) {
-            textInput.value = text; // không mất tin nhắn khi gửi lỗi
-            showToast(friendlyError(err));
-          }
-        };
-
-        imgInput.onchange = async () => {
-          const f = imgInput.files[0];
-          if (!f || !activePeer) return;
-          if (!canMessagePeer(activePeer)) {
-            showToast("Người này chỉ nhận tin nhắn từ bạn bè.");
-            imgInput.value = "";
-            return;
-          }
-          showToast("Đang tải ảnh lên...");
-          try {
-            const imageUrl = await uploadToCloudinary(f);
-            const chatId = getChatId(me.uid, activePeer.uid);
-            await addDoc(collection(db, "messages", chatId, "items"), {
-              senderUid: me.uid,
-              text: "",
-              imageUrl,
-              createdAt: serverTimestamp()
-            });
-            pushNotification(activePeer.uid, {
-              fromUid: me.uid,
-              fromName: me.name,
-              fromAvatar: me.avatar || DEFAULT_AVATAR,
-              type: "message",
-              text: "đã gửi một hình ảnh cho bạn",
-              link: `./messages.html?uid=${encodeURIComponent(me.uid)}`
-            }).catch((err) => console.warn("Image message notification:", err));
-          } catch (err) {
             showToast(friendlyError(err));
           } finally {
-            imgInput.value = "";
+            sending = false;
+            sendBtn.disabled = false;
+            sendBtn.textContent = "Gửi";
           }
         };
       }
