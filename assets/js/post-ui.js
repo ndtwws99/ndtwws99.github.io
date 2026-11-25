@@ -7,6 +7,7 @@ import {
   arrayRemove,
   deleteField,
   pushNotification,
+  uploadToCloudinary,
   DEFAULT_AVATAR,
   escapeHtml,
   formatTime,
@@ -29,7 +30,9 @@ const SVG = {
   comment: `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`,
   share: `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>`,
   save: `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>`,
-  trash: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>`
+  pin: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></svg>`,
+  edit: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`,
+  trash: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>`
 };
 
 async function safe(fn) {
@@ -41,7 +44,6 @@ async function safe(fn) {
   }
 }
 
-// Đóng bảng cảm xúc (mobile) khi chạm ra ngoài — đăng ký 1 lần duy nhất
 let pickerCloserBound = false;
 function bindPickerCloser() {
   if (pickerCloserBound) return;
@@ -53,11 +55,155 @@ function bindPickerCloser() {
   });
 }
 
+// ==========================================================================
+// Modal sửa bài viết dùng chung (hỗ trợ sửa chữ, cảm xúc, thay/xóa ảnh)
+// ==========================================================================
+let editingPost = null;
+let editNewFile = null;
+let editRemoveImage = false;
+
+function ensureEditModal() {
+  let backdrop = document.getElementById("twin-edit-post-modal");
+  if (backdrop) return backdrop;
+
+  backdrop = document.createElement("div");
+  backdrop.id = "twin-edit-post-modal";
+  backdrop.className = "twin-modal-backdrop";
+  backdrop.innerHTML = `
+    <div class="twin-modal">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+        <h2 style="font-size:19px;font-weight:800;">Chỉnh sửa bài viết</h2>
+        <button type="button" id="ep-close-btn" class="twin-icon-btn" style="width:32px;height:32px;">✕</button>
+      </div>
+      <form id="ep-form" style="display:flex;flex-direction:column;gap:12px;">
+        <textarea id="ep-content" class="twin-textarea" placeholder="Nội dung bài viết..." rows="4"></textarea>
+        <div id="ep-img-box" style="display:none;position:relative;">
+          <img id="ep-img-preview" class="twin-post-image" style="max-height:260px;margin-bottom:0;" alt="Ảnh bài viết" />
+          <button type="button" id="ep-img-remove" class="twin-icon-btn" style="position:absolute;top:8px;right:8px;width:30px;height:30px;" title="Gỡ ảnh">✕</button>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:space-between;">
+          <label class="twin-btn twin-btn-secondary twin-btn-sm" style="cursor:pointer;">
+            <span>Đổi / Thêm ảnh</span>
+            <input id="ep-file-input" type="file" accept="image/*" hidden />
+          </label>
+          <select id="ep-feeling" class="twin-select" style="width:auto;padding:6px 12px;border-radius:999px;font-size:13px;">
+            <option value="">Không có cảm xúc</option>
+            <option value="hạnh phúc 😊">Hạnh phúc 😊</option>
+            <option value="hào hứng 🤩">Hào hứng 🤩</option>
+            <option value="thư giãn 😌">Thư giãn 😌</option>
+            <option value="tự hào 💪">Tự hào 💪</option>
+            <option value="buồn nhẹ 😔">Buồn nhẹ 😔</option>
+          </select>
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:6px;">
+          <button type="button" id="ep-cancel-btn" class="twin-btn twin-btn-secondary">Hủy</button>
+          <button type="submit" id="ep-save-btn" class="twin-btn twin-btn-primary">Lưu thay đổi</button>
+        </div>
+      </form>
+    </div>
+  `;
+  document.body.appendChild(backdrop);
+
+  const close = () => {
+    backdrop.classList.remove("open");
+    editingPost = null;
+    editNewFile = null;
+    editRemoveImage = false;
+  };
+  backdrop.querySelector("#ep-close-btn").onclick = close;
+  backdrop.querySelector("#ep-cancel-btn").onclick = close;
+
+  const fileInput = backdrop.querySelector("#ep-file-input");
+  const imgBox = backdrop.querySelector("#ep-img-box");
+  const imgPrev = backdrop.querySelector("#ep-img-preview");
+
+  fileInput.onchange = () => {
+    const f = fileInput.files[0];
+    if (!f) return;
+    editNewFile = f;
+    editRemoveImage = false;
+    imgPrev.src = URL.createObjectURL(f);
+    imgBox.style.display = "block";
+  };
+
+  backdrop.querySelector("#ep-img-remove").onclick = () => {
+    editNewFile = null;
+    editRemoveImage = true;
+    fileInput.value = "";
+    imgPrev.src = "";
+    imgBox.style.display = "none";
+  };
+
+  backdrop.querySelector("#ep-form").onsubmit = async (e) => {
+    e.preventDefault();
+    if (!editingPost) return;
+    const content = backdrop.querySelector("#ep-content").value.trim();
+    const feeling = backdrop.querySelector("#ep-feeling").value;
+    const hasImageAfter = Boolean(editNewFile || (!editRemoveImage && editingPost.imageUrl));
+    if (!content && !hasImageAfter) {
+      return showToast("Bài viết cần có nội dung hoặc hình ảnh.");
+    }
+
+    const saveBtn = backdrop.querySelector("#ep-save-btn");
+    saveBtn.disabled = true;
+    saveBtn.textContent = "Đang lưu...";
+    try {
+      let nextImageUrl = editingPost.imageUrl || "";
+      if (editNewFile) {
+        nextImageUrl = await uploadToCloudinary(editNewFile);
+      } else if (editRemoveImage) {
+        nextImageUrl = "";
+      }
+
+      await updateDoc(doc(db, "posts", editingPost.id), {
+        content,
+        feeling,
+        imageUrl: nextImageUrl,
+        editedAt: Date.now()
+      });
+      close();
+      showToast("Đã cập nhật bài viết!");
+    } catch (err) {
+      showToast(friendlyError(err));
+    } finally {
+      saveBtn.disabled = false;
+      saveBtn.textContent = "Lưu thay đổi";
+    }
+  };
+
+  return backdrop;
+}
+
+export function openEditPostModal(post) {
+  const backdrop = ensureEditModal();
+  editingPost = post;
+  editNewFile = null;
+  editRemoveImage = false;
+
+  backdrop.querySelector("#ep-content").value = post.content || "";
+  backdrop.querySelector("#ep-feeling").value = post.feeling || "";
+  backdrop.querySelector("#ep-file-input").value = "";
+
+  const imgBox = backdrop.querySelector("#ep-img-box");
+  const imgPrev = backdrop.querySelector("#ep-img-preview");
+  if (post.imageUrl) {
+    imgPrev.src = post.imageUrl;
+    imgBox.style.display = "block";
+  } else {
+    imgPrev.src = "";
+    imgBox.style.display = "none";
+  }
+
+  backdrop.classList.add("open");
+  setTimeout(() => backdrop.querySelector("#ep-content")?.focus(), 40);
+}
+
 export function renderPostCard(post, currentUser) {
   bindPickerCloser();
   const card = document.createElement("article");
-  card.className = "twin-card";
+  card.className = `twin-card ${post.pinned ? "twin-pinned-card" : ""}`;
   card.id = `post-${post.id}`;
+
   const reactions = post.reactions || {};
   const reactionValues = Object.values(reactions);
   const myReactionKey = currentUser ? reactions[currentUser.uid] : null;
@@ -65,26 +211,43 @@ export function renderPostCard(post, currentUser) {
   const comments = post.comments || [];
   const isOwner = currentUser && currentUser.uid === post.authorUid;
   let isSaved = !!(currentUser && (currentUser.savedPosts || []).includes(post.id));
+  const isPinned = Boolean(post.pinned);
 
   const uniqueEmojis = [...new Set(reactionValues)]
     .slice(0, 3)
     .map((k) => REACTIONS.find((r) => r.key === k)?.emoji || "👍")
     .join("");
 
+  const displayName = post.pageName ? post.pageName : post.authorName;
+  const displayAvatar = post.pageAvatar || post.authorAvatar || DEFAULT_AVATAR;
+
   card.innerHTML = `
+    ${isPinned ? `<div class="twin-pin-banner">${SVG.pin}<span>Bài viết đã ghim</span></div>` : ""}
+
     <div class="twin-post-header">
       <a href="./profile.html?uid=${encodeURIComponent(post.authorUid)}" class="twin-post-author">
-        <img class="twin-avatar" src="${escapeHtml(post.authorAvatar || DEFAULT_AVATAR)}" alt="" />
-        <div>
+        <img class="twin-avatar" src="${escapeHtml(displayAvatar)}" alt="" />
+        <div style="min-width:0;">
           <div class="twin-post-author-name">
-            ${escapeHtml(post.authorName)}
+            ${escapeHtml(displayName)}
+            ${post.pageName ? `<span class="twin-pill-tag" style="margin-left:4px;">Trang</span>` : ""}
             ${post.feeling ? `<span style="font-weight:400;color:var(--text-3)"> đang cảm thấy ${escapeHtml(post.feeling)}</span>` : ""}
             ${post.groupName ? `<span style="font-weight:400;color:var(--text-3)"> trong <strong>${escapeHtml(post.groupName)}</strong></span>` : ""}
           </div>
-          <div class="twin-post-meta">${formatTime(post.createdAt)} · Công khai</div>
+          <div class="twin-post-meta">
+            ${post.pageName ? `Đăng bởi ${escapeHtml(post.authorName)} · ` : ""}${formatTime(post.createdAt)}${post.editedAt ? " · Đã chỉnh sửa" : ""} · Công khai
+          </div>
         </div>
       </a>
-      ${isOwner ? `<button class="twin-icon-btn btn-del-post" style="width:34px;height:34px;color:var(--text-3);" title="Xóa bài viết">${SVG.trash}</button>` : ""}
+      ${
+        isOwner
+          ? `<div class="twin-post-tools">
+              <button class="twin-icon-btn btn-pin-post" style="width:34px;height:34px;color:${isPinned ? "var(--primary)" : "var(--text-3)"};background:${isPinned ? "var(--primary-soft)" : ""};" title="${isPinned ? "Bỏ ghim bài viết" : "Ghim bài viết lên đầu"}">${SVG.pin}</button>
+              <button class="twin-icon-btn btn-edit-post" style="width:34px;height:34px;color:var(--text-3);" title="Chỉnh sửa bài viết">${SVG.edit}</button>
+              <button class="twin-icon-btn btn-del-post" style="width:34px;height:34px;color:var(--text-3);" title="Xóa bài viết">${SVG.trash}</button>
+            </div>`
+          : ""
+      }
     </div>
 
     ${post.content ? `<div class="twin-post-body">${escapeHtml(post.content)}</div>` : ""}
@@ -134,8 +297,6 @@ export function renderPostCard(post, currentUser) {
 
   const postLink = `./index.html#post-${post.id}`;
 
-  // ---- Cảm xúc ----
-  // Dùng đường dẫn trường (reactions.<uid>) để 2 người bấm cùng lúc không ghi đè nhau
   async function setReaction(key) {
     if (!currentUser) return showToast("Vui lòng đăng nhập để tương tác.");
     const ref = doc(db, "posts", post.id);
@@ -181,7 +342,6 @@ export function renderPostCard(post, currentUser) {
     };
   });
 
-  // ---- Bình luận ----
   card.querySelector(".btn-toggle-cmt").onclick = () => {
     const box = card.querySelector(".twin-comments");
     box.style.display = box.style.display === "none" ? "block" : "none";
@@ -207,7 +367,7 @@ export function renderPostCard(post, currentUser) {
       await updateDoc(doc(db, "posts", post.id), { comments: arrayUnion(newCmt) });
     } catch (err) {
       console.error(err);
-      input.value = text; // không mất nội dung khi gửi lỗi
+      input.value = text;
       showToast(friendlyError(err));
       return;
     }
@@ -220,7 +380,6 @@ export function renderPostCard(post, currentUser) {
     }).catch(() => {});
   };
 
-  // ---- Chia sẻ: luôn trỏ về index.html (nơi có bảng tin) ----
   card.querySelector(".btn-share-post").onclick = async () => {
     const base = new URL("./index.html", window.location.href);
     base.search = "";
@@ -233,7 +392,6 @@ export function renderPostCard(post, currentUser) {
     }
   };
 
-  // ---- Lưu bài: cập nhật giao diện ngay (optimistic) ----
   const saveBtn = card.querySelector(".btn-save-post");
   saveBtn.onclick = async () => {
     if (!currentUser) return showToast("Vui lòng đăng nhập.");
@@ -264,6 +422,27 @@ export function renderPostCard(post, currentUser) {
     }
   };
 
+  // ---- Ghim / Bỏ ghim bài viết ----
+  const pinBtn = card.querySelector(".btn-pin-post");
+  if (pinBtn) {
+    pinBtn.onclick = async () => {
+      const nextPin = !isPinned;
+      await safe(async () => {
+        await updateDoc(doc(db, "posts", post.id), {
+          pinned: nextPin,
+          pinnedAt: nextPin ? Date.now() : 0
+        });
+        showToast(nextPin ? "Đã ghim bài viết lên đầu!" : "Đã bỏ ghim bài viết.");
+      });
+    };
+  }
+
+  // ---- Chỉnh sửa bài viết ----
+  const editBtn = card.querySelector(".btn-edit-post");
+  if (editBtn) {
+    editBtn.onclick = () => openEditPostModal(post);
+  }
+
   // ---- Xóa bài ----
   const delBtn = card.querySelector(".btn-del-post");
   if (delBtn) {
@@ -279,17 +458,14 @@ export function renderPostCard(post, currentUser) {
   return card;
 }
 
-// ==========================================================================
-// Danh sách bài viết có "so khớp" (keyed): chỉ vẽ lại bài nào thật sự thay đổi,
-// nên đang gõ bình luận / mở hộp bình luận sẽ không bị mất khi có người khác tương tác.
-// ==========================================================================
 const listCache = new WeakMap();
 let hashHandled = false;
 
 function postSignature(p, currentUser) {
   const saved = !!(currentUser && (currentUser.savedPosts || []).includes(p.id));
   return JSON.stringify([
-    p.content, p.imageUrl, p.feeling, p.groupName, p.authorName, p.authorAvatar,
+    p.content, p.imageUrl, p.feeling, p.groupName, p.pageName, p.authorName, p.authorAvatar,
+    Boolean(p.pinned), p.pinnedAt || 0, p.editedAt || 0,
     p.reactions || {}, (p.comments || []).map((c) => c.id), toMillis(p.createdAt), saved
   ]);
 }
@@ -316,7 +492,6 @@ export function renderPostList(container, posts, currentUser, emptyHtml = "") {
       const card = renderPostCard(p, currentUser);
       card.dataset.postId = p.id;
       if (entry) {
-        // giữ lại trạng thái hộp bình luận + nội dung đang gõ
         const oldBox = entry.card.querySelector(".twin-comments");
         const oldInput = entry.card.querySelector(".twin-comment-form input");
         const newBox = card.querySelector(".twin-comments");
@@ -342,7 +517,6 @@ export function renderPostList(container, posts, currentUser, emptyHtml = "") {
     }
   }
 
-  // Mở liên kết chia sẻ (#post-<id>): cuộn tới bài và nhấp nháy nhẹ
   if (!hashHandled && window.location.hash.startsWith("#post-")) {
     const target = document.getElementById(decodeURIComponent(window.location.hash.slice(1)));
     if (target) {

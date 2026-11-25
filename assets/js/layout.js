@@ -9,9 +9,11 @@ import {
   query,
   where,
   orderBy,
+  limit,
   onSnapshot,
   addDoc,
   updateDoc,
+  writeBatch,
   serverTimestamp,
   ensureUserDoc,
   DEFAULT_AVATAR,
@@ -25,23 +27,33 @@ import {
 } from "./firebase-service.js";
 
 export const ICONS = {
-  home: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5"/></svg>`,
-  friends: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
-  groups: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><circle cx="9" cy="10" r="1" fill="currentColor"/><circle cx="15" cy="10" r="1" fill="currentColor"/></svg>`,
-  pages: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>`,
-  chat: `<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>`,
-  bell: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>`,
+  home: `<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5"/></svg>`,
+  friends: `<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
+  groups: `<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><circle cx="9" cy="10" r="1" fill="currentColor"/><circle cx="15" cy="10" r="1" fill="currentColor"/></svg>`,
+  pages: `<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>`,
+  chat: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>`,
+  bell: `<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>`,
   search: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>`,
-  moon: `<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`,
-  sun: `<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>`,
-  bookmark: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>`,
-  logout: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>`
+  moon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`,
+  sun: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>`,
+  bookmark: `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>`,
+  logout: `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>`
 };
 
 let currentUserData = null;
 let unsubNotifs = null;
 let unsubUser = null;
+let unsubSearchUsers = null;
+let unsubSearchGroups = null;
+let unsubSearchPages = null;
 let globalListenersBound = false;
+let latestNotifItems = [];
+
+const searchDirectory = {
+  users: [],
+  groups: [],
+  pages: []
+};
 const openChats = new Map();
 
 export function applySavedTheme() {
@@ -67,6 +79,119 @@ function getCurrentPageKey() {
   return known.includes(name) ? name : "home";
 }
 
+function renderGlobalSearchResults(rawQuery) {
+  const drop = document.getElementById("twin-search-dropdown");
+  if (!drop) return;
+  const q = rawQuery.trim().toLowerCase();
+  if (!q) {
+    drop.classList.remove("open");
+    drop.innerHTML = "";
+    return;
+  }
+
+  const matchedUsers = searchDirectory.users
+    .filter((u) => (u.name || "").toLowerCase().includes(q) || (u.bio || "").toLowerCase().includes(q))
+    .slice(0, 5);
+  const matchedGroups = searchDirectory.groups
+    .filter((g) => (g.name || "").toLowerCase().includes(q) || (g.description || "").toLowerCase().includes(q))
+    .slice(0, 4);
+  const matchedPages = searchDirectory.pages
+    .filter((p) => (p.name || "").toLowerCase().includes(q) || (p.category || "").toLowerCase().includes(q))
+    .slice(0, 4);
+
+  let html = "";
+
+  if (matchedUsers.length) {
+    html += `<div class="twin-search-cat">Mọi người</div>`;
+    html += matchedUsers
+      .map(
+        (u) => `
+      <a href="./profile.html?uid=${encodeURIComponent(u.uid)}" class="twin-dropdown-item">
+        <img class="twin-avatar twin-avatar-sm" src="${escapeHtml(u.avatar || DEFAULT_AVATAR)}" alt="" />
+        <div style="min-width:0;flex:1;">
+          <div style="font-weight:700;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(u.name)}</div>
+          <div class="twin-post-meta" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(u.bio || "Thành viên Twin")}</div>
+        </div>
+        <span class="twin-pill-tag">Hồ sơ</span>
+      </a>`
+      )
+      .join("");
+  }
+
+  if (matchedGroups.length) {
+    html += `<div class="twin-search-cat">Nhóm</div>`;
+    html += matchedGroups
+      .map(
+        (g) => `
+      <a href="./groups.html?id=${encodeURIComponent(g.id)}" class="twin-dropdown-item">
+        <img class="twin-avatar twin-avatar-sm" src="${escapeHtml(g.coverUrl || DEFAULT_AVATAR)}" alt="" />
+        <div style="min-width:0;flex:1;">
+          <div style="font-weight:700;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(g.name)}</div>
+          <div class="twin-post-meta">${(g.members || []).length} thành viên</div>
+        </div>
+        <span class="twin-pill-tag">Nhóm</span>
+      </a>`
+      )
+      .join("");
+  }
+
+  if (matchedPages.length) {
+    html += `<div class="twin-search-cat">Trang</div>`;
+    html += matchedPages
+      .map(
+        (p) => `
+      <a href="./pages.html?id=${encodeURIComponent(p.id)}" class="twin-dropdown-item">
+        <img class="twin-avatar twin-avatar-sm" src="${escapeHtml(p.coverUrl || DEFAULT_AVATAR)}" alt="" />
+        <div style="min-width:0;flex:1;">
+          <div style="font-weight:700;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(p.name)}</div>
+          <div class="twin-post-meta">${escapeHtml(p.category || "Trang")} · ${(p.followers || []).length} theo dõi</div>
+        </div>
+        <span class="twin-pill-tag">Trang</span>
+      </a>`
+      )
+      .join("");
+  }
+
+  html += `
+    <hr style="border:none;border-top:1px solid var(--border);margin:6px 0;" />
+    <a href="./index.html?q=${encodeURIComponent(rawQuery.trim())}" class="twin-dropdown-item" style="color:var(--primary);font-weight:600;">
+      ${ICONS.search}
+      <span>Tìm bài viết chứa "${escapeHtml(rawQuery.trim())}"</span>
+    </a>
+  `;
+
+  drop.innerHTML = html;
+  drop.classList.add("open");
+}
+
+function subscribeGlobalSearchDirectory() {
+  if (!db) return;
+  if (!unsubSearchUsers) {
+    unsubSearchUsers = onSnapshot(query(collection(db, "users"), limit(150)), (snap) => {
+      searchDirectory.users = [];
+      snap.forEach((d) => searchDirectory.users.push({ id: d.id, ...d.data() }));
+      const inp = document.getElementById("twin-global-search");
+      if (inp && document.activeElement === inp && inp.value.trim()) renderGlobalSearchResults(inp.value);
+    }, () => {});
+  }
+  if (!unsubSearchGroups) {
+    unsubSearchGroups = onSnapshot(query(collection(db, "groups"), limit(100)), (snap) => {
+      searchDirectory.groups = [];
+      snap.forEach((d) => searchDirectory.groups.push({ id: d.id, ...d.data() }));
+      const inp = document.getElementById("twin-global-search");
+      if (inp && document.activeElement === inp && inp.value.trim()) renderGlobalSearchResults(inp.value);
+    }, () => {});
+  }
+  if (!unsubSearchPages) {
+    unsubSearchPages = onSnapshot(query(collection(db, "pages"), limit(100)), (snap) => {
+      searchDirectory.pages = [];
+      snap.forEach((d) => searchDirectory.pages.push({ id: d.id, ...d.data() }));
+      const inp = document.getElementById("twin-global-search");
+      if (inp && document.activeElement === inp && inp.value.trim()) renderGlobalSearchResults(inp.value);
+    }, () => {});
+  }
+}
+
 export function renderAppChrome() {
   applySavedTheme();
   const page = getCurrentPageKey();
@@ -79,9 +204,12 @@ export function renderAppChrome() {
           <span class="twin-logo-circle">T</span>
           <span>Twin</span>
         </a>
-        <div class="twin-search-box">
-          ${ICONS.search}
-          <input id="twin-global-search" type="search" placeholder="Tìm kiếm trên Twin..." />
+        <div class="twin-search-wrap" id="twin-search-wrap">
+          <div class="twin-search-box">
+            ${ICONS.search}
+            <input id="twin-global-search" type="search" autocomplete="off" placeholder="Tìm người, nhóm, trang, bài viết..." />
+          </div>
+          <div id="twin-search-dropdown" class="twin-search-dropdown"></div>
         </div>
       </div>
 
@@ -99,17 +227,24 @@ export function renderAppChrome() {
     `;
   }
 
-  // Ô tìm kiếm ở các trang khác: nhấn Enter để chuyển về bảng tin và lọc bài viết
+  const searchWrap = document.getElementById("twin-search-wrap");
   const searchInput = document.getElementById("twin-global-search");
-  if (searchInput && page !== "home") {
-    searchInput.placeholder = "Tìm bài viết (nhấn Enter)...";
+  if (searchInput && searchWrap) {
+    searchWrap.addEventListener("click", (e) => e.stopPropagation());
+    searchInput.addEventListener("input", () => {
+      renderGlobalSearchResults(searchInput.value);
+    });
+    searchInput.addEventListener("focus", () => {
+      if (searchInput.value.trim()) renderGlobalSearchResults(searchInput.value);
+    });
     searchInput.addEventListener("keydown", (e) => {
       const v = searchInput.value.trim();
-      if (e.key === "Enter" && v) window.location.href = `./index.html?q=${encodeURIComponent(v)}`;
+      if (e.key === "Enter" && v && page !== "home") {
+        window.location.href = `./index.html?q=${encodeURIComponent(v)}`;
+      }
     });
   }
 
-  // Mobile bottom navigation bar (app-like)
   let mobileBar = document.getElementById("twin-mobile-bar");
   if (!mobileBar && headerEl) {
     mobileBar = document.createElement("nav");
@@ -124,6 +259,63 @@ export function renderAppChrome() {
     `;
     document.body.appendChild(mobileBar);
   }
+}
+
+function setBadgeCount(count) {
+  const badge = document.getElementById("twin-notif-badge");
+  if (!badge) return;
+  badge.style.display = count > 0 ? "grid" : "none";
+  badge.textContent = count > 9 ? "9+" : String(count);
+}
+
+async function markAllNotificationsRead() {
+  setBadgeCount(0);
+  const unreadDocs = latestNotifItems.filter((n) => !n.read);
+  unreadDocs.forEach((n) => { n.read = true; });
+  if (!db || !unreadDocs.length) return;
+  try {
+    const batch = writeBatch(db);
+    unreadDocs.forEach((n) => {
+      batch.update(doc(db, "notifications", n.id), { read: true });
+    });
+    await batch.commit();
+  } catch {
+    unreadDocs.forEach((n) => {
+      updateDoc(doc(db, "notifications", n.id), { read: true }).catch(() => {});
+    });
+  }
+}
+
+function renderNotifList() {
+  const listEl = document.getElementById("twin-notif-list");
+  if (!listEl) return;
+  if (!latestNotifItems.length) {
+    listEl.innerHTML = '<p class="twin-post-meta" style="padding:8px">Chưa có thông báo nào.</p>';
+    return;
+  }
+  listEl.innerHTML = latestNotifItems
+    .slice(0, 15)
+    .map(
+      (n) => `
+    <a href="${escapeHtml(safeLink(n.link))}" data-nid="${n.id}" class="twin-dropdown-item ${n.read ? "" : "twin-notif-unread"}">
+      <img class="twin-avatar twin-avatar-sm" src="${escapeHtml(n.fromAvatar || DEFAULT_AVATAR)}" alt="" />
+      <div>
+        <div style="font-size:13.5px;line-height:1.35;"><strong>${escapeHtml(n.fromName)}</strong> ${escapeHtml(n.text)}</div>
+        <div class="twin-post-meta">${formatTime(n.createdAt)}</div>
+      </div>
+    </a>`
+    )
+    .join("");
+
+  listEl.querySelectorAll("a[data-nid]").forEach((a) => {
+    a.addEventListener("click", () => {
+      a.classList.remove("twin-notif-unread");
+      const target = latestNotifItems.find((item) => item.id === a.dataset.nid);
+      if (target) target.read = true;
+      setBadgeCount(latestNotifItems.filter((item) => !item.read).length);
+      updateDoc(doc(db, "notifications", a.dataset.nid), { read: true }).catch(() => {});
+    });
+  });
 }
 
 function renderLoggedInHeaderRight(user) {
@@ -145,7 +337,10 @@ function renderLoggedInHeaderRight(user) {
     </button>
 
     <div class="twin-dropdown" id="twin-notif-dropdown">
-      <div class="twin-dropdown-title">Thông báo</div>
+      <div class="twin-dropdown-title">
+        <span>Thông báo</span>
+        <button id="twin-mark-all-read" style="font-size:12px;color:var(--primary);font-weight:600;">Đã đọc tất cả</button>
+      </div>
       <div id="twin-notif-list"><p class="twin-post-meta" style="padding:8px">Chưa có thông báo nào.</p></div>
     </div>
 
@@ -172,28 +367,47 @@ function renderLoggedInHeaderRight(user) {
   notifBtn.onclick = (e) => {
     e.stopPropagation();
     accDrop.classList.remove("open");
-    notifDrop.classList.toggle("open");
+    document.getElementById("twin-search-dropdown")?.classList.remove("open");
+    const willOpen = !notifDrop.classList.contains("open");
+    notifDrop.classList.toggle("open", willOpen);
+    if (willOpen) {
+      markAllNotificationsRead();
+    }
   };
+
+  document.getElementById("twin-mark-all-read").onclick = (e) => {
+    e.stopPropagation();
+    markAllNotificationsRead();
+    document.querySelectorAll("#twin-notif-list .twin-notif-unread").forEach((el) => {
+      el.classList.remove("twin-notif-unread");
+    });
+  };
+
   accBtn.onclick = (e) => {
     e.stopPropagation();
     notifDrop.classList.remove("open");
+    document.getElementById("twin-search-dropdown")?.classList.remove("open");
     accDrop.classList.toggle("open");
   };
+
   if (!globalListenersBound) {
     globalListenersBound = true;
     document.addEventListener("click", () => {
       document.getElementById("twin-notif-dropdown")?.classList.remove("open");
       document.getElementById("twin-account-dropdown")?.classList.remove("open");
+      document.getElementById("twin-search-dropdown")?.classList.remove("open");
     });
-    // Bấm nền tối hoặc nhấn Esc để đóng cửa sổ (modal)
     document.addEventListener("click", (e) => {
       if (e.target.classList && e.target.classList.contains("twin-modal-backdrop")) e.target.classList.remove("open");
     });
     document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") document.querySelectorAll(".twin-modal-backdrop.open").forEach((m) => m.classList.remove("open"));
+      if (e.key === "Escape") {
+        document.querySelectorAll(".twin-modal-backdrop.open").forEach((m) => m.classList.remove("open"));
+        document.getElementById("twin-search-dropdown")?.classList.remove("open");
+      }
     });
   }
-  // Chạm vào trong hộp thông báo không làm đóng hộp
+
   notifDrop.addEventListener("click", (e) => e.stopPropagation());
 
   document.getElementById("twin-theme-btn").onclick = toggleTheme;
@@ -211,47 +425,21 @@ function renderLoggedInHeaderRight(user) {
 function subscribeNotifications(uid) {
   if (!db) return;
   if (unsubNotifs) unsubNotifs();
-  // Query without composite orderBy to avoid index errors; sort client-side
   const q = query(collection(db, "notifications"), where("toUid", "==", uid));
   unsubNotifs = onSnapshot(q, (snap) => {
-    const listEl = document.getElementById("twin-notif-list");
-    const badge = document.getElementById("twin-notif-badge");
-    if (!listEl || !badge) return;
-    let unread = 0;
     const items = [];
-    snap.forEach((d) => {
-      const n = { id: d.id, ...d.data() };
-      if (!n.read) unread++;
-      items.push(n);
-    });
+    snap.forEach((d) => items.push({ id: d.id, ...d.data() }));
     items.sort((a, b) => toMillis(b.createdAt) - toMillis(a.createdAt));
+    latestNotifItems = items;
 
-    badge.style.display = unread > 0 ? "grid" : "none";
-    badge.textContent = unread > 9 ? "9+" : String(unread);
-
-    if (!items.length) {
-      listEl.innerHTML = '<p class="twin-post-meta" style="padding:8px">Chưa có thông báo nào.</p>';
-      return;
+    const notifDrop = document.getElementById("twin-notif-dropdown");
+    const isDropdownOpen = notifDrop && notifDrop.classList.contains("open");
+    if (isDropdownOpen && items.some((n) => !n.read)) {
+      markAllNotificationsRead();
+    } else {
+      setBadgeCount(items.filter((n) => !n.read).length);
     }
-    listEl.innerHTML = items
-      .slice(0, 15)
-      .map(
-        (n) => `
-      <a href="${escapeHtml(safeLink(n.link))}" data-nid="${n.id}" class="twin-dropdown-item ${n.read ? "" : "twin-notif-unread"}">
-        <img class="twin-avatar twin-avatar-sm" src="${escapeHtml(n.fromAvatar || DEFAULT_AVATAR)}" alt="" />
-        <div>
-          <div style="font-size:13.5px;line-height:1.35;"><strong>${escapeHtml(n.fromName)}</strong> ${escapeHtml(n.text)}</div>
-          <div class="twin-post-meta">${formatTime(n.createdAt)}</div>
-        </div>
-      </a>`
-      )
-      .join("");
-
-    listEl.querySelectorAll("a[data-nid]").forEach((a) => {
-      a.addEventListener("click", () => {
-        updateDoc(doc(db, "notifications", a.dataset.nid), { read: true }).catch(() => {});
-      });
-    });
+    renderNotifList();
   }, (err) => console.warn("Notifications:", err));
 }
 
@@ -369,7 +557,6 @@ export function initTwinPage({ requireAuth = true, chrome = true, ensureProfile 
       return;
     }
 
-    // Trang đăng nhập không cần tạo/đọc hồ sơ (tránh tranh chấp khi đang đăng ký)
     if (!ensureProfile) {
       if (onReady) onReady({ uid: fbUser.uid });
       return;
@@ -388,9 +575,9 @@ export function initTwinPage({ requireAuth = true, chrome = true, ensureProfile 
     if (chrome) {
       renderLoggedInHeaderRight(profile);
       subscribeNotifications(fbUser.uid);
+      subscribeGlobalSearchDirectory();
     }
 
-    // Giữ cho đối tượng `profile` (chính là `me` ở các trang) luôn là dữ liệu mới nhất
     if (unsubUser) unsubUser();
     unsubUser = onSnapshot(doc(db, "users", fbUser.uid), (snap) => {
       if (!snap.exists()) return;

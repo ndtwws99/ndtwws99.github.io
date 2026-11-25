@@ -20,6 +20,7 @@ import {
   addDoc,
   updateDoc,
   deleteDoc,
+  writeBatch,
   query,
   where,
   orderBy,
@@ -81,6 +82,7 @@ export {
   addDoc,
   updateDoc,
   deleteDoc,
+  writeBatch,
   query,
   where,
   orderBy,
@@ -93,7 +95,7 @@ export {
 };
 
 export const DEFAULT_AVATAR =
-  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 80'%3E%3Crect width='80' height='80' fill='%23dbeafe'/%3E%3Ccircle cx='40' cy='30' r='14' fill='%232563eb'/%3E%3Cpath d='M16 72c2-17 14-23 24-23s22 6 24 23' fill='%232563eb'/%3E%3C/svg%3E";
+  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 80'%3E%3Crect width='80' height='80' fill='%23dbeafe'/%3E%3Ccircle cx='40' cy='30' r='14' fill='%230a84ff'/%3E%3Cpath d='M16 72c2-17 14-23 24-23s22 6 24 23' fill='%230a84ff'/%3E%3C/svg%3E";
 
 export function friendlyError(err) {
   const code = (err && err.code) || "";
@@ -117,7 +119,6 @@ export function friendlyError(err) {
   return map[code] || map[key] || (err && err.message) || "Đã xảy ra lỗi. Vui lòng thử lại.";
 }
 
-/** Chỉ cho phép liên kết nội bộ (chống javascript: / URL lạ trong thông báo). */
 export function safeLink(link, fallback = "./index.html") {
   const s = String(link || "").trim();
   if (/^\.\/[A-Za-z0-9_\-]+\.html([?#][^\s"'<>]*)?$/.test(s)) return s;
