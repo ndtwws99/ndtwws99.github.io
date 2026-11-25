@@ -11,7 +11,7 @@
   <meta name="format-detection" content="telephone=no" />
   <title>Bảng tin — Twin</title>
   <meta name="description" content="Twin — Mạng xã hội kết nối bạn bè, chia sẻ khoảnh khắc, nhóm, trang và nhắn tin thời gian thực." />
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%23007aff'/%3E%3Cstop offset='100%25' stop-color='%235856d6'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect x='4' y='4' width='56' height='56' rx='16' fill='url(%23g)'/%3E%3Cpath d='M19 21h26v6H35.5v18h-7V27H19z' fill='%23ffffff'/%3E%3C/svg%3E" />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%23007aff'/%3E%3Cstop offset='100%25' stop-color='%235856d6'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='32' cy='32' r='28' fill='url(%23g)'/%3E%3Cpath d='M19 21h26v6H35.5v18h-7V27H19z' fill='%23ffffff'/%3E%3C/svg%3E" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet" />
@@ -35,7 +35,7 @@
             <span>Bạn bè</span>
           </a>
           <a href="./groups.html" class="twin-side-item">
-            <span class="twin-side-icon ios-indigo"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="2"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2"/></svg></span>
+            <span class="twin-side-icon ios-indigo"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="7.5" r="3.2"/><path d="M6.5 20a5.5 5.5 0 0 1 11 0"/><circle cx="18.5" cy="9.5" r="2.2"/><path d="M22 19.5a4 4 0 0 0-3-3.8"/><circle cx="5.5" cy="9.5" r="2.2"/><path d="M2 19.5a4 4 0 0 1 3-3.8"/></svg></span>
             <span>Nhóm</span>
           </a>
           <a href="./pages.html" class="twin-side-item">
@@ -58,12 +58,19 @@
         <!-- Thanh Stories (Tin văn bản màu + Tin ảnh) -->
         <div class="twin-stories-row" id="twin-stories"></div>
 
-        <!-- Khung đăng bài gọn (mở rộng khi ấn vào) -->
+        <!-- Khung đăng bài gọn (tự động nhận diện văn bản & mã HTML) -->
         <div id="twin-composer-card" class="twin-card twin-composer-card">
           <div class="twin-composer-bar">
-            <div class="twin-seg-tabs">
-              <button type="button" id="comp-mode-text" class="twin-seg-tab active">Văn bản</button>
-              <button type="button" id="comp-mode-html" class="twin-seg-tab">&lt;/&gt; HTML</button>
+            <div class="twin-feeling-pill" title="Chọn cảm xúc hiện tại">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M8.5 14.5s1.4 2 3.5 2 3.5-2 3.5-2"/><circle cx="9.2" cy="10" r="1" fill="currentColor" stroke="none"/><circle cx="14.8" cy="10" r="1" fill="currentColor" stroke="none"/></svg>
+              <select id="post-feeling" class="twin-feeling-select" aria-label="Chọn cảm xúc">
+                <option value="">Cảm xúc...</option>
+                <option value="hạnh phúc 😊">Hạnh phúc 😊</option>
+                <option value="hào hứng 🤩">Hào hứng 🤩</option>
+                <option value="thư giãn 😌">Thư giãn 😌</option>
+                <option value="tự hào 💪">Tự hào 💪</option>
+                <option value="buồn nhẹ 😔">Buồn nhẹ 😔</option>
+              </select>
             </div>
             <div class="twin-composer-bar-right">
               <button type="button" id="comp-html-preview-btn" class="twin-btn twin-btn-secondary twin-btn-sm" style="display:none;">Xem trước HTML</button>
@@ -73,7 +80,7 @@
 
           <div class="twin-composer-top">
             <img class="twin-avatar" id="composer-avatar" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 80'%3E%3Crect width='80' height='80' fill='%23dbeafe'/%3E%3C/svg%3E" alt="" />
-            <textarea id="post-content" class="twin-textarea" rows="1" placeholder="Bạn đang nghĩ gì?"></textarea>
+            <textarea id="post-content" class="twin-textarea" rows="1" placeholder="Bạn đang nghĩ gì? (Hỗ trợ văn bản &amp; mã HTML)"></textarea>
           </div>
 
           <div class="twin-composer-extras">
@@ -91,18 +98,10 @@
           <div class="twin-composer-actions">
             <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
               <label class="twin-btn twin-btn-secondary twin-btn-sm" style="cursor:pointer;">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9.5"/><circle cx="9.2" cy="9.5" r="1.4"/><path d="m20 16-4.5-4.5-6.5 6.5"/></svg>
                 <span>Thêm ảnh</span>
                 <input id="post-image-file" type="file" accept="image/*" hidden />
               </label>
-              <select id="post-feeling" class="twin-select" style="width:auto;padding:6px 12px;font-size:13px;">
-                <option value="">Cảm xúc...</option>
-                <option value="hạnh phúc 😊">Hạnh phúc 😊</option>
-                <option value="hào hứng 🤩">Hào hứng 🤩</option>
-                <option value="thư giãn 😌">Thư giãn 😌</option>
-                <option value="tự hào 💪">Tự hào 💪</option>
-                <option value="buồn nhẹ 😔">Buồn nhẹ 😔</option>
-              </select>
             </div>
             <button id="btn-publish-post" class="twin-btn twin-btn-primary">Đăng bài</button>
           </div>
@@ -259,6 +258,7 @@
       uploadToCloudinary,
       pushNotification,
       sanitizeHtml,
+      containsHtmlMarkup,
       isUserAdmin,
       STORY_BACKGROUNDS,
       getStoryBgCss,
@@ -274,19 +274,16 @@
     let allPosts = [];
     let activeFilter = "all";
     let selectedFile = null;
-    let composerIsHtml = false;
     let viewingStory = null;
     let storyLikeBusy = false;
     const storiesById = new Map();
     let pendingStoryId = new URLSearchParams(window.location.search).get("story");
 
-    // ---- Collapsible & HTML Post Composer ----
+    // ---- Collapsible & Unified Auto-HTML Post Composer ----
     const composerCard = document.getElementById("twin-composer-card");
     const compCollapseBtn = document.getElementById("comp-collapse-btn");
     const postFeelingEl = document.getElementById("post-feeling");
     const postContentEl = document.getElementById("post-content");
-    const modeTextBtn = document.getElementById("comp-mode-text");
-    const modeHtmlBtn = document.getElementById("comp-mode-html");
     const htmlPrevBtn = document.getElementById("comp-html-preview-btn");
     const htmlPrevWrap = document.getElementById("comp-html-preview");
     const htmlPrevBody = document.getElementById("comp-html-preview-body");
@@ -307,7 +304,7 @@
     }
 
     function isComposerEmpty() {
-      return !postContentEl.value.trim() && !selectedFile && !postFeelingEl.value && !composerIsHtml;
+      return !postContentEl.value.trim() && !selectedFile && !postFeelingEl.value;
     }
 
     composerCard.addEventListener("click", () => {
@@ -335,42 +332,23 @@
       return getSiteSettings().allowHtmlPosts || isUserAdmin(me);
     }
 
-    function syncHtmlPermission() {
-      const allowed = canUseHtmlPosts();
-      modeHtmlBtn.style.display = allowed ? "" : "none";
-      if (!allowed && composerIsHtml) {
-        composerIsHtml = false;
-        syncComposerMode();
+    function syncComposerHtmlPreview() {
+      const detected = canUseHtmlPosts() && containsHtmlMarkup(postContentEl.value);
+      htmlPrevBtn.style.display = detected ? "inline-flex" : "none";
+      if (!detected) {
+        htmlPrevWrap.style.display = "none";
+      } else if (htmlPrevWrap.style.display !== "none") {
+        htmlPrevBody.innerHTML = sanitizeHtml(postContentEl.value);
       }
     }
 
-    function syncComposerMode() {
-      modeTextBtn.classList.toggle("active", !composerIsHtml);
-      modeHtmlBtn.classList.toggle("active", composerIsHtml);
-      postContentEl.classList.toggle("code-mode", composerIsHtml);
-      postContentEl.placeholder = composerIsHtml
-        ? "Nhập mã HTML (VD: <h3>Chào Twin!</h3><p>Nội dung <b>in đậm</b>, <mark>nổi bật</mark>...</p>)"
-        : "Bạn đang nghĩ gì?";
-      htmlPrevBtn.style.display = composerIsHtml ? "inline-flex" : "none";
-      if (!composerIsHtml) htmlPrevWrap.style.display = "none";
-    }
-    modeTextBtn.onclick = () => { composerIsHtml = false; syncComposerMode(); };
-    modeHtmlBtn.onclick = () => {
-      if (!canUseHtmlPosts()) return showToast("Quản trị viên đã tạm tắt chế độ đăng bài HTML.");
-      composerIsHtml = true;
-      syncComposerMode();
-    };
-    window.addEventListener("twin-site-settings-changed", syncHtmlPermission);
+    window.addEventListener("twin-site-settings-changed", syncComposerHtmlPreview);
     htmlPrevBtn.onclick = () => {
       const show = htmlPrevWrap.style.display === "none";
       htmlPrevWrap.style.display = show ? "block" : "none";
       if (show) htmlPrevBody.innerHTML = sanitizeHtml(postContentEl.value);
     };
-    postContentEl.addEventListener("input", () => {
-      if (composerIsHtml && htmlPrevWrap.style.display !== "none") {
-        htmlPrevBody.innerHTML = sanitizeHtml(postContentEl.value);
-      }
-    });
+    postContentEl.addEventListener("input", syncComposerHtmlPreview);
 
     // ---- Post image preview ----
     const previewWrap = document.getElementById("post-preview-wrap");
@@ -720,30 +698,31 @@
         document.getElementById("side-me-name").textContent = me.name;
         document.getElementById("side-me-avatar").src = me.avatar || DEFAULT_AVATAR;
         document.getElementById("composer-avatar").src = me.avatar || DEFAULT_AVATAR;
-        syncHtmlPermission();
+        syncComposerHtmlPreview();
 
         const searchEl = document.getElementById("twin-global-search");
         const initialQ = new URLSearchParams(window.location.search).get("q");
         if (searchEl && initialQ) searchEl.value = initialQ;
         searchEl?.addEventListener("input", (e) => renderFeedList(e.target.value, { resetPagination: true }));
 
-        // Publish Post (Text or HTML)
+        // Publish Post (auto-detect plain text vs HTML markup)
         document.getElementById("btn-publish-post").onclick = async () => {
           const btn = document.getElementById("btn-publish-post");
           const content = postContentEl.value.trim();
-          const feeling = document.getElementById("post-feeling").value;
+          const feeling = postFeelingEl.value;
           if (!content && !selectedFile) return showToast("Hãy nhập nội dung hoặc chọn ảnh.");
           btn.disabled = true;
           btn.textContent = "Đang đăng...";
           try {
             let imageUrl = "";
             if (selectedFile) imageUrl = await uploadToCloudinary(selectedFile);
+            const isHtml = canUseHtmlPosts() && containsHtmlMarkup(content);
             await addDoc(collection(db, "posts"), {
               authorUid: me.uid,
               authorName: me.name,
               authorAvatar: me.avatar || DEFAULT_AVATAR,
               content,
-              isHtml: composerIsHtml,
+              isHtml,
               feeling,
               imageUrl,
               pinned: false,
@@ -753,8 +732,7 @@
             });
             postContentEl.value = "";
             postFeelingEl.value = "";
-            composerIsHtml = false;
-            syncComposerMode();
+            syncComposerHtmlPreview();
             htmlPrevWrap.style.display = "none";
             selectedFile = null;
             fileInput.value = "";

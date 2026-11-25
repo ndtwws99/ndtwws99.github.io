@@ -12,6 +12,7 @@ import {
   pushNotification,
   uploadToCloudinary,
   sanitizeHtml,
+  containsHtmlMarkup,
   DEFAULT_AVATAR,
   escapeHtml,
   formatTime,
@@ -20,6 +21,7 @@ import {
   friendlyError,
   isUserAdmin
 } from "./firebase-service.js";
+import { getSiteSettings } from "./layout.js";
 
 const svgUri = (svg) => `data:image/svg+xml,${encodeURIComponent(svg.trim())}`;
 
@@ -105,12 +107,12 @@ function bindPickerCloser() {
 }
 
 // ==========================================================================
-// Modal chỉnh sửa bài viết (hỗ trợ cả Văn bản & Mã HTML + xem trước)
+// Modal chỉnh sửa bài viết (Tự động nhận diện Văn bản hoặc Mã HTML)
 // ==========================================================================
 let editingPost = null;
 let editNewFile = null;
 let editRemoveImage = false;
-let editIsHtml = false;
+let editingUser = null;
 
 function ensureEditModal() {
   let backdrop = document.getElementById("twin-edit-post-modal");
@@ -127,17 +129,24 @@ function ensureEditModal() {
       </div>
       <form id="ep-form" style="display:flex;flex-direction:column;gap:12px;">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
-          <div class="twin-seg-tabs">
-            <button type="button" id="ep-mode-text" class="twin-seg-tab active">Văn bản</button>
-            <button type="button" id="ep-mode-html" class="twin-seg-tab">&lt;/&gt; HTML</button>
+          <div class="twin-feeling-pill">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><path d="M8.5 14.5s1.3 2 3.5 2 3.5-2 3.5-2"/><circle cx="9" cy="10" r="1" fill="currentColor" stroke="none"/><circle cx="15" cy="10" r="1" fill="currentColor" stroke="none"/></svg>
+            <select id="ep-feeling" class="twin-feeling-select" aria-label="Cảm xúc bài viết">
+              <option value="">Cảm xúc...</option>
+              <option value="hạnh phúc 😊">Hạnh phúc 😊</option>
+              <option value="hào hứng 🤩">Hào hứng 🤩</option>
+              <option value="thư giãn 😌">Thư giãn 😌</option>
+              <option value="tự hào 💪">Tự hào 💪</option>
+              <option value="buồn nhẹ 😔">Buồn nhẹ 😔</option>
+            </select>
           </div>
           <button type="button" id="ep-toggle-preview" class="twin-btn twin-btn-secondary twin-btn-sm" style="display:none;">Xem trước HTML</button>
         </div>
 
-        <textarea id="ep-content" class="twin-textarea" placeholder="Nội dung bài viết..." rows="5"></textarea>
+        <textarea id="ep-content" class="twin-textarea" placeholder="Nội dung bài viết (gõ văn bản bình thường hoặc mã HTML)..." rows="5"></textarea>
 
         <div id="ep-html-preview-box" class="twin-html-preview" style="display:none;margin-top:0;">
-          <div class="twin-html-preview-label">Xem trước HTML</div>
+          <div class="twin-html-preview-label">Xem trước mã HTML tự động nhận diện</div>
           <div id="ep-html-preview-body" class="twin-post-body twin-post-html" style="margin-bottom:0;"></div>
         </div>
 
@@ -151,18 +160,10 @@ function ensureEditModal() {
             <span>Đổi / Thêm ảnh</span>
             <input id="ep-file-input" type="file" accept="image/*" hidden />
           </label>
-          <select id="ep-feeling" class="twin-select" style="width:auto;padding:6px 12px;font-size:13px;">
-            <option value="">Không có cảm xúc</option>
-            <option value="hạnh phúc 😊">Hạnh phúc 😊</option>
-            <option value="hào hứng 🤩">Hào hứng 🤩</option>
-            <option value="thư giãn 😌">Thư giãn 😌</option>
-            <option value="tự hào 💪">Tự hào 💪</option>
-            <option value="buồn nhẹ 😔">Buồn nhẹ 😔</option>
-          </select>
-        </div>
-        <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:6px;">
-          <button type="button" id="ep-cancel-btn" class="twin-btn twin-btn-secondary">Hủy</button>
-          <button type="submit" id="ep-save-btn" class="twin-btn twin-btn-primary">Lưu thay đổi</button>
+          <div style="display:flex;gap:8px;">
+            <button type="button" id="ep-cancel-btn" class="twin-btn twin-btn-secondary">Hủy</button>
+            <button type="submit" id="ep-save-btn" class="twin-btn twin-btn-primary">Lưu thay đổi</button>
+          </div>
         </div>
       </form>
     </div>
@@ -179,35 +180,28 @@ function ensureEditModal() {
   backdrop.querySelector("#ep-cancel-btn").onclick = close;
 
   const contentEl = backdrop.querySelector("#ep-content");
-  const modeTextBtn = backdrop.querySelector("#ep-mode-text");
-  const modeHtmlBtn = backdrop.querySelector("#ep-mode-html");
   const prevToggleBtn = backdrop.querySelector("#ep-toggle-preview");
   const prevBox = backdrop.querySelector("#ep-html-preview-box");
   const prevBody = backdrop.querySelector("#ep-html-preview-body");
 
-  const syncModeUi = () => {
-    modeTextBtn.classList.toggle("active", !editIsHtml);
-    modeHtmlBtn.classList.toggle("active", editIsHtml);
-    contentEl.classList.toggle("code-mode", editIsHtml);
-    contentEl.placeholder = editIsHtml
-      ? "Nhập mã HTML (VD: <h3>Tiêu đề</h3><p>Nội dung <b>in đậm</b>...</p>)"
-      : "Nội dung bài viết...";
-    prevToggleBtn.style.display = editIsHtml ? "inline-flex" : "none";
-    if (!editIsHtml) prevBox.style.display = "none";
+  const canHtmlNow = () => getSiteSettings().allowHtmlPosts || isUserAdmin(editingUser);
+
+  const syncHtmlAutoUi = () => {
+    const detected = canHtmlNow() && containsHtmlMarkup(contentEl.value);
+    prevToggleBtn.style.display = detected ? "inline-flex" : "none";
+    if (!detected) {
+      prevBox.style.display = "none";
+    } else if (prevBox.style.display !== "none") {
+      prevBody.innerHTML = sanitizeHtml(contentEl.value);
+    }
   };
 
-  modeTextBtn.onclick = () => { editIsHtml = false; syncModeUi(); };
-  modeHtmlBtn.onclick = () => { editIsHtml = true; syncModeUi(); };
   prevToggleBtn.onclick = () => {
     const show = prevBox.style.display === "none";
     prevBox.style.display = show ? "block" : "none";
     if (show) prevBody.innerHTML = sanitizeHtml(contentEl.value);
   };
-  contentEl.addEventListener("input", () => {
-    if (editIsHtml && prevBox.style.display !== "none") {
-      prevBody.innerHTML = sanitizeHtml(contentEl.value);
-    }
-  });
+  contentEl.addEventListener("input", syncHtmlAutoUi);
 
   const fileInput = backdrop.querySelector("#ep-file-input");
   const imgBox = backdrop.querySelector("#ep-img-box");
@@ -251,9 +245,10 @@ function ensureEditModal() {
         nextImageUrl = "";
       }
 
+      const detectedHtml = canHtmlNow() && containsHtmlMarkup(content);
       await updateDoc(doc(db, "posts", editingPost.id), {
         content,
-        isHtml: editIsHtml,
+        isHtml: detectedHtml,
         feeling,
         imageUrl: nextImageUrl,
         editedAt: Date.now()
@@ -268,22 +263,22 @@ function ensureEditModal() {
     }
   };
 
-  backdrop._syncModeUi = syncModeUi;
+  backdrop._syncHtmlAutoUi = syncHtmlAutoUi;
   return backdrop;
 }
 
-export function openEditPostModal(post) {
+export function openEditPostModal(post, currentUser = null) {
   const backdrop = ensureEditModal();
   editingPost = post;
+  editingUser = currentUser;
   editNewFile = null;
   editRemoveImage = false;
-  editIsHtml = Boolean(post.isHtml);
 
   backdrop.querySelector("#ep-content").value = post.content || "";
   backdrop.querySelector("#ep-feeling").value = post.feeling || "";
   backdrop.querySelector("#ep-file-input").value = "";
   backdrop.querySelector("#ep-html-preview-box").style.display = "none";
-  backdrop._syncModeUi();
+  backdrop._syncHtmlAutoUi();
 
   const imgBox = backdrop.querySelector("#ep-img-box");
   const imgPrev = backdrop.querySelector("#ep-img-preview");
@@ -323,8 +318,9 @@ export function renderPostCard(post, currentUser) {
   const displayName = post.pageName ? post.pageName : post.authorName;
   const displayAvatar = post.pageAvatar || post.authorAvatar || DEFAULT_AVATAR;
 
+  const renderAsHtml = Boolean(post.isHtml || (post.content && containsHtmlMarkup(post.content)));
   const bodyHtml = post.content
-    ? post.isHtml
+    ? renderAsHtml
       ? `<div class="twin-post-body twin-post-html">${sanitizeHtml(post.content)}</div>`
       : `<div class="twin-post-body">${escapeHtml(post.content)}</div>`
     : "";
@@ -571,7 +567,7 @@ export function renderPostCard(post, currentUser) {
 
   const editBtn = card.querySelector(".btn-edit-post");
   if (editBtn) {
-    editBtn.onclick = () => openEditPostModal(post);
+    editBtn.onclick = () => openEditPostModal(post, currentUser);
   }
 
   const delBtn = card.querySelector(".btn-del-post");

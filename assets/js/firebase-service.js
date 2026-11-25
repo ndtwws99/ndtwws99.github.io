@@ -12,7 +12,11 @@ import {
   signInWithPopup,
   signOut,
   updateProfile,
-  sendPasswordResetEmail
+  sendPasswordResetEmail,
+  updatePassword,
+  EmailAuthProvider,
+  reauthenticateWithCredential,
+  linkWithCredential
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import {
   getFirestore,
@@ -75,6 +79,37 @@ export async function resetPassword(email) {
     throw err;
   }
   await sendPasswordResetEmail(auth, cleanEmail);
+}
+
+export function hasPasswordProvider(fbUser = auth?.currentUser) {
+  if (!fbUser || !Array.isArray(fbUser.providerData)) return false;
+  return fbUser.providerData.some((p) => p && p.providerId === "password");
+}
+
+export async function setOrChangePassword({ currentPassword = "", newPassword = "" } = {}) {
+  if (!auth || !auth.currentUser) throw new Error("Bạn cần đăng nhập trước.");
+  const user = auth.currentUser;
+  const nextPass = String(newPassword || "");
+  if (nextPass.length < 6) {
+    const err = new Error("Mật khẩu mới cần ít nhất 6 ký tự.");
+    err.code = "auth/weak-password";
+    throw err;
+  }
+  const hasPass = hasPasswordProvider(user);
+  if (hasPass) {
+    if (currentPassword && user.email) {
+      const cred = EmailAuthProvider.credential(user.email, currentPassword);
+      await reauthenticateWithCredential(user, cred);
+    }
+    await updatePassword(user, nextPass);
+    return "updated";
+  }
+  if (!user.email) {
+    throw new Error("Tài khoản chưa có địa chỉ email để đặt mật khẩu.");
+  }
+  const cred = EmailAuthProvider.credential(user.email, nextPass);
+  await linkWithCredential(user, cred);
+  return "linked";
 }
 
 export {
@@ -148,6 +183,9 @@ export function friendlyError(err) {
     "auth/cancelled-popup-request": "Bạn đã đóng cửa sổ đăng nhập.",
     "auth/popup-blocked": "Trình duyệt đã chặn cửa sổ đăng nhập. Hãy cho phép popup rồi thử lại.",
     "auth/unauthorized-domain": "Tên miền này chưa được thêm vào Firebase (Authentication → Settings → Authorized domains).",
+    "auth/requires-recent-login": "Vì lý do bảo mật, hãy nhập đúng mật khẩu hiện tại hoặc đăng nhập lại rồi thử lại.",
+    "auth/provider-already-linked": "Tài khoản này đã được đặt mật khẩu trước đó.",
+    "auth/credential-already-in-use": "Email này đã được liên kết với phương thức mật khẩu khác.",
     "permission-denied": "Bạn không có quyền thực hiện thao tác này (kiểm tra Firestore Rules).",
     "unavailable": "Không kết nối được máy chủ. Vui lòng thử lại."
   };
@@ -181,6 +219,14 @@ const ALLOWED_IFRAME_HOSTS = [
   "www.youtube-nocookie.com",
   "player.vimeo.com"
 ];
+
+const HTML_DETECT_REGEX = /<\/?(?:div|span|p|br|hr|center|h[1-6]|b|strong|i|em|u|s|del|ins|mark|small|sub|sup|blockquote|pre|code|ul|ol|li|dl|dt|dd|a|img|figure|figcaption|table|thead|tbody|tfoot|tr|th|td|details|summary|video|audio|source|iframe)(?:\s+[^<>]*)?\/?>/i;
+
+export function containsHtmlMarkup(text = "") {
+  const s = String(text || "");
+  if (!s.includes("<") || !s.includes(">")) return false;
+  return HTML_DETECT_REGEX.test(s);
+}
 
 export function sanitizeHtml(rawHtml = "") {
   if (!rawHtml) return "";
@@ -239,13 +285,16 @@ export function sanitizeHtml(rawHtml = "") {
           continue;
         }
         if (name === "href" || name === "src") {
-          if (/^\s*(javascript|vbscript|data:text\/html)/i.test(val)) {
+          const isSafeUrl =
+            /^(https?:\/\/|mailto:|tel:|\/(?!\/)|\.\/|#)/i.test(val) ||
+            (tag === "IMG" && name === "src" && /^data:image\/(png|jpe?g|gif|webp);base64,/i.test(val));
+          if (!isSafeUrl) {
             child.removeAttribute(attr.name);
             continue;
           }
         }
         if (name === "style") {
-          if (/expression\s*\(|javascript:|url\s*\(\s*['"]?\s*javascript:/i.test(val)) {
+          if (/expression\s*\(|javascript:|vbscript:|url\s*\(|behavior\s*:|-moz-binding/i.test(val)) {
             child.removeAttribute(attr.name);
             continue;
           }
@@ -343,20 +392,40 @@ export const ROOT_ADMIN_EMAILS = ["ndtwws99@gmail.com"];
 export function isUserAdmin(user) {
   if (!user) return false;
   if (user.role === "admin") return true;
-  const email = String(user.email || auth?.currentUser?.email || "").trim().toLowerCase();
+  const isSelf = Boolean(auth?.currentUser && user.uid && user.uid === auth.currentUser.uid);
+  const email = String(user.email || (isSelf ? auth.currentUser.email : "") || "").trim().toLowerCase();
   return Boolean(email && ROOT_ADMIN_EMAILS.includes(email));
+}
+
+async function shouldEmailBeAdmin(email) {
+  const clean = String(email || "").trim().toLowerCase();
+  if (!clean) return false;
+  if (ROOT_ADMIN_EMAILS.includes(clean)) return true;
+  if (!db) return false;
+  try {
+    const webSnap = await getDoc(doc(db, "settings", "web"));
+    if (webSnap.exists()) {
+      const list = webSnap.data()?.adminEmails;
+      if (Array.isArray(list) && list.map((e) => String(e).trim().toLowerCase()).includes(clean)) {
+        return true;
+      }
+    }
+  } catch {}
+  return false;
 }
 
 export async function ensureUserDoc(user, extra = {}) {
   if (!db || !user) return null;
   const ref = doc(db, "users", user.uid);
   const snap = await getDoc(ref);
+  const autoAdmin = await shouldEmailBeAdmin(user.email);
+
   if (!snap.exists()) {
     const profile = {
       uid: user.uid,
       name: extra.name || user.displayName || user.email?.split("@")[0] || "Thành viên Twin",
       email: user.email || "",
-      role: "member",
+      role: autoAdmin ? "admin" : "member",
       showEmail: true,
       showPersonalInfo: true,
       allowMessagesFrom: "everyone",
@@ -383,9 +452,17 @@ export async function ensureUserDoc(user, extra = {}) {
     return profile;
   }
   const data = snap.data();
-  if (user.email && !data.email) {
+  const patch = {};
+  if (user.email && data.email !== user.email) {
     data.email = user.email;
-    updateDoc(ref, { email: user.email }).catch(() => {});
+    patch.email = user.email;
+  }
+  if (autoAdmin && data.role !== "admin") {
+    data.role = "admin";
+    patch.role = "admin";
+  }
+  if (Object.keys(patch).length) {
+    updateDoc(ref, patch).catch(() => {});
   }
   return data;
 }

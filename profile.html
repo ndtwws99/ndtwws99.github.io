@@ -11,7 +11,7 @@
   <meta name="format-detection" content="telephone=no" />
   <title>Trang cá nhân — Twin</title>
   <meta name="description" content="Twin — Mạng xã hội kết nối bạn bè, chia sẻ khoảnh khắc, nhóm, trang và nhắn tin thời gian thực." />
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%23007aff'/%3E%3Cstop offset='100%25' stop-color='%235856d6'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect x='4' y='4' width='56' height='56' rx='16' fill='url(%23g)'/%3E%3Cpath d='M19 21h26v6H35.5v18h-7V27H19z' fill='%23ffffff'/%3E%3C/svg%3E" />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%23007aff'/%3E%3Cstop offset='100%25' stop-color='%235856d6'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='32' cy='32' r='28' fill='url(%23g)'/%3E%3Cpath d='M19 21h26v6H35.5v18h-7V27H19z' fill='%23ffffff'/%3E%3C/svg%3E" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet" />
@@ -187,7 +187,6 @@
       getDoc,
       updateDoc,
       updateProfile,
-      resetPassword,
       collection,
       query,
       where,
@@ -367,7 +366,7 @@
             </button>
             <button type="button" id="pf-reset-pass-btn" class="twin-btn twin-btn-secondary twin-btn-sm">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="5"/><path d="m21 2-9.6 9.6"/><path d="m15.5 7.5 3 3L22 7l-3-3"/></svg>
-              <span>Đổi mật khẩu</span>
+              <span>Đặt / Đổi mật khẩu</span>
             </button>
           `;
           document.getElementById("pf-open-settings-btn").onclick = () => openAccountSettingsModal("effects");
@@ -396,19 +395,8 @@
           document.getElementById("pf-edit-close").onclick = closeEditModal;
           document.getElementById("pf-edit-cancel").onclick = closeEditModal;
 
-          document.getElementById("pf-reset-pass-btn").onclick = async () => {
-            const targetEmail = auth?.currentUser?.email || profile.email;
-            if (!targetEmail) return showToast("Chưa có email tài khoản để đặt lại mật khẩu.");
-            const btn = document.getElementById("pf-reset-pass-btn");
-            btn.disabled = true;
-            try {
-              await resetPassword(targetEmail);
-              showToast(`Đã gửi email đặt lại mật khẩu đến ${targetEmail}!`);
-            } catch (err) {
-              showToast(friendlyError(err));
-            } finally {
-              btn.disabled = false;
-            }
+          document.getElementById("pf-reset-pass-btn").onclick = () => {
+            openAccountSettingsModal("privacy", { focusPassword: true });
           };
 
           document.getElementById("pf-edit-form").onsubmit = async (e) => {

@@ -11,7 +11,7 @@
   <meta name="format-detection" content="telephone=no" />
   <title>Trang — Twin</title>
   <meta name="description" content="Twin — Mạng xã hội kết nối bạn bè, chia sẻ khoảnh khắc, nhóm, trang và nhắn tin thời gian thực." />
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%23007aff'/%3E%3Cstop offset='100%25' stop-color='%235856d6'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect x='4' y='4' width='56' height='56' rx='16' fill='url(%23g)'/%3E%3Cpath d='M19 21h26v6H35.5v18h-7V27H19z' fill='%23ffffff'/%3E%3C/svg%3E" />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%23007aff'/%3E%3Cstop offset='100%25' stop-color='%235856d6'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='32' cy='32' r='28' fill='url(%23g)'/%3E%3Cpath d='M19 21h26v6H35.5v18h-7V27H19z' fill='%23ffffff'/%3E%3C/svg%3E" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet" />
@@ -45,14 +45,10 @@
         </div>
 
         <div id="pf-page-composer" style="display:none;border-top:1px solid var(--border);padding-top:12px;">
-          <div class="twin-composer-bar">
-            <div class="twin-seg-tabs">
-              <button type="button" id="pg-mode-text" class="twin-seg-tab active">Văn bản</button>
-              <button type="button" id="pg-mode-html" class="twin-seg-tab">&lt;/&gt; HTML</button>
-            </div>
+          <div class="twin-composer-bar" style="justify-content:flex-end;">
             <button type="button" id="pg-prev-btn" class="twin-btn twin-btn-secondary twin-btn-sm" style="display:none;">Xem trước HTML</button>
           </div>
-          <textarea id="page-post-content" class="twin-textarea" placeholder="Đăng tin mới từ Trang này..."></textarea>
+          <textarea id="page-post-content" class="twin-textarea" placeholder="Đăng tin mới từ Trang này... (Hỗ trợ văn bản &amp; mã HTML)"></textarea>
           <div id="pg-html-preview" class="twin-html-preview" style="display:none;">
             <div class="twin-html-preview-label">Xem trước tin Trang (HTML)</div>
             <div id="pg-html-preview-body" class="twin-post-body twin-post-html" style="margin-bottom:0;"></div>
@@ -95,7 +91,7 @@
   </div>
 
   <script type="module">
-    import { initTwinPage } from "./assets/js/layout.js";
+    import { initTwinPage, getSiteSettings } from "./assets/js/layout.js";
     import { renderPostList } from "./assets/js/post-ui.js";
     import {
       db,
@@ -112,6 +108,8 @@
       serverTimestamp,
       uploadToCloudinary,
       sanitizeHtml,
+      containsHtmlMarkup,
+      isUserAdmin,
       DEFAULT_AVATAR,
       escapeHtml,
       toMillis,
@@ -123,7 +121,6 @@
     let activePage = null;
     let unsubPagePosts = null;
     let selectedPageFile = null;
-    let pagePostIsHtml = false;
     let initialOpened = false;
 
     const modal = document.getElementById("page-modal");
@@ -136,29 +133,25 @@
     };
 
     const pgContentEl = document.getElementById("page-post-content");
-    const pgModeText = document.getElementById("pg-mode-text");
-    const pgModeHtml = document.getElementById("pg-mode-html");
     const pgPrevBtn = document.getElementById("pg-prev-btn");
     const pgPrevBox = document.getElementById("pg-html-preview");
     const pgPrevBody = document.getElementById("pg-html-preview-body");
-    const syncPgMode = () => {
-      pgModeText.classList.toggle("active", !pagePostIsHtml);
-      pgModeHtml.classList.toggle("active", pagePostIsHtml);
-      pgContentEl.classList.toggle("code-mode", pagePostIsHtml);
-      pgContentEl.placeholder = pagePostIsHtml ? "Nhập mã HTML cho tin Trang..." : "Đăng tin mới từ Trang này...";
-      pgPrevBtn.style.display = pagePostIsHtml ? "inline-flex" : "none";
-      if (!pagePostIsHtml) pgPrevBox.style.display = "none";
+    const canUseHtml = () => getSiteSettings().allowHtmlPosts || isUserAdmin(me);
+    const syncPgHtmlPreview = () => {
+      const detected = canUseHtml() && containsHtmlMarkup(pgContentEl.value);
+      pgPrevBtn.style.display = detected ? "inline-flex" : "none";
+      if (!detected) {
+        pgPrevBox.style.display = "none";
+      } else if (pgPrevBox.style.display !== "none") {
+        pgPrevBody.innerHTML = sanitizeHtml(pgContentEl.value);
+      }
     };
-    pgModeText.onclick = () => { pagePostIsHtml = false; syncPgMode(); };
-    pgModeHtml.onclick = () => { pagePostIsHtml = true; syncPgMode(); };
     pgPrevBtn.onclick = () => {
       const show = pgPrevBox.style.display === "none";
       pgPrevBox.style.display = show ? "block" : "none";
       if (show) pgPrevBody.innerHTML = sanitizeHtml(pgContentEl.value);
     };
-    pgContentEl.addEventListener("input", () => {
-      if (pagePostIsHtml && pgPrevBox.style.display !== "none") pgPrevBody.innerHTML = sanitizeHtml(pgContentEl.value);
-    });
+    pgContentEl.addEventListener("input", syncPgHtmlPreview);
 
     const fileInput = document.getElementById("page-post-file");
     const previewWrap = document.getElementById("page-post-preview-wrap");
@@ -262,6 +255,7 @@
           try {
             let imageUrl = "";
             if (selectedPageFile) imageUrl = await uploadToCloudinary(selectedPageFile);
+            const isHtml = canUseHtml() && containsHtmlMarkup(content);
             await addDoc(collection(db, "posts"), {
               authorUid: me.uid,
               authorName: me.name,
@@ -270,14 +264,15 @@
               pageName: activePage.name,
               pageAvatar: activePage.coverUrl || DEFAULT_AVATAR,
               content,
-              isHtml: pagePostIsHtml,
+              isHtml,
               imageUrl,
               pinned: false,
               reactions: {},
               comments: [],
               createdAt: serverTimestamp()
             });
-            document.getElementById("page-post-content").value = "";
+            pgContentEl.value = "";
+            syncPgHtmlPreview();
             pgPrevBox.style.display = "none";
             selectedPageFile = null;
             fileInput.value = "";

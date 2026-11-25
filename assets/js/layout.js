@@ -32,17 +32,21 @@ import {
   friendlyError,
   showToast,
   pushNotification,
-  resetPassword
+  resetPassword,
+  hasPasswordProvider,
+  setOrChangePassword,
+  arrayUnion,
+  getDocs
 } from "./firebase-service.js";
 
 export const ICONS = {
-  home: `<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V19a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2V9.5"/><path d="M9.5 21v-6a1.5 1.5 0 0 1 1.5-1.5h2a1.5 1.5 0 0 1 1.5 1.5v6"/></svg>`,
-  friends: `<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="7.5" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17" cy="9" r="2.6"/><path d="M16.5 14.3a5 5 0 0 1 5 5.7"/></svg>`,
-  groups: `<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7.5" height="7.5" rx="2.2"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="2.2"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="2.2"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2.2"/></svg>`,
-  pages: `<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 4.5h15a1.5 1.5 0 0 1 1.5 1.5v12a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18V6a1.5 1.5 0 0 1 1.5-1.5Z"/><path d="M7.5 9h9"/><path d="M7.5 13h6"/></svg>`,
+  home: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 10.8 12 3.5l8.5 7.3"/><path d="M5.5 9.5V19a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2V9.5"/><path d="M9.5 21v-5.5a2.5 2.5 0 0 1 5 0V21"/></svg>`,
+  friends: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="7.5" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17" cy="9" r="2.6"/><path d="M16.5 14.3a5 5 0 0 1 5 5.7"/></svg>`,
+  groups: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="7.5" r="3.2"/><path d="M6.5 20a5.5 5.5 0 0 1 11 0"/><circle cx="18.5" cy="9.5" r="2.2"/><path d="M22 19.5a4 4 0 0 0-3-3.8"/><circle cx="5.5" cy="9.5" r="2.2"/><path d="M2 19.5a4 4 0 0 1 3-3.8"/></svg>`,
+  pages: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polygon points="15.8 8.2 13.8 13.8 8.2 15.8 10.2 10.2 15.8 8.2"/></svg>`,
   chat: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c5 0 9 3.6 9 8.1 0 4.5-4 8.1-9 8.1-1.4 0-2.7-.3-3.9-.8L3.5 20l1.1-3.9A7.6 7.6 0 0 1 3 11.1C3 6.6 7 3 12 3Z"/><path d="M8.5 11.2h.01M12 11.2h.01M15.5 11.2h.01"/></svg>`,
   bell: `<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8.5a6 6 0 1 0-12 0c0 6-2.5 7.5-2.5 7.5h17S18 14.5 18 8.5Z"/><path d="M10 19.5a2.1 2.1 0 0 0 4 0"/></svg>`,
-  search: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7.5"/><path d="m20.5 20.5-4.2-4.2"/></svg>`,
+  search: `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7.5"/><path d="m20.5 20.5-4.2-4.2"/></svg>`,
   moon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6.5 6.5 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>`,
   sun: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2.5 12h2M19.5 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>`,
   settings: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>`,
@@ -51,13 +55,13 @@ export const ICONS = {
   key: `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4.5"/><path d="m20.5 3.5-9.2 9.2"/><path d="m15.5 8.5 3 3"/></svg>`,
   logout: `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 20H5.5A1.5 1.5 0 0 1 4 18.5v-13A1.5 1.5 0 0 1 5.5 4H9"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>`,
   palette: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".8" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".8" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".8" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".8" fill="currentColor"/><path d="M12 2a10 10 0 0 0 0 20c1.4 0 2-.8 2-1.8 0-.5-.2-.9-.5-1.3-.3-.3-.5-.7-.5-1.2 0-1 .8-1.7 1.8-1.7H17a5 5 0 0 0 5-5c0-5-4.5-9-10-9Z"/></svg>`,
-  glass: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="5"/><path d="m7 14 7-7"/><path d="m11 17 6-6"/></svg>`,
+  glass: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 9.5a4.5 4.5 0 0 1 6-2"/><path d="M15.5 14.5a4.5 4.5 0 0 1-5 2"/></svg>`,
   motion: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M4.5 12a7.5 7.5 0 0 1 13-5.1"/><path d="M19.5 12a7.5 7.5 0 0 1-13 5.1"/></svg>`,
   volume: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5.5a9.5 9.5 0 0 1 0 13"/></svg>`,
   type: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V5h16v2"/><path d="M9 19h6"/><path d="M12 5v14"/></svg>`,
   sliders: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/><circle cx="9" cy="6" r="2" fill="currentColor"/><circle cx="15" cy="12" r="2" fill="currentColor"/><circle cx="10" cy="18" r="2" fill="currentColor"/></svg>`,
   eye: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12s3.5-6.5 9.5-6.5 9.5 6.5 9.5 6.5-3.5 6.5-9.5 6.5-9.5-6.5-9.5-6.5Z"/><circle cx="12" cy="12" r="2.8"/></svg>`,
-  lock: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="10.5" width="15" height="10" rx="2.5"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></svg>`
+  lock: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="14.5" r="5.5"/><path d="M8.5 10.2V7.8a3.5 3.5 0 0 1 7 0v2.4"/><circle cx="12" cy="14.5" r="1.2" fill="currentColor"/></svg>`
 };
 
 let currentUserData = null;
@@ -347,9 +351,12 @@ export function renderAppChrome() {
           <span id="twin-brand-name">Twin</span>
         </a>
         <div class="twin-search-wrap" id="twin-search-wrap">
-          <div class="twin-search-box">
-            ${ICONS.search}
+          <div class="twin-search-box" id="twin-search-box">
+            <button type="button" id="twin-search-trigger" class="twin-search-trigger" aria-label="Mở tìm kiếm" title="Tìm kiếm">
+              ${ICONS.search}
+            </button>
             <input id="twin-global-search" type="search" autocomplete="off" placeholder="Tìm người, nhóm, trang, bài viết..." />
+            <button type="button" id="twin-search-close" class="twin-search-close" aria-label="Đóng tìm kiếm" title="Đóng">✕</button>
           </div>
           <div id="twin-search-dropdown" class="twin-search-dropdown"></div>
         </div>
@@ -374,15 +381,49 @@ export function renderAppChrome() {
 
   const searchWrap = document.getElementById("twin-search-wrap");
   const searchInput = document.getElementById("twin-global-search");
+  const searchTrigger = document.getElementById("twin-search-trigger");
+  const searchClose = document.getElementById("twin-search-close");
+
+  const openMobileSearch = () => {
+    headerEl?.classList.add("search-expanded");
+    searchWrap?.classList.add("expanded");
+    setTimeout(() => searchInput?.focus(), 40);
+  };
+  const closeMobileSearch = () => {
+    headerEl?.classList.remove("search-expanded");
+    searchWrap?.classList.remove("expanded");
+    document.getElementById("twin-search-dropdown")?.classList.remove("open");
+    searchInput?.blur();
+  };
+
   if (searchInput && searchWrap) {
     searchWrap.addEventListener("click", (e) => e.stopPropagation());
+    searchTrigger?.addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (window.innerWidth <= 820 && !searchWrap.classList.contains("expanded")) {
+        openMobileSearch();
+      } else {
+        searchInput.focus();
+      }
+    });
+    searchClose?.addEventListener("click", (e) => {
+      e.stopPropagation();
+      searchInput.value = "";
+      renderGlobalSearchResults("");
+      closeMobileSearch();
+    });
     searchInput.addEventListener("input", () => {
       renderGlobalSearchResults(searchInput.value);
     });
     searchInput.addEventListener("focus", () => {
+      if (window.innerWidth <= 820) openMobileSearch();
       if (searchInput.value.trim()) renderGlobalSearchResults(searchInput.value);
     });
     searchInput.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        closeMobileSearch();
+        return;
+      }
       const v = searchInput.value.trim();
       if (e.key === "Enter" && v && page !== "home") {
         window.location.href = `./index.html?q=${encodeURIComponent(v)}`;
@@ -593,7 +634,7 @@ function renderLoggedInHeaderRight(user) {
       ${admin ? `<button class="twin-dropdown-item" id="twin-menu-admin" style="color:var(--primary);">${ICONS.shield}<span>Quản trị Admin</span></button>` : ""}
       <a href="./saved.html" class="twin-dropdown-item">${ICONS.bookmark}<span>Bài viết đã lưu</span></a>
       <button class="twin-dropdown-item" id="twin-menu-theme">${isDark ? ICONS.sun : ICONS.moon}<span id="twin-theme-label">${isDark ? "Chế độ Sáng" : "Chế độ Tối"}</span></button>
-      <button class="twin-dropdown-item" id="twin-reset-pass-btn">${ICONS.key}<span>Đặt lại mật khẩu</span></button>
+      <button class="twin-dropdown-item" id="twin-reset-pass-btn">${ICONS.key}<span>Đặt / Đổi mật khẩu</span></button>
       <button class="twin-dropdown-item" id="twin-logout-btn" style="color:var(--danger)">${ICONS.logout}<span>Đăng xuất</span></button>
     </div>
   `;
@@ -635,6 +676,8 @@ function renderLoggedInHeaderRight(user) {
       document.getElementById("twin-notif-dropdown")?.classList.remove("open");
       document.getElementById("twin-account-dropdown")?.classList.remove("open");
       document.getElementById("twin-search-dropdown")?.classList.remove("open");
+      document.getElementById("twin-header")?.classList.remove("search-expanded");
+      document.getElementById("twin-search-wrap")?.classList.remove("expanded");
     });
     document.addEventListener("click", (e) => {
       if (e.target.classList && e.target.classList.contains("twin-modal-backdrop")) e.target.classList.remove("open");
@@ -643,6 +686,8 @@ function renderLoggedInHeaderRight(user) {
       if (e.key === "Escape") {
         document.querySelectorAll(".twin-modal-backdrop.open").forEach((m) => m.classList.remove("open"));
         document.getElementById("twin-search-dropdown")?.classList.remove("open");
+        document.getElementById("twin-header")?.classList.remove("search-expanded");
+        document.getElementById("twin-search-wrap")?.classList.remove("expanded");
       }
     });
   }
@@ -672,16 +717,10 @@ function renderLoggedInHeaderRight(user) {
   }
   document.getElementById("twin-theme-btn").onclick = toggleTheme;
   document.getElementById("twin-menu-theme").onclick = toggleTheme;
-  document.getElementById("twin-reset-pass-btn").onclick = async () => {
-    const email = auth?.currentUser?.email || currentUserData?.email;
-    if (!email) return showToast("Tài khoản chưa có địa chỉ email để đặt lại mật khẩu.");
-    try {
-      await resetPassword(email);
-      document.getElementById("twin-account-dropdown")?.classList.remove("open");
-      showToast(`Đã gửi liên kết đặt lại mật khẩu tới ${email}!`);
-    } catch (err) {
-      showToast(friendlyError(err));
-    }
+  document.getElementById("twin-reset-pass-btn").onclick = (e) => {
+    e.stopPropagation();
+    accDrop.classList.remove("open");
+    openAccountSettingsModal("privacy", { focusPassword: true });
   };
   document.getElementById("twin-logout-btn").onclick = async () => {
     try {
@@ -764,7 +803,7 @@ function renderAdminUserList(filterText = "") {
   });
 }
 
-export function openAccountSettingsModal(initialTab = "effects") {
+export function openAccountSettingsModal(initialTab = "effects", { focusPassword = false } = {}) {
   if (!currentUserData) return;
   let backdrop = document.getElementById("twin-settings-modal");
   if (!backdrop) {
@@ -778,6 +817,7 @@ export function openAccountSettingsModal(initialTab = "effects") {
   const admin = isUserAdmin(currentUserData);
   const activeTab = initialTab === "admin" && !admin ? "effects" : initialTab;
   const userEmail = auth?.currentUser?.email || currentUserData.email || "";
+  const hasPass = hasPasswordProvider(auth?.currentUser);
   const notifEnabled = isBrowserNotifEnabled();
   const notifBlocked = typeof window !== "undefined" && "Notification" in window && Notification.permission === "denied";
 
@@ -961,15 +1001,31 @@ export function openAccountSettingsModal(initialTab = "effects") {
                 <span class="twin-role-badge ${admin ? "admin" : ""}">${admin ? "Quản trị viên" : "Thành viên"}</span>
               </div>
 
-              <div class="twin-setting-row">
-                <div class="twin-setting-lead">
-                  <span class="twin-side-icon ios-orange">${ICONS.lock}</span>
-                  <div class="twin-setting-info">
-                    <div class="twin-setting-label">Mật khẩu đăng nhập</div>
-                    <div class="twin-setting-desc">Gửi liên kết đặt lại mật khẩu tới email của bạn.</div>
+              <div class="twin-setting-row twin-setting-row-col" id="ts-password-section">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+                  <div class="twin-setting-lead">
+                    <span class="twin-side-icon ios-orange">${ICONS.lock}</span>
+                    <div class="twin-setting-info">
+                      <div class="twin-setting-label">${hasPass ? "Đổi mật khẩu đăng nhập" : "Đặt mật khẩu cho tài khoản"}</div>
+                      <div class="twin-setting-desc">${hasPass ? "Cập nhật mật khẩu mới trực tiếp ngay tại đây." : "Đặt mật khẩu để có thể đăng nhập bằng Email + Mật khẩu."}</div>
+                    </div>
+                  </div>
+                  <button type="button" id="ts-send-reset-pass" class="twin-btn twin-btn-secondary twin-btn-sm">Gửi mail đặt lại</button>
+                </div>
+                <div class="twin-password-box">
+                  ${
+                    hasPass
+                      ? `<input id="ts-pass-current" class="twin-input" type="password" autocomplete="current-password" placeholder="Mật khẩu hiện tại (để xác minh)" />`
+                      : ""
+                  }
+                  <div class="twin-form-grid-2">
+                    <input id="ts-pass-new" class="twin-input" type="password" autocomplete="new-password" minlength="6" placeholder="Mật khẩu mới (tối thiểu 6 ký tự)" />
+                    <input id="ts-pass-confirm" class="twin-input" type="password" autocomplete="new-password" minlength="6" placeholder="Nhập lại mật khẩu mới" />
+                  </div>
+                  <div style="display:flex;justify-content:flex-end;">
+                    <button type="button" id="ts-save-password-btn" class="twin-btn twin-btn-primary twin-btn-sm">${hasPass ? "Đổi mật khẩu" : "Đặt mật khẩu"}</button>
                   </div>
                 </div>
-                <button type="button" id="ts-send-reset-pass" class="twin-btn twin-btn-secondary twin-btn-sm">Đặt lại</button>
               </div>
             </div>
           </div>
@@ -1100,8 +1156,12 @@ export function openAccountSettingsModal(initialTab = "effects") {
             <div class="twin-setting-group-title">Phân quyền tài khoản Admin</div>
             <div class="twin-setting-group" style="padding:14px 16px;">
               <p class="twin-setting-desc" style="margin-bottom:10px;">
-                Admin có toàn quyền quản trị bài viết, tin ngắn, thông số web toàn hệ thống và cấp/gỡ quyền Admin cho thành viên khác.
+                Admin có toàn quyền quản trị bài viết, tin ngắn, thông số web toàn hệ thống và cấp/gỡ quyền Admin cho tài khoản khác.
               </p>
+              <form id="ts-admin-grant-email-form" style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+                <input id="ts-admin-email-input" class="twin-input" type="email" placeholder="Nhập email để nâng cấp lên Admin..." style="flex:1;min-width:200px;" required />
+                <button type="submit" id="ts-admin-grant-email-btn" class="twin-btn twin-btn-primary twin-btn-sm">Cấp Admin</button>
+              </form>
               <input id="ts-admin-user-search" class="twin-input" type="search" placeholder="Tìm thành viên theo tên hoặc email..." style="margin-bottom:10px;" />
               <div id="ts-admin-user-list" class="twin-admin-user-list"></div>
             </div>
@@ -1183,6 +1243,46 @@ export function openAccountSettingsModal(initialTab = "effects") {
     }
   };
 
+  const savePassBtn = backdrop.querySelector("#ts-save-password-btn");
+  if (savePassBtn) {
+    savePassBtn.onclick = async () => {
+      const curEl = backdrop.querySelector("#ts-pass-current");
+      const newEl = backdrop.querySelector("#ts-pass-new");
+      const confEl = backdrop.querySelector("#ts-pass-confirm");
+      const currentPassword = curEl ? curEl.value : "";
+      const newPassword = newEl ? newEl.value : "";
+      const confirmPassword = confEl ? confEl.value : "";
+
+      if (newPassword.length < 6) return showToast("Mật khẩu mới cần có ít nhất 6 ký tự.");
+      if (newPassword !== confirmPassword) return showToast("Mật khẩu nhập lại không khớp.");
+
+      savePassBtn.disabled = true;
+      const oldText = savePassBtn.textContent;
+      savePassBtn.textContent = "Đang lưu...";
+      try {
+        const mode = await setOrChangePassword({ currentPassword, newPassword });
+        if (curEl) curEl.value = "";
+        if (newEl) newEl.value = "";
+        if (confEl) confEl.value = "";
+        showToast(mode === "linked" ? "Đã đặt mật khẩu thành công!" : "Đã đổi mật khẩu thành công!");
+        if (mode === "linked") openAccountSettingsModal("privacy");
+      } catch (err) {
+        showToast(friendlyError(err));
+      } finally {
+        savePassBtn.disabled = false;
+        savePassBtn.textContent = oldText;
+      }
+    };
+  }
+
+  if (focusPassword) {
+    setTimeout(() => {
+      const sec = backdrop.querySelector("#ts-password-section");
+      sec?.scrollIntoView({ behavior: "smooth", block: "center" });
+      (backdrop.querySelector("#ts-pass-current") || backdrop.querySelector("#ts-pass-new"))?.focus();
+    }, 60);
+  }
+
   const browserNotifBtn = backdrop.querySelector("#ts-browser-notif-btn");
   if (browserNotifBtn && !notifBlocked) {
     browserNotifBtn.onclick = async () => {
@@ -1247,6 +1347,49 @@ export function openAccountSettingsModal(initialTab = "effects") {
     backdrop.querySelector("#ts-admin-user-search").addEventListener("input", (e) => {
       renderAdminUserList(e.target.value);
     });
+
+    const grantEmailForm = backdrop.querySelector("#ts-admin-grant-email-form");
+    if (grantEmailForm) {
+      grantEmailForm.onsubmit = async (e) => {
+        e.preventDefault();
+        const emailInput = backdrop.querySelector("#ts-admin-email-input");
+        const btn = backdrop.querySelector("#ts-admin-grant-email-btn");
+        const cleanEmail = String(emailInput.value || "").trim().toLowerCase();
+        if (!cleanEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+          return showToast("Vui lòng nhập địa chỉ email hợp lệ.");
+        }
+        btn.disabled = true;
+        btn.textContent = "Đang xử lý...";
+        try {
+          await setDoc(doc(db, "settings", "web"), { adminEmails: arrayUnion(cleanEmail) }, { merge: true });
+          const matched = searchDirectory.users.filter((u) => String(u.email || "").trim().toLowerCase() === cleanEmail);
+          let upgradedCount = 0;
+          if (matched.length) {
+            for (const u of matched) {
+              await updateDoc(doc(db, "users", u.uid || u.id), { role: "admin" });
+              upgradedCount++;
+            }
+          } else {
+            const snap = await getDocs(query(collection(db, "users"), where("email", "==", cleanEmail)));
+            for (const d of snap.docs) {
+              await updateDoc(doc(db, "users", d.id), { role: "admin" });
+              upgradedCount++;
+            }
+          }
+          emailInput.value = "";
+          showToast(
+            upgradedCount > 0
+              ? `Đã nâng cấp ${cleanEmail} lên Admin!`
+              : `Đã thêm ${cleanEmail} vào danh sách Admin (tự động kích hoạt khi đăng nhập).`
+          );
+        } catch (err) {
+          showToast(friendlyError(err));
+        } finally {
+          btn.disabled = false;
+          btn.textContent = "Cấp Admin";
+        }
+      };
+    }
 
     backdrop.querySelector("#ts-admin-site-form").onsubmit = async (e) => {
       e.preventDefault();
