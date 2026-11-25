@@ -2,23 +2,22 @@
 <html lang="vi" data-theme="light">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Đã lưu | Twin</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Đã lưu — Twin</title>
   <meta name="description" content="Twin — Mạng xã hội kết nối bạn bè, chia sẻ khoảnh khắc, nhóm, trang và nhắn tin thời gian thực." />
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%232563eb'/%3E%3Cstop offset='100%25' stop-color='%2306b6d4'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='16' fill='url(%23g)'/%3E%3Cpath d='M16 20h32v8H36v22h-8V28H16z' fill='%23fff'/%3E%3C/svg%3E" />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%231877f2'/%3E%3Cstop offset='100%25' stop-color='%230ea5e9'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='32' cy='32' r='32' fill='url(%23g)'/%3E%3Cpath d='M17 20h30v7.5H36V48h-8V27.5H17z' fill='%23fff'/%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="./assets/css/twin.css" />
 </head>
-<body>
+<body class="">
   <header id="twin-header" class="twin-header"></header>
 
-  <main class="twin-main" style="max-width:740px;">
-    <h1 style="margin-bottom:16px;">Bài viết đã lưu</h1>
+  <main class="twin-main" style="max-width:680px;">
+    <div class="twin-page-head"><h1>Bài viết đã lưu</h1></div>
     <div id="saved-posts-list"></div>
   </main>
-
-  <div id="twin-chat-dock" class="twin-chat-dock"></div>
-  <div id="twin-toast-container" class="twin-toast-container"></div>
-  <footer id="twin-footer" class="twin-footer"></footer>
 
   <script type="module">
     import { initTwinPage } from "./assets/js/layout.js";
@@ -37,7 +36,7 @@
           box.innerHTML = "";
           const list = postsMap.filter((p) => savedIds.includes(p.id));
           if (!list.length) {
-            box.innerHTML = '<div class="twin-card" style="color:var(--twin-text-muted)">Bạn chưa lưu bài viết nào trên Twin.</div>';
+            box.innerHTML = '<div class="twin-card" style="color:var(--text-3);text-align:center;padding:32px;">Bạn chưa lưu bài viết nào.</div>';
             return;
           }
           list.forEach((p) => box.appendChild(renderPostCard(p, { ...me, savedPosts: savedIds })));

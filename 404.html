@@ -2,33 +2,29 @@
 <html lang="vi" data-theme="light">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Không tìm thấy trang | Twin</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Không tìm thấy trang — Twin</title>
   <meta name="description" content="Twin — Mạng xã hội kết nối bạn bè, chia sẻ khoảnh khắc, nhóm, trang và nhắn tin thời gian thực." />
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%232563eb'/%3E%3Cstop offset='100%25' stop-color='%2306b6d4'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='16' fill='url(%23g)'/%3E%3Cpath d='M16 20h32v8H36v22h-8V28H16z' fill='%23fff'/%3E%3C/svg%3E" />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%231877f2'/%3E%3Cstop offset='100%25' stop-color='%230ea5e9'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='32' cy='32' r='32' fill='url(%23g)'/%3E%3Cpath d='M17 20h30v7.5H36V48h-8V27.5H17z' fill='%23fff'/%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="./assets/css/twin.css" />
 </head>
-<body>
-  <header id="twin-header" class="twin-header"></header>
-
-  <main class="twin-main">
-    <div class="twin-card twin-404">
-      <h1>404</h1>
-      <h2 style="margin:12px 0 8px;">Trang này không tồn tại trên Twin</h2>
-      <p class="twin-post-meta" style="font-size:15px;margin-bottom:22px;">
-        Liên kết bạn truy cập có thể đã bị hỏng hoặc trang đã bị gỡ bỏ.
-      </p>
-      <a href="./index.html" class="twin-btn twin-btn-primary">← Quay về Bảng tin Twin</a>
-    </div>
-  </main>
-
-  <div id="twin-chat-dock" class="twin-chat-dock"></div>
-  <div id="twin-toast-container" class="twin-toast-container"></div>
-  <footer id="twin-footer" class="twin-footer"></footer>
+<body class="page-404">
+  <div class="twin-card twin-404-card">
+    <div class="twin-logo-circle lg" style="margin:0 auto 16px;">T</div>
+    <h1 style="font-size:52px;font-weight:800;letter-spacing:-2px;line-height:1;">404</h1>
+    <h2 style="font-size:19px;margin:10px 0 8px;">Không tìm thấy trang này</h2>
+    <p class="twin-post-meta" style="font-size:14.5px;margin-bottom:24px;">
+      Liên kết có thể đã bị hỏng hoặc nội dung đã bị gỡ bỏ khỏi Twin.
+    </p>
+    <a href="./index.html" class="twin-btn twin-btn-primary">Quay về bảng tin</a>
+  </div>
 
   <script type="module">
-    import { initTwinPage } from "./assets/js/layout.js";
-    initTwinPage({ requireAuth: false });
+    import { applySavedTheme } from "./assets/js/layout.js";
+    applySavedTheme();
   </script>
 </body>
 </html>
