@@ -4,13 +4,18 @@
 import {
   db,
   doc,
+  collection,
+  addDoc,
   updateDoc,
   deleteDoc,
   arrayUnion,
   arrayRemove,
   deleteField,
+  serverTimestamp,
   pushNotification,
   uploadToCloudinary,
+  uploadVideoToCloudinary,
+  readVideoMetadata,
   getVideoPosterUrl,
   formatDuration,
   sanitizeHtml,
@@ -21,7 +26,8 @@ import {
   toMillis,
   showToast,
   friendlyError,
-  isUserAdmin
+  isUserAdmin,
+  renderAdminIconHtml
 } from "./firebase-service.js";
 import { getSiteSettings } from "./layout.js";
 
@@ -376,14 +382,14 @@ export function renderPostCard(post, currentUser) {
         <img class="twin-avatar" src="${escapeHtml(displayAvatar)}" alt="" />
         <div style="min-width:0;">
           <div class="twin-post-author-name">
-            ${escapeHtml(displayName)}
+            ${escapeHtml(displayName)}${!post.pageName ? renderAdminIconHtml(post.authorUid) : ""}
             ${post.pageName ? `<span class="twin-pill-tag" style="margin-left:4px;">Trang</span>` : ""}
             ${post.isHtml ? `<span class="twin-pill-tag" style="margin-left:4px;font-family:monospace;">HTML</span>` : ""}
             ${post.feeling ? `<span style="font-weight:400;color:var(--text-3)"> đang cảm thấy ${escapeHtml(post.feeling)}</span>` : ""}
             ${post.groupName ? `<span style="font-weight:400;color:var(--text-3)"> trong <strong>${escapeHtml(post.groupName)}</strong></span>` : ""}
           </div>
           <div class="twin-post-meta">
-            ${post.pageName ? `Đăng bởi ${escapeHtml(post.authorName)} · ` : ""}${formatTime(post.createdAt)}${post.editedAt ? " · Đã chỉnh sửa" : ""} · Công khai
+            ${post.pageName ? `Đăng bởi ${escapeHtml(post.authorName)}${renderAdminIconHtml(post.authorUid)} · ` : ""}${formatTime(post.createdAt)}${post.editedAt ? " · Đã chỉnh sửa" : ""} · Công khai
           </div>
         </div>
       </a>
@@ -459,9 +465,11 @@ export function renderPostCard(post, currentUser) {
           .map(
             (c) => `
           <div class="twin-comment-item">
-            <img class="twin-avatar twin-avatar-sm" src="${escapeHtml(c.authorAvatar || DEFAULT_AVATAR)}" alt="" />
+            <a href="./profile.html?uid=${encodeURIComponent(c.authorUid || "")}" class="twin-avatar-link" title="Xem trang cá nhân">
+              <img class="twin-avatar twin-avatar-sm" src="${escapeHtml(c.authorAvatar || DEFAULT_AVATAR)}" alt="" />
+            </a>
             <div class="twin-comment-bubble">
-              <div style="font-weight:700;font-size:13px;">${escapeHtml(c.authorName)}</div>
+              <a href="./profile.html?uid=${encodeURIComponent(c.authorUid || "")}" style="font-weight:700;font-size:13px;display:inline-flex;align-items:center;gap:4px;">${escapeHtml(c.authorName)}${renderAdminIconHtml(c.authorUid)}</a>
               <div>${escapeHtml(c.text)}</div>
             </div>
           </div>`
@@ -491,6 +499,7 @@ export function renderPostCard(post, currentUser) {
           fromName: currentUser.name,
           fromAvatar: currentUser.avatar || DEFAULT_AVATAR,
           type: "reaction",
+          postId: post.id,
           text: `đã bày tỏ cảm xúc ${reactObj ? reactObj.emoji : ""} về bài viết của bạn.`,
           link: postLink
         }).catch((err) => console.warn("Reaction notification:", err));
@@ -553,14 +562,16 @@ export function renderPostCard(post, currentUser) {
       showToast(friendlyError(err));
       return;
     }
+    const commentLink = `./index.html?comment=1#post-${post.id}`;
     if (post.authorUid && post.authorUid !== currentUser.uid) {
       pushNotification(post.authorUid, {
         fromUid: currentUser.uid,
         fromName: currentUser.name,
         fromAvatar: currentUser.avatar || DEFAULT_AVATAR,
         type: "comment",
+        postId: post.id,
         text: `đã bình luận bài viết của bạn: "${text.slice(0, 45)}"`,
-        link: postLink
+        link: commentLink
       }).catch((err) => console.warn("Comment notification:", err));
     }
 
@@ -576,8 +587,9 @@ export function renderPostCard(post, currentUser) {
         fromName: currentUser.name,
         fromAvatar: currentUser.avatar || DEFAULT_AVATAR,
         type: "comment",
+        postId: post.id,
         text: `cũng đã bình luận: "${text.slice(0, 40)}"`,
-        link: postLink
+        link: commentLink
       }).catch((err) => console.warn("Thread comment notification:", err));
     });
   };
@@ -730,4 +742,308 @@ export function renderPostList(container, posts, currentUser, emptyHtml = "") {
       setTimeout(() => target.classList.remove("twin-highlight"), 2400);
     }
   }
+}
+
+// ==========================================================================
+// Reusable Full-Featured Post Composer (dùng trên Trang cá nhân giống Bảng tin)
+// ==========================================================================
+export function mountPostComposer(container, currentUser, { isProfilePage = false, onAvatarClick = null } = {}) {
+  if (!container || !currentUser) return null;
+
+  container.innerHTML = `
+    <section class="twin-card twin-composer-card" id="pf-composer-card">
+      <div class="twin-composer-bar">
+        <div class="twin-feeling-pill">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><path d="M8.5 14.5s1.3 2 3.5 2 3.5-2 3.5-2"/><circle cx="9" cy="10" r="1" fill="currentColor" stroke="none"/><circle cx="15" cy="10" r="1" fill="currentColor" stroke="none"/></svg>
+          <select id="pfc-feeling" class="twin-feeling-select" aria-label="Cảm xúc bài viết">
+            <option value="">Cảm xúc...</option>
+            <option value="hạnh phúc 😊">Hạnh phúc 😊</option>
+            <option value="hào hứng 🤩">Hào hứng 🤩</option>
+            <option value="thư giãn 😌">Thư giãn 😌</option>
+            <option value="tự hào 💪">Tự hào 💪</option>
+            <option value="buồn nhẹ 😔">Buồn nhẹ 😔</option>
+          </select>
+        </div>
+        <div class="twin-composer-bar-right">
+          <button type="button" id="pfc-html-preview-btn" class="twin-btn twin-btn-secondary twin-btn-sm" style="display:none;">Xem trước HTML</button>
+          <button type="button" id="pfc-collapse" class="twin-icon-btn twin-composer-collapse" title="Thu gọn" aria-label="Thu gọn khung đăng bài">✕</button>
+        </div>
+      </div>
+
+      <div class="twin-composer-top">
+        ${
+          isProfilePage
+            ? `<button type="button" id="pfc-avatar-trigger" class="twin-composer-avatar-link" title="Xem ảnh đại diện" aria-label="Xem ảnh đại diện">
+                <img class="twin-avatar" id="pfc-avatar" src="${escapeHtml(currentUser.avatar || DEFAULT_AVATAR)}" alt="" />
+              </button>`
+            : `<a href="./profile.html" class="twin-composer-avatar-link" title="Xem trang cá nhân" aria-label="Xem trang cá nhân">
+                <img class="twin-avatar" id="pfc-avatar" src="${escapeHtml(currentUser.avatar || DEFAULT_AVATAR)}" alt="" />
+              </a>`
+        }
+        <textarea id="pfc-content" class="twin-textarea" placeholder="Bạn đang nghĩ gì?"></textarea>
+      </div>
+
+      <div class="twin-composer-extras">
+        <div id="pfc-html-preview-wrap" class="twin-html-preview" style="display:none;">
+          <div class="twin-html-preview-label">Xem trước mã HTML tự động nhận diện</div>
+          <div id="pfc-html-preview-body" class="twin-post-body twin-post-html" style="margin-bottom:0;"></div>
+        </div>
+
+        <div id="pfc-preview-wrap" style="margin-top:10px;display:none;position:relative;">
+          <img id="pfc-preview-img" class="twin-post-image" alt="Xem trước" />
+          <button id="pfc-preview-remove" type="button" class="twin-icon-btn" style="position:absolute;top:8px;right:8px;width:30px;height:30px;">✕</button>
+        </div>
+
+        <div id="pfc-video-preview-wrap" class="twin-composer-video-preview" style="margin-top:10px;display:none;position:relative;">
+          <div class="twin-video-mode-bar">
+            <span class="twin-post-meta" id="pfc-video-meta" style="font-weight:600;"></span>
+          </div>
+          <video id="pfc-preview-video" class="twin-post-video" controls playsinline muted></video>
+          <button id="pfc-video-remove" type="button" class="twin-icon-btn" style="position:absolute;top:8px;right:8px;width:30px;height:30px;background:rgba(0,0,0,0.65);color:#fff;" title="Bỏ video">✕</button>
+        </div>
+
+        <div id="pfc-upload-progress" class="twin-upload-progress" style="display:none;">
+          <div class="twin-upload-progress-track">
+            <div id="pfc-upload-progress-fill" class="twin-upload-progress-fill" style="width:0%"></div>
+          </div>
+          <span id="pfc-upload-progress-text" class="twin-post-meta">Đang tải lên 0%...</span>
+        </div>
+      </div>
+
+      <div class="twin-composer-actions">
+        <div class="twin-composer-media-btns">
+          <label class="twin-btn twin-btn-secondary twin-btn-sm twin-media-btn-photo" style="cursor:pointer;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-4.5-4.5a2 2 0 0 0-2.8 0L5 19"/></svg>
+            <span>Ảnh</span>
+            <input id="pfc-file" type="file" accept="image/*" hidden />
+          </label>
+          <label class="twin-btn twin-btn-secondary twin-btn-sm twin-media-btn-video" id="pfc-video-label" style="cursor:pointer;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5.5" width="14" height="13" rx="2.5"/><path d="m16.5 10 5-3v10l-5-3"/></svg>
+            <span>Video</span>
+            <input id="pfc-video" type="file" accept="video/*" hidden />
+          </label>
+        </div>
+        <button id="pfc-publish" type="button" class="twin-btn twin-btn-primary">Đăng bài</button>
+      </div>
+    </section>
+  `;
+
+  const card = container.querySelector("#pf-composer-card");
+  const contentEl = container.querySelector("#pfc-content");
+  const feelingEl = container.querySelector("#pfc-feeling");
+  const htmlBtn = container.querySelector("#pfc-html-preview-btn");
+  const htmlWrap = container.querySelector("#pfc-html-preview-wrap");
+  const htmlBody = container.querySelector("#pfc-html-preview-body");
+  const fileInput = container.querySelector("#pfc-file");
+  const previewWrap = container.querySelector("#pfc-preview-wrap");
+  const previewImg = container.querySelector("#pfc-preview-img");
+  const videoLabel = container.querySelector("#pfc-video-label");
+  const videoInput = container.querySelector("#pfc-video");
+  const videoWrap = container.querySelector("#pfc-video-preview-wrap");
+  const previewVideo = container.querySelector("#pfc-preview-video");
+  const videoMeta = container.querySelector("#pfc-video-meta");
+  const progressEl = container.querySelector("#pfc-upload-progress");
+  const progressFill = container.querySelector("#pfc-upload-progress-fill");
+  const progressText = container.querySelector("#pfc-upload-progress-text");
+  const publishBtn = container.querySelector("#pfc-publish");
+  const avatarTrigger = container.querySelector("#pfc-avatar-trigger");
+
+  let selectedFile = null;
+  let selectedVideoFile = null;
+  let selectedVideoDuration = 0;
+  let selectedVideoObjUrl = "";
+
+  if (avatarTrigger && typeof onAvatarClick === "function") {
+    avatarTrigger.onclick = (e) => {
+      e.stopPropagation();
+      onAvatarClick();
+    };
+  }
+
+  const syncPolicy = () => {
+    const cfg = getSiteSettings();
+    const allowVid = cfg.allowVideoPosts || isUserAdmin(currentUser);
+    if (videoLabel) videoLabel.style.display = allowVid ? "inline-flex" : "none";
+  };
+  syncPolicy();
+  window.addEventListener("twin-site-settings-changed", syncPolicy);
+
+  const canUseHtml = () => getSiteSettings().allowHtmlPosts || isUserAdmin(currentUser);
+  const syncHtml = () => {
+    const detected = canUseHtml() && containsHtmlMarkup(contentEl.value);
+    htmlBtn.style.display = detected ? "inline-flex" : "none";
+    if (!detected) {
+      htmlWrap.style.display = "none";
+    } else if (htmlWrap.style.display !== "none") {
+      htmlBody.innerHTML = sanitizeHtml(contentEl.value);
+    }
+  };
+
+  htmlBtn.onclick = () => {
+    const show = htmlWrap.style.display === "none";
+    htmlWrap.style.display = show ? "block" : "none";
+    if (show) htmlBody.innerHTML = sanitizeHtml(contentEl.value);
+  };
+  contentEl.addEventListener("input", syncHtml);
+
+  const expand = (focus = false) => {
+    if (!card.classList.contains("expanded")) card.classList.add("expanded");
+    if (focus) setTimeout(() => contentEl.focus(), 10);
+  };
+  const collapse = () => {
+    card.classList.remove("expanded");
+    htmlWrap.style.display = "none";
+  };
+  card.addEventListener("click", (e) => {
+    if (e.target.closest(".twin-composer-avatar-link")) return;
+    if (!card.classList.contains("expanded")) expand(true);
+  });
+  contentEl.addEventListener("focus", () => expand(false));
+  container.querySelector("#pfc-collapse").onclick = (e) => {
+    e.stopPropagation();
+    collapse();
+  };
+
+  const clearMedia = () => {
+    selectedFile = null;
+    fileInput.value = "";
+    previewWrap.style.display = "none";
+    if (selectedVideoObjUrl) {
+      URL.revokeObjectURL(selectedVideoObjUrl);
+      selectedVideoObjUrl = "";
+    }
+    selectedVideoFile = null;
+    selectedVideoDuration = 0;
+    videoInput.value = "";
+    previewVideo.pause();
+    previewVideo.removeAttribute("src");
+    previewVideo.load();
+    videoWrap.style.display = "none";
+    videoMeta.textContent = "";
+  };
+
+  fileInput.onchange = () => {
+    const f = fileInput.files[0] || null;
+    clearMedia();
+    if (!f) return;
+    selectedFile = f;
+    previewImg.src = URL.createObjectURL(f);
+    previewWrap.style.display = "block";
+    expand(false);
+  };
+  container.querySelector("#pfc-preview-remove").onclick = clearMedia;
+
+  videoInput.onchange = async () => {
+    const f = videoInput.files[0] || null;
+    clearMedia();
+    if (!f) return;
+    if (!f.type || !f.type.startsWith("video/")) {
+      showToast("Vui lòng chọn tệp video hợp lệ (MP4, MOV, WebM...).");
+      return;
+    }
+    const maxMb = getSiteSettings().maxVideoSizeMb || 100;
+    if (f.size > maxMb * 1024 * 1024) {
+      showToast(`Video quá lớn (giới hạn hiện tại ${maxMb}MB).`);
+      return;
+    }
+    selectedVideoFile = f;
+    selectedVideoObjUrl = URL.createObjectURL(f);
+    previewVideo.src = selectedVideoObjUrl;
+    videoWrap.style.display = "flex";
+    const sizeMb = (f.size / (1024 * 1024)).toFixed(1);
+    videoMeta.textContent = `${f.name} · ${sizeMb} MB`;
+    expand(false);
+
+    const meta = await readVideoMetadata(f);
+    if (selectedVideoFile !== f) return;
+    selectedVideoDuration = meta.duration || 0;
+    videoMeta.textContent = `${meta.duration ? `${formatDuration(meta.duration)} · ` : ""}${sizeMb} MB`;
+  };
+  container.querySelector("#pfc-video-remove").onclick = clearMedia;
+
+  publishBtn.onclick = async () => {
+    const cfg = getSiteSettings();
+    if (cfg.readOnlyMode && !isUserAdmin(currentUser)) {
+      return showToast("Hệ thống đang ở chế độ chỉ đọc. Chỉ Admin được đăng bài mới.");
+    }
+    const content = contentEl.value.trim();
+    const feeling = feelingEl.value;
+    if (!content && !selectedFile && !selectedVideoFile) {
+      return showToast("Hãy nhập nội dung hoặc chọn ảnh / video.");
+    }
+    if (selectedVideoFile && !cfg.allowVideoPosts && !isUserAdmin(currentUser)) {
+      return showToast("Admin đang tạm tắt đăng video bài viết.");
+    }
+
+    publishBtn.disabled = true;
+    publishBtn.textContent = selectedVideoFile ? "Đang tải video..." : "Đang đăng...";
+    try {
+      let imageUrl = "";
+      let videoUrl = "";
+      let videoType = "";
+      let videoDuration = 0;
+      let videoPoster = "";
+      if (selectedFile) {
+        imageUrl = await uploadToCloudinary(selectedFile);
+      } else if (selectedVideoFile) {
+        progressEl.style.display = "flex";
+        progressFill.style.width = "0%";
+        progressText.textContent = "Đang tải video 0%...";
+        const uploaded = await uploadVideoToCloudinary(
+          selectedVideoFile,
+          (pct) => {
+            progressFill.style.width = `${pct}%`;
+            progressText.textContent = `Đang tải video ${pct}%...`;
+            publishBtn.textContent = `Đang tải ${pct}%...`;
+          },
+          { maxSizeMb: cfg.maxVideoSizeMb || 100 }
+        );
+        videoUrl = uploaded.url;
+        videoType = "video";
+        videoDuration = uploaded.duration || selectedVideoDuration || 0;
+        videoPoster = uploaded.poster || "";
+      }
+
+      const isHtml = canUseHtml() && containsHtmlMarkup(content);
+      await addDoc(collection(db, "posts"), {
+        authorUid: currentUser.uid,
+        authorName: currentUser.name,
+        authorAvatar: currentUser.avatar || DEFAULT_AVATAR,
+        content,
+        isHtml,
+        feeling,
+        imageUrl,
+        videoUrl,
+        videoType,
+        videoDuration,
+        videoPoster,
+        pinned: false,
+        reactions: {},
+        comments: [],
+        createdAt: serverTimestamp()
+      });
+
+      contentEl.value = "";
+      feelingEl.value = "";
+      syncHtml();
+      htmlWrap.style.display = "none";
+      clearMedia();
+      collapse();
+      showToast(videoUrl ? "Đã đăng video!" : "Đã đăng bài!");
+    } catch (err) {
+      showToast(friendlyError(err));
+    } finally {
+      progressEl.style.display = "none";
+      progressFill.style.width = "0%";
+      publishBtn.disabled = false;
+      publishBtn.textContent = "Đăng bài";
+    }
+  };
+
+  return {
+    updateAvatar(url) {
+      const img = container.querySelector("#pfc-avatar");
+      if (img) img.src = url || DEFAULT_AVATAR;
+    }
+  };
 }

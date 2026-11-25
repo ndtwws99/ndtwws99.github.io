@@ -16,6 +16,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="./assets/css/twin.css" />
+  <link rel="modulepreload" href="./assets/js/firebase-service.js" />
+  <link rel="modulepreload" href="./assets/js/layout.js" />
 </head>
 <body class="page-messages">
   <header id="twin-header" class="twin-header"></header>
@@ -35,9 +37,11 @@
           <button id="msg-back-btn" class="twin-icon-btn twin-back-btn" style="width:36px;height:36px;" aria-label="Quay lại danh sách">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
           </button>
-          <img id="msg-peer-avatar" class="twin-avatar" src="" alt="" />
+          <a id="msg-peer-avatar-link" href="./profile.html" class="twin-avatar-link" title="Xem trang cá nhân">
+            <img id="msg-peer-avatar" class="twin-avatar" src="" alt="" />
+          </a>
           <div>
-            <div id="msg-peer-name" style="font-weight:700;font-size:15px;"></div>
+            <div id="msg-peer-name" class="twin-name-with-badge" style="font-weight:700;font-size:15px;"></div>
             <div class="twin-post-meta">Twin Chat</div>
           </div>
         </div>
@@ -79,6 +83,7 @@
       uploadToCloudinary,
       pushNotification,
       isUserAdmin,
+      renderAdminIconHtml,
       getChatId,
       DEFAULT_AVATAR,
       escapeHtml,
@@ -177,12 +182,12 @@
         btn.className = `twin-conv-item ${isActive ? "active" : ""} ${unread > 0 ? "unread" : ""}`;
         btn.innerHTML = `
           <div class="twin-conv-avatar-wrap">
-            <img class="twin-avatar twin-avatar-md" src="${escapeHtml(u.avatar || DEFAULT_AVATAR)}" alt="" />
+            <img class="twin-avatar twin-avatar-md twin-conv-avatar-go" src="${escapeHtml(u.avatar || DEFAULT_AVATAR)}" alt="" title="Xem trang cá nhân" />
             ${unread > 0 ? '<span class="twin-conv-dot" aria-hidden="true"></span>' : ""}
           </div>
           <div style="min-width:0;flex:1;">
             <div class="twin-conv-top">
-              <div class="twin-conv-name">${escapeHtml(u.name)}</div>
+              <div class="twin-conv-name twin-name-with-badge"><span>${escapeHtml(u.name)}</span>${renderAdminIconHtml(u)}</div>
               ${timeLabel ? `<span class="twin-conv-time">${escapeHtml(timeLabel)}</span>` : ""}
             </div>
             <div class="twin-conv-bottom">
@@ -191,6 +196,10 @@
             </div>
           </div>
         `;
+        btn.querySelector(".twin-conv-avatar-go").addEventListener("click", (e) => {
+          e.stopPropagation();
+          window.location.href = `./profile.html?uid=${encodeURIComponent(u.uid)}`;
+        });
         btn.onclick = () => selectPeer(u);
         convList.appendChild(btn);
       });
@@ -205,7 +214,8 @@
       topbar.style.display = "flex";
       sendForm.style.display = "flex";
       document.getElementById("msg-peer-avatar").src = peer.avatar || DEFAULT_AVATAR;
-      document.getElementById("msg-peer-name").textContent = peer.name;
+      document.getElementById("msg-peer-avatar-link").href = `./profile.html?uid=${encodeURIComponent(peer.uid)}`;
+      document.getElementById("msg-peer-name").innerHTML = `<span>${escapeHtml(peer.name)}</span>${renderAdminIconHtml(peer)}`;
       document.getElementById("msg-peer-profile").href = `./profile.html?uid=${encodeURIComponent(peer.uid)}`;
       renderUsers(document.getElementById("msg-search-user").value);
 

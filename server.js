@@ -24,7 +24,14 @@ const HTML_PAGES = new Set([
 ]);
 
 app.use(express.json({ limit: "256kb" }));
-app.use("/assets", express.static(path.join(__dirname, "assets")));
+app.use(
+  "/assets",
+  express.static(path.join(__dirname, "assets"), {
+    etag: true,
+    lastModified: true,
+    maxAge: "10m"
+  })
+);
 
 // Simple per-IP in-memory rate limit for Gemini endpoint (30 requests / 60s)
 const geminiRateBucket = new Map();

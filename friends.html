@@ -16,6 +16,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="./assets/css/twin.css" />
+  <link rel="modulepreload" href="./assets/js/firebase-service.js" />
+  <link rel="modulepreload" href="./assets/js/layout.js" />
 </head>
 <body class="">
   <header id="twin-header" class="twin-header"></header>
@@ -50,6 +52,8 @@
       arrayUnion,
       arrayRemove,
       pushNotification,
+      renderAdminIconHtml,
+      unfriendUser,
       DEFAULT_AVATAR,
       escapeHtml,
       showToast,
@@ -97,9 +101,11 @@
             const card = document.createElement("div");
             card.className = "twin-entity-card";
             card.innerHTML = `
-              <img class="twin-entity-cover" src="${escapeHtml(u.avatar || DEFAULT_AVATAR)}" alt="" />
+              <a href="./profile.html?uid=${encodeURIComponent(u.uid)}" class="twin-entity-cover-link" title="Xem trang cá nhân">
+                <img class="twin-entity-cover" src="${escapeHtml(u.avatar || DEFAULT_AVATAR)}" alt="" />
+              </a>
               <div class="twin-entity-body">
-                <a href="./profile.html?uid=${encodeURIComponent(u.uid)}" style="font-weight:700;">${escapeHtml(u.name)}</a>
+                <a href="./profile.html?uid=${encodeURIComponent(u.uid)}" class="twin-name-with-badge" style="font-weight:700;"><span>${escapeHtml(u.name)}</span>${renderAdminIconHtml(u)}</a>
                 <button class="twin-btn twin-btn-primary twin-btn-sm btn-accept">Xác nhận</button>
                 <button class="twin-btn twin-btn-secondary twin-btn-sm btn-decline">Xóa</button>
               </div>
@@ -128,12 +134,24 @@
             const card = document.createElement("div");
             card.className = "twin-entity-card";
             card.innerHTML = `
-              <img class="twin-entity-cover" src="${escapeHtml(u.avatar || DEFAULT_AVATAR)}" alt="" />
+              <a href="./profile.html?uid=${encodeURIComponent(u.uid)}" class="twin-entity-cover-link" title="Xem trang cá nhân">
+                <img class="twin-entity-cover" src="${escapeHtml(u.avatar || DEFAULT_AVATAR)}" alt="" />
+              </a>
               <div class="twin-entity-body">
-                <a href="./profile.html?uid=${encodeURIComponent(u.uid)}" style="font-weight:700;">${escapeHtml(u.name)}</a>
-                <a href="./messages.html?uid=${encodeURIComponent(u.uid)}" class="twin-btn twin-btn-primary twin-btn-sm">Nhắn tin</a>
+                <a href="./profile.html?uid=${encodeURIComponent(u.uid)}" class="twin-name-with-badge" style="font-weight:700;"><span>${escapeHtml(u.name)}</span>${renderAdminIconHtml(u)}</a>
+                <div class="twin-friend-actions">
+                  <a href="./messages.html?uid=${encodeURIComponent(u.uid)}" class="twin-btn twin-btn-primary twin-btn-sm" style="flex:1;">Nhắn tin</a>
+                  <button type="button" class="twin-btn twin-btn-secondary twin-btn-sm twin-btn-unfriend btn-unfriend">Hủy bạn bè</button>
+                </div>
               </div>
             `;
+            card.querySelector(".btn-unfriend").onclick = () => {
+              if (!confirm(`Bạn có chắc muốn hủy kết bạn với ${u.name || "người này"}?`)) return;
+              run(async () => {
+                await unfriendUser(me.uid, u.uid);
+                showToast(`Đã hủy kết bạn với ${u.name || "người dùng"}.`);
+              });
+            };
             frGrid.appendChild(card);
           });
 
@@ -143,9 +161,11 @@
             const card = document.createElement("div");
             card.className = "twin-entity-card";
             card.innerHTML = `
-              <img class="twin-entity-cover" src="${escapeHtml(u.avatar || DEFAULT_AVATAR)}" alt="" />
+              <a href="./profile.html?uid=${encodeURIComponent(u.uid)}" class="twin-entity-cover-link" title="Xem trang cá nhân">
+                <img class="twin-entity-cover" src="${escapeHtml(u.avatar || DEFAULT_AVATAR)}" alt="" />
+              </a>
               <div class="twin-entity-body">
-                <a href="./profile.html?uid=${encodeURIComponent(u.uid)}" style="font-weight:700;">${escapeHtml(u.name)}</a>
+                <a href="./profile.html?uid=${encodeURIComponent(u.uid)}" class="twin-name-with-badge" style="font-weight:700;"><span>${escapeHtml(u.name)}</span>${renderAdminIconHtml(u)}</a>
                 <button class="twin-btn ${sent ? "twin-btn-ghost" : "twin-btn-secondary"} twin-btn-sm btn-add">${sent ? "Hủy lời mời" : "Thêm bạn bè"}</button>
               </div>
             `;

@@ -196,6 +196,9 @@ export function friendlyError(err) {
 export function safeLink(link, fallback = "./index.html") {
   const s = String(link || "").trim();
   if (/^\.\/[A-Za-z0-9_\-]+\.html([?#][^\s"'<>]*)?$/.test(s)) return s;
+  if (/^\/?[A-Za-z0-9_\-]+\.html([?#][^\s"'<>]*)?$/.test(s)) {
+    return `./${s.replace(/^\/+/, "")}`;
+  }
   return fallback;
 }
 
@@ -509,12 +512,101 @@ export function uploadVideoToCloudinary(file, onProgress, { maxSizeMb = 100 } = 
 
 export const ROOT_ADMIN_EMAILS = ["ndtwws99@gmail.com"];
 
+const ADMIN_UIDS_STORAGE_KEY = "twin_admin_uids_v1";
+const adminUidSet = new Set();
+
+try {
+  const cached = JSON.parse(localStorage.getItem(ADMIN_UIDS_STORAGE_KEY) || "[]");
+  if (Array.isArray(cached)) {
+    cached.forEach((uid) => {
+      if (typeof uid === "string" && uid) adminUidSet.add(uid);
+    });
+  }
+} catch {}
+
+export function isAdminUid(uid) {
+  return Boolean(uid && adminUidSet.has(String(uid)));
+}
+
 export function isUserAdmin(user) {
   if (!user) return false;
+  if (typeof user === "string") return isAdminUid(user);
   if (user.role === "admin") return true;
+  if (user.uid && adminUidSet.has(String(user.uid))) return true;
   const isSelf = Boolean(auth?.currentUser && user.uid && user.uid === auth.currentUser.uid);
   const email = String(user.email || (isSelf ? auth.currentUser.email : "") || "").trim().toLowerCase();
   return Boolean(email && ROOT_ADMIN_EMAILS.includes(email));
+}
+
+export function hydrateAdminBadges(root = document) {
+  if (!root || typeof root.querySelectorAll !== "function") return;
+  root.querySelectorAll("[data-admin-badge-uid]").forEach((el) => {
+    const uid = el.getAttribute("data-admin-badge-uid");
+    el.classList.toggle("is-hidden", !isAdminUid(uid));
+  });
+}
+
+export function syncAdminRegistry(users = []) {
+  if (!Array.isArray(users)) return;
+  const next = new Set();
+  users.forEach((u) => {
+    if (!u) return;
+    const uid = u.uid || u.id;
+    if (!uid) return;
+    const email = String(u.email || "").trim().toLowerCase();
+    if (u.role === "admin" || (email && ROOT_ADMIN_EMAILS.includes(email))) {
+      next.add(String(uid));
+    }
+  });
+  adminUidSet.clear();
+  next.forEach((uid) => adminUidSet.add(uid));
+  try {
+    localStorage.setItem(ADMIN_UIDS_STORAGE_KEY, JSON.stringify([...adminUidSet]));
+  } catch {}
+  hydrateAdminBadges(document);
+  try {
+    window.dispatchEvent(new CustomEvent("twin-admin-registry-changed"));
+  } catch {}
+}
+
+export function registerAdminUser(user) {
+  if (!user) return;
+  const uid = user.uid || user.id;
+  if (!uid) return;
+  const email = String(user.email || "").trim().toLowerCase();
+  const isAdm = user.role === "admin" || (email && ROOT_ADMIN_EMAILS.includes(email));
+  if (isAdm) {
+    adminUidSet.add(String(uid));
+  } else {
+    adminUidSet.delete(String(uid));
+  }
+  try {
+    localStorage.setItem(ADMIN_UIDS_STORAGE_KEY, JSON.stringify([...adminUidSet]));
+  } catch {}
+  hydrateAdminBadges(document);
+}
+
+const ADMIN_SHIELD_SVG = `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2.2 4.5 5.4v5.7c0 5.1 3.2 9.7 7.5 10.9 4.3-1.2 7.5-5.8 7.5-10.9V5.4L12 2.2Zm-1.1 13.4-3.3-3.3 1.4-1.4 1.9 1.9 4.3-4.3 1.4 1.4-5.7 5.7Z"/></svg>`;
+
+export function renderAdminIconHtml(userOrUid) {
+  const uid = typeof userOrUid === "string" ? userOrUid : (userOrUid?.uid || userOrUid?.id || "");
+  const isAdm = isUserAdmin(userOrUid) || isAdminUid(uid);
+  const uidAttr = uid ? ` data-admin-badge-uid="${escapeHtml(uid)}"` : "";
+  return `<span class="twin-admin-icon${isAdm ? "" : " is-hidden"}"${uidAttr} title="Quản trị viên" aria-label="Quản trị viên">${ADMIN_SHIELD_SVG}</span>`;
+}
+
+export async function unfriendUser(myUid, targetUid) {
+  if (!db || !myUid || !targetUid || myUid === targetUid) return;
+  await Promise.all([
+    updateDoc(doc(db, "users", myUid), {
+      friends: arrayRemove(targetUid),
+      friendRequests: arrayRemove(targetUid)
+    }),
+    updateDoc(doc(db, "users", targetUid), {
+      friends: arrayRemove(myUid),
+      friendRequests: arrayRemove(myUid)
+    })
+  ]);
 }
 
 async function shouldEmailBeAdmin(email) {
@@ -569,6 +661,7 @@ export async function ensureUserDoc(user, extra = {}) {
       createdAt: serverTimestamp()
     };
     await setDoc(ref, profile);
+    registerAdminUser(profile);
     return profile;
   }
   const data = snap.data();
@@ -584,6 +677,7 @@ export async function ensureUserDoc(user, extra = {}) {
   if (Object.keys(patch).length) {
     updateDoc(ref, patch).catch(() => {});
   }
+  registerAdminUser(data);
   return data;
 }
 

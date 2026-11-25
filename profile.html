@@ -16,6 +16,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="./assets/css/twin.css" />
+  <link rel="modulepreload" href="./assets/js/firebase-service.js" />
+  <link rel="modulepreload" href="./assets/js/layout.js" />
+  <link rel="modulepreload" href="./assets/js/post-ui.js" />
 </head>
 <body class="">
   <header id="twin-header" class="twin-header"></header>
@@ -40,9 +43,9 @@
       <div class="twin-profile-bar">
         <div class="twin-profile-id">
           <div class="twin-profile-avatar-wrap">
-            <div class="twin-profile-avatar-ring">
+            <button type="button" id="pf-avatar-view-trigger" class="twin-profile-avatar-ring twin-profile-avatar-btn" title="Xem ảnh đại diện" aria-label="Xem ảnh đại diện">
               <img id="pf-avatar" class="twin-avatar twin-avatar-xl" alt="Avatar" />
-            </div>
+            </button>
             <label id="pf-avatar-btn" class="twin-icon-btn twin-profile-cam-btn" style="display:none;" title="Đổi ảnh đại diện" aria-label="Đổi ảnh đại diện">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7.5 7H4.5A2.5 2.5 0 0 0 2 9.5v8A2.5 2.5 0 0 0 4.5 20h15a2.5 2.5 0 0 0 2.5-2.5v-8A2.5 2.5 0 0 0 19.5 7h-3l-2-3Z"/><circle cx="12" cy="13.2" r="3.2"/></svg>
               <input id="pf-avatar-input" type="file" accept="image/*" hidden />
@@ -74,10 +77,27 @@
       </aside>
 
       <section>
+        <div id="pf-composer-slot"></div>
         <div id="pf-posts"></div>
       </section>
     </div>
   </main>
+
+  <!-- Chế độ xem ảnh đại diện toàn màn hình -->
+  <div class="twin-modal-backdrop twin-avatar-lightbox" id="pf-avatar-lightbox" role="dialog" aria-modal="true" aria-label="Xem ảnh đại diện">
+    <div class="twin-avatar-lightbox-inner">
+      <div class="twin-avatar-lightbox-bar">
+        <div id="pf-lightbox-title" class="twin-avatar-lightbox-title">Ảnh đại diện</div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <button type="button" id="pf-lightbox-change" class="twin-btn twin-btn-secondary twin-btn-sm" style="display:none;">Đổi ảnh đại diện</button>
+          <button type="button" id="pf-lightbox-close" class="twin-icon-btn twin-lightbox-close-btn" aria-label="Đóng">✕</button>
+        </div>
+      </div>
+      <div class="twin-avatar-lightbox-stage">
+        <img id="pf-lightbox-img" src="" alt="Ảnh đại diện phóng lớn" />
+      </div>
+    </div>
+  </div>
 
   <!-- Modal chỉnh sửa đầy đủ thông tin trang cá nhân -->
   <div class="twin-modal-backdrop" id="pf-edit-modal">
@@ -179,7 +199,7 @@
 
   <script type="module">
     import { initTwinPage } from "./assets/js/layout.js";
-    import { renderPostList } from "./assets/js/post-ui.js";
+    import { renderPostList, mountPostComposer } from "./assets/js/post-ui.js";
     import {
       auth,
       db,
@@ -196,6 +216,8 @@
       uploadToCloudinary,
       pushNotification,
       isUserAdmin,
+      renderAdminIconHtml,
+      unfriendUser,
       DEFAULT_AVATAR,
       escapeHtml,
       toMillis,
@@ -237,8 +259,8 @@
     function renderProfileDetails(profile, isMe, viewerIsAdmin = false) {
       document.title = `${profile.name} — Twin`;
       const nameEl = document.getElementById("pf-name");
-      nameEl.innerHTML = `${escapeHtml(profile.name || "Thành viên Twin")}${
-        isUserAdmin(profile) ? ` <span class="twin-role-badge admin" style="vertical-align:middle;margin-left:6px;">Quản trị viên</span>` : ""
+      nameEl.innerHTML = `${escapeHtml(profile.name || "Thành viên Twin")}${renderAdminIconHtml(profile)}${
+        isUserAdmin(profile) ? `<span class="twin-role-badge admin" style="vertical-align:middle;">Quản trị viên</span>` : ""
       }`;
       document.getElementById("pf-bio-box").textContent = profile.bio || "Chưa có tiểu sử.";
       document.getElementById("pf-friends-count").textContent = String((profile.friends || []).length);
@@ -336,7 +358,8 @@
         }
         const profile = snap.data();
 
-        document.getElementById("pf-avatar").src = profile.avatar || DEFAULT_AVATAR;
+        const avatarEl = document.getElementById("pf-avatar");
+        avatarEl.src = profile.avatar || DEFAULT_AVATAR;
         if (profile.cover) {
           const c = document.getElementById("pf-cover");
           c.src = profile.cover;
@@ -344,9 +367,37 @@
         }
         renderProfileDetails(profile, isMe, isUserAdmin(me));
 
+        // Avatar photo lightbox viewer (inside profile page)
+        const avatarLightbox = document.getElementById("pf-avatar-lightbox");
+        const lightboxImg = document.getElementById("pf-lightbox-img");
+        const lightboxTitle = document.getElementById("pf-lightbox-title");
+        const lightboxChangeBtn = document.getElementById("pf-lightbox-change");
+
+        const openAvatarViewer = () => {
+          lightboxImg.src = profile.avatar || avatarEl.src || DEFAULT_AVATAR;
+          lightboxTitle.innerHTML = `<span>${escapeHtml(profile.name || "Ảnh đại diện")}</span>${renderAdminIconHtml(profile)}`;
+          lightboxChangeBtn.style.display = isMe ? "inline-flex" : "none";
+          avatarLightbox.classList.add("open");
+        };
+        const closeAvatarViewer = () => avatarLightbox.classList.remove("open");
+
+        document.getElementById("pf-avatar-view-trigger").onclick = openAvatarViewer;
+        document.getElementById("pf-lightbox-close").onclick = closeAvatarViewer;
+        lightboxChangeBtn.onclick = () => {
+          closeAvatarViewer();
+          document.getElementById("pf-avatar-input")?.click();
+        };
+        document.getElementById("pf-avatar-btn").addEventListener("click", (e) => e.stopPropagation());
+
         const actions = document.getElementById("pf-actions");
+        let profileComposer = null;
 
         if (isMe) {
+          profileComposer = mountPostComposer(document.getElementById("pf-composer-slot"), me, {
+            isProfilePage: true,
+            onAvatarClick: openAvatarViewer
+          });
+
           document.getElementById("pf-cover-btn").style.display = "inline-flex";
           const coverRemoveBtn = document.getElementById("pf-cover-remove-btn");
           coverRemoveBtn.style.display = profile.cover ? "inline-flex" : "none";
@@ -427,7 +478,10 @@
             try {
               const url = await uploadToCloudinary(f);
               await updateDoc(doc(db, "users", me.uid), { avatar: url });
+              profile.avatar = url;
+              me.avatar = url;
               document.getElementById("pf-avatar").src = url;
+              profileComposer?.updateAvatar(url);
               showToast("Đã cập nhật ảnh đại diện!");
             } catch (err) {
               showToast(friendlyError(err));
@@ -484,7 +538,7 @@
                 : "none";
 
           const labels = {
-            friend: ["Bạn bè", "twin-btn-secondary"],
+            friend: ["Hủy bạn bè", "twin-btn-secondary twin-btn-unfriend"],
             incoming: ["Chấp nhận lời mời", "twin-btn-primary"],
             sent: ["Hủy lời mời", "twin-btn-secondary"],
             none: ["Thêm bạn bè", "twin-btn-primary"]
@@ -498,13 +552,16 @@
           const paintFr = () => {
             frBtn.textContent = labels[state][0];
             frBtn.className = `twin-btn ${labels[state][1]}`;
-            frBtn.disabled = state === "friend";
+            frBtn.disabled = false;
           };
           paintFr();
 
           frBtn.onclick = async () => {
             if (state === "none" && profile.allowFriendRequests === false && !isUserAdmin(me)) {
               showToast("Người dùng này đã tắt nhận lời mời kết bạn.");
+              return;
+            }
+            if (state === "friend" && !confirm(`Bạn có chắc muốn hủy kết bạn với ${profile.name || "người này"}?`)) {
               return;
             }
             frBtn.disabled = true;
@@ -529,6 +586,8 @@
                 await updateDoc(doc(db, "users", me.uid), { friendRequests: arrayRemove(targetUid), friends: arrayUnion(targetUid) });
                 await updateDoc(doc(db, "users", targetUid), { friends: arrayUnion(me.uid), friendRequests: arrayRemove(me.uid) });
                 state = "friend";
+                profile.friends = [...new Set([...(profile.friends || []), me.uid])];
+                document.getElementById("pf-friends-count").textContent = String(profile.friends.length);
                 showToast(`Bạn và ${profile.name} đã là bạn bè!`);
                 pushNotification(targetUid, {
                   fromUid: me.uid,
@@ -538,6 +597,13 @@
                   text: "đã chấp nhận lời mời kết bạn.",
                   link: `./profile.html?uid=${encodeURIComponent(me.uid)}`
                 }).catch((err) => console.warn("Accept notification:", err));
+              } else if (state === "friend") {
+                await unfriendUser(me.uid, targetUid);
+                state = "none";
+                profile.friends = (profile.friends || []).filter((id) => id !== me.uid);
+                me.friends = (me.friends || []).filter((id) => id !== targetUid);
+                document.getElementById("pf-friends-count").textContent = String(profile.friends.length);
+                showToast(`Đã hủy kết bạn với ${profile.name || "người dùng"}.`);
               }
             } catch (err) {
               showToast(friendlyError(err));

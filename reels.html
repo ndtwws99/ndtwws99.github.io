@@ -16,6 +16,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="./assets/css/twin.css" />
+  <link rel="modulepreload" href="./assets/js/firebase-service.js" />
+  <link rel="modulepreload" href="./assets/js/layout.js" />
+  <link rel="modulepreload" href="./assets/js/post-ui.js" />
 </head>
 <body class="page-reels">
   <header id="twin-header" class="twin-header"></header>
@@ -107,6 +110,7 @@
       db,
       collection,
       doc,
+      getDoc,
       addDoc,
       updateDoc,
       deleteDoc,
@@ -123,6 +127,7 @@
       formatDuration,
       pushNotification,
       isUserAdmin,
+      renderAdminIconHtml,
       DEFAULT_AVATAR,
       escapeHtml,
       formatTime,
@@ -539,7 +544,7 @@
             <a href="./profile.html?uid=${encodeURIComponent(story.authorUid)}" class="twin-reel-author">
               <img class="twin-avatar twin-avatar-sm" src="${escapeHtml(story.authorAvatar || DEFAULT_AVATAR)}" alt="" />
               <div style="min-width:0;">
-                <div class="twin-reel-author-name">${escapeHtml(story.authorName || "Thành viên Twin")}</div>
+                <div class="twin-reel-author-name twin-name-with-badge"><span>${escapeHtml(story.authorName || "Thành viên Twin")}</span>${renderAdminIconHtml(story.authorUid)}</div>
                 <div class="twin-reel-time">${escapeHtml(formatTime(story.createdAt))}</div>
               </div>
             </a>
@@ -587,6 +592,7 @@
               fromName: me.name,
               fromAvatar: me.avatar || DEFAULT_AVATAR,
               type: "reaction",
+              storyId: story.id,
               text: "đã thả tim tin video ngắn của bạn ❤️",
               link: `./reels.html?id=${encodeURIComponent(story.id)}`
             }).catch(() => {});
@@ -693,9 +699,39 @@
         if (targetCard) {
           targetReelId = "";
           requestAnimationFrame(() => targetCard.scrollIntoView({ behavior: "smooth", block: "start" }));
+        } else if (rawVideoStories.length) {
+          const missingId = targetReelId;
+          targetReelId = "";
+          focusReelById(missingId);
         }
       }
     }
+
+    async function focusReelById(reelId) {
+      if (!reelId) return;
+      setTab("short");
+      const existing = renderedReelMap.get(reelId);
+      if (existing) {
+        requestAnimationFrame(() => existing.scrollIntoView({ behavior: "smooth", block: "start" }));
+        return;
+      }
+      targetReelId = reelId;
+      try {
+        const snap = await getDoc(doc(db, "stories", reelId));
+        if (snap.exists()) {
+          const data = { id: snap.id, ...snap.data() };
+          if ((data.type === "video" || data.videoUrl) && !rawVideoStories.some((s) => s.id === data.id)) {
+            rawVideoStories = [data, ...rawVideoStories];
+            activeVideoStories = [data, ...activeVideoStories.filter((s) => s.id !== data.id)];
+            renderShorts(activeVideoStories);
+          }
+        }
+      } catch {}
+    }
+
+    window.addEventListener("twin-open-reel", (e) => {
+      if (e.detail?.reelId) focusReelById(e.detail.reelId);
+    });
 
     function renderVideos(videos) {
       const empty = `

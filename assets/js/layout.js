@@ -22,6 +22,9 @@ import {
   serverTimestamp,
   ensureUserDoc,
   isUserAdmin,
+  syncAdminRegistry,
+  registerAdminUser,
+  renderAdminIconHtml,
   ROOT_ADMIN_EMAILS,
   DEFAULT_AVATAR,
   escapeHtml,
@@ -38,6 +41,117 @@ import {
   arrayUnion,
   getDocs
 } from "./firebase-service.js";
+
+const CACHED_ME_KEY = "twin_cached_me_v1";
+const PREFETCHED_URLS = new Set();
+let prefetchInitialized = false;
+
+function readCachedMe() {
+  try {
+    const raw = sessionStorage.getItem(CACHED_ME_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return parsed && parsed.uid ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeCachedMe(user) {
+  try {
+    if (!user || !user.uid) {
+      sessionStorage.removeItem(CACHED_ME_KEY);
+      return;
+    }
+    sessionStorage.setItem(
+      CACHED_ME_KEY,
+      JSON.stringify({
+        uid: user.uid,
+        name: user.name || "Thành viên Twin",
+        avatar: user.avatar || DEFAULT_AVATAR,
+        email: user.email || "",
+        role: user.role || "member"
+      })
+    );
+  } catch {}
+}
+
+function prefetchHtmlUrl(rawHref) {
+  if (!rawHref) return;
+  try {
+    const url = new URL(rawHref, window.location.href);
+    if (url.origin !== window.location.origin) return;
+    const cleanPath = url.pathname;
+    if (cleanPath === window.location.pathname && !url.search) return;
+    if (!/\.html$|^\/$/.test(cleanPath)) return;
+    const key = url.pathname + url.search;
+    if (PREFETCHED_URLS.has(key)) return;
+    PREFETCHED_URLS.add(key);
+
+    const link = document.createElement("link");
+    link.rel = "prefetch";
+    link.as = "document";
+    link.href = url.href;
+    document.head.appendChild(link);
+  } catch {}
+}
+
+function initHtmlLinkPrefetch() {
+  if (prefetchInitialized) return;
+  prefetchInitialized = true;
+
+  // Speculation Rules API (Chrome/Edge) for near-instant HTML navigation
+  try {
+    if (HTMLScriptElement.supports && HTMLScriptElement.supports("speculationrules")) {
+      const ruleScript = document.createElement("script");
+      ruleScript.type = "speculationrules";
+      ruleScript.textContent = JSON.stringify({
+        prefetch: [
+          {
+            source: "document",
+            where: {
+              and: [
+                { href_matches: "/*.html*" },
+                { not: { href_matches: "/*login.html*" } }
+              ]
+            },
+            eagerness: "moderate"
+          }
+        ]
+      });
+      document.head.appendChild(ruleScript);
+    }
+  } catch {}
+
+  // Prefetch on hover / touchstart for immediate response on all browsers
+  const onLinkIntent = (e) => {
+    const a = e.target?.closest?.("a[href]");
+    if (!a) return;
+    const href = a.getAttribute("href");
+    if (!href || href.startsWith("#") || href.startsWith("mailto:") || href.startsWith("tel:")) return;
+    prefetchHtmlUrl(href);
+  };
+  document.addEventListener("pointerenter", onLinkIntent, true);
+  document.addEventListener("touchstart", onLinkIntent, { capture: true, passive: true });
+
+  // Idle prefetch core Twin pages so switching tabs feels instant
+  const corePages = [
+    "./index.html",
+    "./profile.html",
+    "./reels.html",
+    "./friends.html",
+    "./groups.html",
+    "./pages.html",
+    "./messages.html",
+    "./saved.html"
+  ];
+  const scheduleIdle = window.requestIdleCallback || ((fn) => setTimeout(fn, 900));
+  scheduleIdle(() => {
+    corePages.forEach((p, idx) => {
+      setTimeout(() => prefetchHtmlUrl(p), idx * 140);
+    });
+  });
+}
 
 export const ICONS = {
   home: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 10.8 12 3.5l8.5 7.3"/><path d="M5.5 9.5V19a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2V9.5"/><path d="M9.5 21v-5.5a2.5 2.5 0 0 1 5 0V21"/></svg>`,
@@ -269,7 +383,7 @@ function renderGlobalSearchResults(rawQuery) {
       <a href="./profile.html?uid=${encodeURIComponent(u.uid)}" class="twin-dropdown-item">
         <img class="twin-avatar twin-avatar-sm" src="${escapeHtml(u.avatar || DEFAULT_AVATAR)}" alt="" />
         <div style="min-width:0;flex:1;">
-          <div style="font-weight:700;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(u.name)}</div>
+          <div style="font-weight:700;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:4px;"><span>${escapeHtml(u.name)}</span>${renderAdminIconHtml(u)}</div>
           <div class="twin-post-meta" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(u.bio || "Thành viên Twin")}</div>
         </div>
         <span class="twin-pill-tag">Hồ sơ</span>
@@ -330,6 +444,7 @@ function subscribeGlobalSearchDirectory() {
     unsubSearchUsers = onSnapshot(query(collection(db, "users"), limit(150)), (snap) => {
       searchDirectory.users = [];
       snap.forEach((d) => searchDirectory.users.push({ id: d.id, ...d.data() }));
+      syncAdminRegistry(searchDirectory.users);
       const inp = document.getElementById("twin-global-search");
       if (inp && document.activeElement === inp && inp.value.trim()) renderGlobalSearchResults(inp.value);
       const adminSearch = document.getElementById("ts-admin-user-search");
@@ -562,6 +677,120 @@ async function markAllGeneralNotificationsRead() {
   }
 }
 
+function resolveNotifLink(n) {
+  if (!n) return "./index.html";
+  const direct = safeLink(n.link, "");
+  if (direct) return direct;
+  if (n.postId) {
+    return n.type === "comment"
+      ? `./index.html?comment=1#post-${encodeURIComponent(n.postId)}`
+      : `./index.html#post-${encodeURIComponent(n.postId)}`;
+  }
+  if (n.storyId) return `./index.html?story=${encodeURIComponent(n.storyId)}`;
+  if (n.groupId) return `./groups.html?id=${encodeURIComponent(n.groupId)}`;
+  if (n.pageId) return `./pages.html?id=${encodeURIComponent(n.pageId)}`;
+  if (n.type === "message" && n.fromUid) return `./messages.html?uid=${encodeURIComponent(n.fromUid)}`;
+  if (n.fromUid) return `./profile.html?uid=${encodeURIComponent(n.fromUid)}`;
+  return "./index.html";
+}
+
+function normalizePagePath(pathname) {
+  const clean = (pathname || "/").replace(/\/+$/, "");
+  if (!clean || clean === "/index.html") return "/index.html";
+  return clean;
+}
+
+async function navigateToNotification(n, { event = null, anchorEl = null } = {}) {
+  const rawHref = anchorEl?.getAttribute("href") || resolveNotifLink(n);
+  const href = safeLink(rawHref, resolveNotifLink(n));
+  const nid = n?.id || anchorEl?.dataset?.nid || "";
+  const target = nid ? latestNotifItems.find((item) => item.id === nid) : n;
+  const wasUnread = Boolean(target && !target.read);
+
+  document.getElementById("twin-notif-dropdown")?.classList.remove("open");
+
+  if (target) target.read = true;
+  if (anchorEl) {
+    anchorEl.classList.remove("twin-notif-unread");
+    anchorEl.classList.add("twin-notif-read");
+    anchorEl.querySelector(".twin-notif-dot")?.remove();
+  }
+  updateAllBadges();
+
+  const markReadPromise = wasUnread && db && nid
+    ? updateDoc(doc(db, "notifications", nid), { read: true }).catch(() => {})
+    : Promise.resolve();
+
+  let targetUrl;
+  try {
+    targetUrl = new URL(href, window.location.href);
+  } catch {
+    if (event) event.preventDefault();
+    await Promise.race([markReadPromise, new Promise((r) => setTimeout(r, 250))]);
+    window.location.href = href;
+    return;
+  }
+
+  const samePage =
+    targetUrl.origin === window.location.origin &&
+    normalizePagePath(targetUrl.pathname) === normalizePagePath(window.location.pathname);
+
+  if (samePage) {
+    const hash = targetUrl.hash || "";
+    const params = targetUrl.searchParams;
+    const pageKey = getCurrentPageKey();
+
+    if (hash.startsWith("#post-") || params.get("post")) {
+      if (event) event.preventDefault();
+      const postId = hash.startsWith("#post-")
+        ? decodeURIComponent(hash.slice("#post-".length))
+        : params.get("post");
+      const openComments = params.get("comment") === "1" || target?.type === "comment";
+      try {
+        history.replaceState(null, "", targetUrl.pathname + targetUrl.search + targetUrl.hash);
+      } catch {}
+      window.dispatchEvent(new CustomEvent("twin-focus-post", { detail: { postId, openComments } }));
+      return;
+    }
+
+    if (pageKey === "home" && params.get("story")) {
+      if (event) event.preventDefault();
+      const storyId = params.get("story");
+      try {
+        history.replaceState(null, "", targetUrl.pathname + targetUrl.search);
+      } catch {}
+      window.dispatchEvent(new CustomEvent("twin-open-story", { detail: { storyId } }));
+      return;
+    }
+
+    if (pageKey === "reels" && params.get("id")) {
+      if (event) event.preventDefault();
+      const reelId = params.get("id");
+      try {
+        history.replaceState(null, "", targetUrl.pathname + targetUrl.search);
+      } catch {}
+      window.dispatchEvent(new CustomEvent("twin-open-reel", { detail: { reelId } }));
+      return;
+    }
+
+    if (pageKey === "groups" && params.get("id")) {
+      if (event) event.preventDefault();
+      const groupId = params.get("id");
+      try {
+        history.replaceState(null, "", targetUrl.pathname + targetUrl.search);
+      } catch {}
+      window.dispatchEvent(new CustomEvent("twin-open-group", { detail: { groupId } }));
+      return;
+    }
+  }
+
+  if (event) event.preventDefault();
+  if (wasUnread && db && nid) {
+    await Promise.race([markReadPromise, new Promise((resolve) => setTimeout(resolve, 260))]);
+  }
+  window.location.href = targetUrl.href;
+}
+
 function renderNotifList() {
   const listEl = document.getElementById("twin-notif-list");
   if (!listEl) return;
@@ -574,10 +803,10 @@ function renderNotifList() {
     .slice(0, 18)
     .map(
       (n) => `
-    <a href="${escapeHtml(safeLink(n.link))}" data-nid="${escapeHtml(n.id)}" class="twin-dropdown-item twin-notif-item ${n.read ? "twin-notif-read" : "twin-notif-unread"}">
-      <img class="twin-avatar twin-avatar-sm" src="${escapeHtml(n.fromAvatar || DEFAULT_AVATAR)}" alt="" />
+    <a href="${escapeHtml(resolveNotifLink(n))}" data-nid="${escapeHtml(n.id)}" class="twin-dropdown-item twin-notif-item ${n.read ? "twin-notif-read" : "twin-notif-unread"}">
+      <img class="twin-avatar twin-avatar-sm twin-notif-avatar" data-uid="${escapeHtml(n.fromUid || "")}" src="${escapeHtml(n.fromAvatar || DEFAULT_AVATAR)}" alt="" title="Xem trang cá nhân" />
       <div style="min-width:0;flex:1;">
-        <div style="font-size:13.5px;line-height:1.35;"><strong>${escapeHtml(n.fromName)}</strong> ${escapeHtml(n.text)}</div>
+        <div style="font-size:13.5px;line-height:1.35;"><strong>${escapeHtml(n.fromName)}</strong>${renderAdminIconHtml(n.fromUid)} ${escapeHtml(n.text)}</div>
         <div class="twin-post-meta twin-notif-time">${escapeHtml(formatTime(n.createdAt || n.createdAtMs))}</div>
       </div>
       ${n.read ? "" : '<span class="twin-notif-dot" aria-label="Chưa đọc"></span>'}
@@ -585,29 +814,23 @@ function renderNotifList() {
     )
     .join("");
 
+  listEl.querySelectorAll(".twin-notif-avatar[data-uid]").forEach((img) => {
+    const uid = img.dataset.uid;
+    if (!uid) return;
+    img.style.cursor = "pointer";
+    img.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      document.getElementById("twin-notif-dropdown")?.classList.remove("open");
+      window.location.href = `./profile.html?uid=${encodeURIComponent(uid)}`;
+    });
+  });
+
   listEl.querySelectorAll("a[data-nid]").forEach((a) => {
-    a.addEventListener("click", async (e) => {
-      const nid = a.dataset.nid;
-      const href = a.getAttribute("href");
-      const target = latestNotifItems.find((item) => item.id === nid);
-      const wasUnread = Boolean(target && !target.read);
-
-      if (target) target.read = true;
-      a.classList.remove("twin-notif-unread");
-      a.classList.add("twin-notif-read");
-      a.querySelector(".twin-notif-dot")?.remove();
-      updateAllBadges();
-
-      if (wasUnread && db && nid) {
-        e.preventDefault();
-        try {
-          await Promise.race([
-            updateDoc(doc(db, "notifications", nid), { read: true }),
-            new Promise((resolve) => setTimeout(resolve, 350))
-          ]);
-        } catch {}
-        if (href) window.location.href = href;
-      }
+    a.addEventListener("click", (e) => {
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+      const target = latestNotifItems.find((item) => item.id === a.dataset.nid);
+      navigateToNotification(target || { id: a.dataset.nid, link: a.getAttribute("href") }, { event: e, anchorEl: a });
     });
   });
 }
@@ -644,9 +867,9 @@ function renderLoggedInHeaderRight(user) {
       <a href="./profile.html" class="twin-dropdown-item">
         <img class="twin-avatar" src="${escapeHtml(user.avatar || DEFAULT_AVATAR)}" alt="" />
         <div style="min-width:0;flex:1;">
-          <div style="display:flex;align-items:center;gap:6px;">
+          <div style="display:flex;align-items:center;gap:5px;">
             <span id="twin-account-name" style="font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(user.name)}</span>
-            ${admin ? `<span class="twin-role-badge admin" id="twin-account-role-badge">Admin</span>` : `<span id="twin-account-role-badge" style="display:none;"></span>`}
+            ${renderAdminIconHtml(user)}
           </div>
           <div class="twin-post-meta">Xem trang cá nhân</div>
         </div>
@@ -739,6 +962,7 @@ function renderLoggedInHeaderRight(user) {
     openAccountSettingsModal("privacy", { focusPassword: true });
   };
   document.getElementById("twin-logout-btn").onclick = async () => {
+    writeCachedMe(null);
     try {
       await signOut(auth);
     } catch (err) {
@@ -775,10 +999,13 @@ function renderAdminUserList(filterText = "") {
       const locked = targetIsRoot || isSelf;
       return `
         <div class="twin-admin-user-row">
-          <img class="twin-avatar twin-avatar-sm" src="${escapeHtml(u.avatar || DEFAULT_AVATAR)}" alt="" />
+          <a href="./profile.html?uid=${encodeURIComponent(targetUid)}" class="twin-avatar-link" title="Xem trang cá nhân">
+            <img class="twin-avatar twin-avatar-sm" src="${escapeHtml(u.avatar || DEFAULT_AVATAR)}" alt="" />
+          </a>
           <div style="min-width:0;flex:1;">
-            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-              <strong style="font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(u.name || "Thành viên")}</strong>
+            <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;">
+              <a href="./profile.html?uid=${encodeURIComponent(targetUid)}" style="font-weight:700;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(u.name || "Thành viên")}</a>
+              ${renderAdminIconHtml(u)}
               <span class="twin-role-badge ${targetIsAdmin ? "admin" : ""}">${targetIsRoot ? "Root Admin" : targetIsAdmin ? "Admin" : "Thành viên"}</span>
             </div>
             <div class="twin-post-meta" style="font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(u.email || targetUid)}</div>
@@ -1535,13 +1762,14 @@ function showLiveNotificationPopup(n) {
     document.body.appendChild(stack);
   }
 
+  const notifHref = resolveNotifLink(n);
   const card = document.createElement("div");
   card.className = "twin-notif-popup";
   card.innerHTML = `
-    <a href="${escapeHtml(safeLink(n.link))}" class="twin-notif-popup-link">
+    <a href="${escapeHtml(notifHref)}" class="twin-notif-popup-link">
       <img class="twin-avatar twin-avatar-sm" src="${escapeHtml(n.fromAvatar || DEFAULT_AVATAR)}" alt="" />
       <div style="min-width:0;flex:1;">
-        <div style="font-size:13.5px;line-height:1.35;"><strong>${escapeHtml(n.fromName || "Ai đó")}</strong> ${escapeHtml(n.text || "")}</div>
+        <div style="font-size:13.5px;line-height:1.35;"><strong>${escapeHtml(n.fromName || "Ai đó")}</strong>${renderAdminIconHtml(n.fromUid)} ${escapeHtml(n.text || "")}</div>
         <div class="twin-post-meta" style="font-size:11.5px;">${escapeHtml(formatTime(n.createdAt || n.createdAtMs || Date.now()))} · Nhấn để xem</div>
       </div>
     </a>
@@ -1558,10 +1786,10 @@ function showLiveNotificationPopup(n) {
     e.stopPropagation();
     dismiss();
   };
-  card.querySelector(".twin-notif-popup-link").onclick = () => {
-    if (n.id && db) {
-      updateDoc(doc(db, "notifications", n.id), { read: true }).catch(() => {});
-    }
+  card.querySelector(".twin-notif-popup-link").onclick = (e) => {
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+    dismiss();
+    navigateToNotification(n, { event: e, anchorEl: e.currentTarget });
   };
 
   stack.prepend(card);
@@ -1578,10 +1806,7 @@ function showLiveNotificationPopup(n) {
       });
       browserNotif.onclick = () => {
         window.focus();
-        if (n.id && db) {
-          updateDoc(doc(db, "notifications", n.id), { read: true }).catch(() => {});
-        }
-        window.location.href = safeLink(n.link);
+        navigateToNotification(n);
         browserNotif.close();
       };
     } catch {}
@@ -1879,10 +2104,10 @@ export function openTwinChat(peer) {
   box.className = "twin-chat-box";
   box.innerHTML = `
     <div class="twin-chat-head">
-      <div style="display:flex;align-items:center;gap:8px;min-width:0;">
+      <a href="./profile.html?uid=${encodeURIComponent(peer.uid)}" style="display:flex;align-items:center;gap:8px;min-width:0;" title="Xem trang cá nhân">
         <img class="twin-avatar twin-avatar-sm" src="${escapeHtml(peer.avatar || DEFAULT_AVATAR)}" alt="" />
-        <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(peer.name)}</span>
-      </div>
+        <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:inline-flex;align-items:center;gap:4px;"><span>${escapeHtml(peer.name)}</span>${renderAdminIconHtml(peer)}</span>
+      </a>
       <div style="display:flex;align-items:center;gap:6px;">
         <a href="./messages.html?uid=${encodeURIComponent(peer.uid)}" class="twin-icon-btn" style="width:28px;height:28px;font-size:13px;" title="Mở toàn màn hình">⤢</a>
         <button class="twin-icon-btn chat-close" style="width:28px;height:28px;font-size:14px;" title="Đóng">✕</button>
@@ -1967,7 +2192,12 @@ export function openTwinChat(peer) {
 
 export function initTwinPage({ requireAuth = true, chrome = true, ensureProfile = true, onReady = null } = {}) {
   applySavedTheme();
-  if (chrome) renderAppChrome();
+  initHtmlLinkPrefetch();
+  if (chrome) {
+    renderAppChrome();
+    const cachedMe = readCachedMe();
+    if (cachedMe) renderLoggedInHeaderRight(cachedMe);
+  }
 
   if (!isFirebaseConfigured()) {
     if (onReady) onReady(null);
@@ -1977,6 +2207,7 @@ export function initTwinPage({ requireAuth = true, chrome = true, ensureProfile 
   onAuthStateChanged(auth, async (fbUser) => {
     if (!fbUser) {
       currentUserData = null;
+      writeCachedMe(null);
       if (unsubUser) { unsubUser(); unsubUser = null; }
       if (unsubNotifs) { unsubNotifs(); unsubNotifs = null; }
       if (unsubSiteSettings) { unsubSiteSettings(); unsubSiteSettings = null; }
@@ -2003,6 +2234,7 @@ export function initTwinPage({ requireAuth = true, chrome = true, ensureProfile 
       return;
     }
     currentUserData = profile;
+    writeCachedMe(profile);
     if (profile.preferences && !localStorage.getItem("twin_web_prefs_v2")) {
       saveWebPrefs(profile.preferences, { syncCloud: false });
     }
@@ -2019,6 +2251,8 @@ export function initTwinPage({ requireAuth = true, chrome = true, ensureProfile 
       if (!snap.exists()) return;
       Object.assign(profile, snap.data());
       currentUserData = profile;
+      writeCachedMe(profile);
+      registerAdminUser(profile);
       const nowIsAdmin = isUserAdmin(profile);
       if (chrome) {
         if (nowIsAdmin !== prevIsAdmin) {

@@ -16,6 +16,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="./assets/css/twin.css" />
+  <link rel="modulepreload" href="./assets/js/firebase-service.js" />
+  <link rel="modulepreload" href="./assets/js/layout.js" />
+  <link rel="modulepreload" href="./assets/js/post-ui.js" />
 </head>
 <body class="">
   <header id="twin-header" class="twin-header"></header>
@@ -90,6 +93,7 @@
       serverTimestamp,
       uploadToCloudinary,
       pushNotification,
+      renderAdminIconHtml,
       DEFAULT_AVATAR,
       escapeHtml,
       toMillis,
@@ -145,9 +149,11 @@
         div.className = "twin-request-row";
         div.innerHTML = `
           <div style="display:flex;align-items:center;gap:10px;">
-            <img class="twin-avatar twin-avatar-sm" src="${escapeHtml(user.avatar || DEFAULT_AVATAR)}" alt="" />
+            <a class="twin-avatar-link" href="./profile.html?uid=${encodeURIComponent(user.uid)}" title="Xem trang cá nhân">
+              <img class="twin-avatar twin-avatar-sm" src="${escapeHtml(user.avatar || DEFAULT_AVATAR)}" alt="" />
+            </a>
             <div>
-              <div style="font-weight:700;font-size:14px;">${escapeHtml(user.name)}</div>
+              <a href="./profile.html?uid=${encodeURIComponent(user.uid)}" class="twin-name-with-badge" style="font-weight:700;font-size:14px;"><span>${escapeHtml(user.name)}</span>${renderAdminIconHtml(user)}</a>
               <div class="twin-post-meta">Xin tham gia nhóm <strong>${escapeHtml(group.name)}</strong></div>
             </div>
           </div>
@@ -395,6 +401,13 @@
             }
           }
         }, (err) => showToast(friendlyError(err)));
+
+        window.addEventListener("twin-open-group", (e) => {
+          const gid = e.detail?.groupId;
+          if (!gid) return;
+          const found = groupsList.find((item) => item.id === gid);
+          if (found) openGroupDetail(found);
+        });
       }
     });
   </script>
