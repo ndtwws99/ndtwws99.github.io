@@ -11,6 +11,8 @@ import {
   deleteField,
   pushNotification,
   uploadToCloudinary,
+  getVideoPosterUrl,
+  formatDuration,
   sanitizeHtml,
   containsHtmlMarkup,
   DEFAULT_AVATAR,
@@ -112,6 +114,7 @@ function bindPickerCloser() {
 let editingPost = null;
 let editNewFile = null;
 let editRemoveImage = false;
+let editRemoveVideo = false;
 let editingUser = null;
 
 function ensureEditModal() {
@@ -155,6 +158,11 @@ function ensureEditModal() {
           <button type="button" id="ep-img-remove" class="twin-icon-btn" style="position:absolute;top:8px;right:8px;width:30px;height:30px;" title="Gỡ ảnh">✕</button>
         </div>
 
+        <div id="ep-video-box" style="display:none;position:relative;">
+          <video id="ep-video-preview" class="twin-post-video" controls playsinline preload="metadata" style="max-height:240px;border-radius:12px;"></video>
+          <button type="button" id="ep-video-remove" class="twin-icon-btn" style="position:absolute;top:8px;right:8px;width:30px;height:30px;background:rgba(0,0,0,0.65);color:#fff;" title="Gỡ video">✕</button>
+        </div>
+
         <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:space-between;">
           <label class="twin-btn twin-btn-secondary twin-btn-sm" style="cursor:pointer;">
             <span>Đổi / Thêm ảnh</span>
@@ -175,6 +183,9 @@ function ensureEditModal() {
     editingPost = null;
     editNewFile = null;
     editRemoveImage = false;
+    editRemoveVideo = false;
+    const vp = backdrop.querySelector("#ep-video-preview");
+    if (vp) { vp.pause(); vp.removeAttribute("src"); vp.load(); }
   };
   backdrop.querySelector("#ep-close-btn").onclick = close;
   backdrop.querySelector("#ep-cancel-btn").onclick = close;
@@ -216,6 +227,9 @@ function ensureEditModal() {
     imgBox.style.display = "block";
   };
 
+  const videoBox = backdrop.querySelector("#ep-video-box");
+  const videoPrev = backdrop.querySelector("#ep-video-preview");
+
   backdrop.querySelector("#ep-img-remove").onclick = () => {
     editNewFile = null;
     editRemoveImage = true;
@@ -224,14 +238,23 @@ function ensureEditModal() {
     imgBox.style.display = "none";
   };
 
+  backdrop.querySelector("#ep-video-remove").onclick = () => {
+    editRemoveVideo = true;
+    videoPrev.pause();
+    videoPrev.removeAttribute("src");
+    videoPrev.load();
+    videoBox.style.display = "none";
+  };
+
   backdrop.querySelector("#ep-form").onsubmit = async (e) => {
     e.preventDefault();
     if (!editingPost) return;
     const content = contentEl.value.trim();
     const feeling = backdrop.querySelector("#ep-feeling").value;
     const hasImageAfter = Boolean(editNewFile || (!editRemoveImage && editingPost.imageUrl));
-    if (!content && !hasImageAfter) {
-      return showToast("Bài viết cần có nội dung hoặc hình ảnh.");
+    const hasVideoAfter = Boolean(!editRemoveVideo && editingPost.videoUrl);
+    if (!content && !hasImageAfter && !hasVideoAfter) {
+      return showToast("Bài viết cần có nội dung, hình ảnh hoặc video.");
     }
 
     const saveBtn = backdrop.querySelector("#ep-save-btn");
@@ -246,13 +269,20 @@ function ensureEditModal() {
       }
 
       const detectedHtml = canHtmlNow() && containsHtmlMarkup(content);
-      await updateDoc(doc(db, "posts", editingPost.id), {
+      const patch = {
         content,
         isHtml: detectedHtml,
         feeling,
         imageUrl: nextImageUrl,
         editedAt: Date.now()
-      });
+      };
+      if (editRemoveVideo) {
+        patch.videoUrl = "";
+        patch.videoType = "";
+        patch.videoPoster = "";
+        patch.videoDuration = 0;
+      }
+      await updateDoc(doc(db, "posts", editingPost.id), patch);
       close();
       showToast("Đã cập nhật bài viết!");
     } catch (err) {
@@ -273,6 +303,7 @@ export function openEditPostModal(post, currentUser = null) {
   editingUser = currentUser;
   editNewFile = null;
   editRemoveImage = false;
+  editRemoveVideo = false;
 
   backdrop.querySelector("#ep-content").value = post.content || "";
   backdrop.querySelector("#ep-feeling").value = post.feeling || "";
@@ -288,6 +319,18 @@ export function openEditPostModal(post, currentUser = null) {
   } else {
     imgPrev.src = "";
     imgBox.style.display = "none";
+  }
+
+  const videoBox = backdrop.querySelector("#ep-video-box");
+  const videoPrev = backdrop.querySelector("#ep-video-preview");
+  if (post.videoUrl) {
+    videoPrev.src = post.videoUrl;
+    videoBox.style.display = "block";
+  } else {
+    videoPrev.pause();
+    videoPrev.removeAttribute("src");
+    videoPrev.load();
+    videoBox.style.display = "none";
   }
 
   backdrop.classList.add("open");
@@ -357,6 +400,39 @@ export function renderPostCard(post, currentUser) {
 
     ${bodyHtml}
     ${post.imageUrl ? `<img class="twin-post-image" src="${escapeHtml(post.imageUrl)}" alt="Ảnh bài viết" loading="lazy" />` : ""}
+    ${
+      post.videoUrl
+        ? (() => {
+            const isShort = post.videoType === "short";
+            const poster = post.videoPoster || getVideoPosterUrl(post.videoUrl);
+            const durText = post.videoDuration ? formatDuration(post.videoDuration) : "";
+            return `
+              <div class="twin-post-video-wrap ${isShort ? "is-short" : ""}">
+                <div class="twin-post-video-top">
+                  <span class="twin-post-video-badge ${isShort ? "short" : ""}">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="6 4 20 12 6 20 6 4"/></svg>
+                    <span>${isShort ? "Video ngắn" : "Video"}${durText ? ` · ${escapeHtml(durText)}` : ""}</span>
+                  </span>
+                  ${
+                    isShort
+                      ? `<a href="./reels.html?id=${encodeURIComponent(post.id)}" class="twin-post-video-reel-link">Xem Reels</a>`
+                      : ""
+                  }
+                </div>
+                <video
+                  class="twin-post-video"
+                  src="${escapeHtml(post.videoUrl)}"
+                  ${poster ? `poster="${escapeHtml(poster)}"` : ""}
+                  controls
+                  playsinline
+                  ${isShort ? "loop" : ""}
+                  preload="metadata"
+                ></video>
+              </div>
+            `;
+          })()
+        : ""
+    }
 
     <div class="twin-post-stats">
       <div class="twin-stats-reacts">${reactionValues.length > 0 ? `<span class="twin-rx-stack">${uniqueReactionBadges}</span><span>${reactionValues.length}</span>` : "Chưa có cảm xúc"}</div>
@@ -591,7 +667,8 @@ function postSignature(p, currentUser) {
   const saved = !!(currentUser && (currentUser.savedPosts || []).includes(p.id));
   const canManage = Boolean(currentUser && (currentUser.uid === p.authorUid || isUserAdmin(currentUser)));
   return JSON.stringify([
-    p.content, Boolean(p.isHtml), p.imageUrl, p.feeling, p.groupName, p.pageName, p.authorName, p.authorAvatar,
+    p.content, Boolean(p.isHtml), p.imageUrl, p.videoUrl || "", p.videoType || "", p.videoDuration || 0,
+    p.feeling, p.groupName, p.pageName, p.authorName, p.authorAvatar,
     Boolean(p.pinned), p.pinnedAt || 0, p.editedAt || 0,
     p.reactions || {}, (p.comments || []).map((c) => c.id), toMillis(p.createdAt), saved, canManage
   ]);

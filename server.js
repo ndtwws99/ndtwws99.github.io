@@ -19,6 +19,7 @@ const HTML_PAGES = new Set([
   "messages",
   "profile",
   "saved",
+  "reels",
   "404"
 ]);
 

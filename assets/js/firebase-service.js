@@ -411,6 +411,101 @@ export async function uploadToCloudinary(file) {
   return data.secure_url;
 }
 
+export function formatDuration(seconds = 0) {
+  const total = Math.max(0, Math.round(Number(seconds) || 0));
+  const mins = Math.floor(total / 60);
+  const secs = total % 60;
+  return `${mins}:${String(secs).padStart(2, "0")}`;
+}
+
+export function getVideoPosterUrl(videoUrl = "") {
+  const s = String(videoUrl || "").trim();
+  if (!s || !s.includes("res.cloudinary.com") || !s.includes("/video/upload/")) return "";
+  return s
+    .replace("/video/upload/", "/video/upload/so_auto,f_jpg,q_auto/")
+    .replace(/\.(mp4|mov|webm|m4v|ogv)(\?.*)?$/i, ".jpg");
+}
+
+export function readVideoMetadata(file) {
+  return new Promise((resolve) => {
+    if (!file) return resolve({ duration: 0, width: 0, height: 0 });
+    const url = URL.createObjectURL(file);
+    const v = document.createElement("video");
+    let done = false;
+    const finish = (meta) => {
+      if (done) return;
+      done = true;
+      URL.revokeObjectURL(url);
+      resolve(meta);
+    };
+    const timer = setTimeout(() => finish({ duration: 0, width: 0, height: 0 }), 4000);
+    v.preload = "metadata";
+    v.muted = true;
+    v.playsInline = true;
+    v.onloadedmetadata = () => {
+      clearTimeout(timer);
+      finish({
+        duration: Number.isFinite(v.duration) ? Math.round(v.duration) : 0,
+        width: v.videoWidth || 0,
+        height: v.videoHeight || 0
+      });
+    };
+    v.onerror = () => {
+      clearTimeout(timer);
+      finish({ duration: 0, width: 0, height: 0 });
+    };
+    v.src = url;
+  });
+}
+
+export function uploadVideoToCloudinary(file, onProgress) {
+  return new Promise((resolve, reject) => {
+    if (!file) return resolve({ url: "", duration: 0, width: 0, height: 0, poster: "" });
+    if (!isCloudinaryConfigured()) {
+      return reject(new Error("Chưa cấu hình Cloudinary trong assets/js/config.js"));
+    }
+    if (!file.type || !file.type.startsWith("video/")) {
+      return reject(new Error("Chỉ hỗ trợ tệp video (MP4, MOV, WebM...)."));
+    }
+    if (file.size > 100 * 1024 * 1024) {
+      return reject(new Error("Video quá lớn (tối đa 100MB)."));
+    }
+
+    const endpoint = `https://api.cloudinary.com/v1_1/${cloudinaryConfig.cloudName}/video/upload`;
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", cloudinaryConfig.uploadPreset);
+    formData.append("folder", "twin_videos");
+
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", endpoint);
+    xhr.upload.onprogress = (ev) => {
+      if (ev.lengthComputable && typeof onProgress === "function") {
+        onProgress(Math.min(99, Math.round((ev.loaded / ev.total) * 100)));
+      }
+    };
+    xhr.onload = () => {
+      let data = {};
+      try { data = JSON.parse(xhr.responseText || "{}"); } catch {}
+      if (xhr.status >= 200 && xhr.status < 300 && data.secure_url) {
+        if (typeof onProgress === "function") onProgress(100);
+        resolve({
+          url: data.secure_url,
+          duration: Math.round(Number(data.duration) || 0),
+          width: Number(data.width) || 0,
+          height: Number(data.height) || 0,
+          poster: getVideoPosterUrl(data.secure_url)
+        });
+      } else {
+        const detail = data?.error?.message || "";
+        reject(new Error("Tải video lên Cloudinary thất bại" + (detail ? `: ${detail}` : ". Kiểm tra lại Upload Preset (Unsigned).")));
+      }
+    };
+    xhr.onerror = () => reject(new Error("Không kết nối được Cloudinary. Kiểm tra mạng."));
+    xhr.send(formData);
+  });
+}
+
 export const ROOT_ADMIN_EMAILS = ["ndtwws99@gmail.com"];
 
 export function isUserAdmin(user) {

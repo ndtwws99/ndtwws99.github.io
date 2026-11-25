@@ -44,6 +44,7 @@ export const ICONS = {
   friends: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="7.5" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17" cy="9" r="2.6"/><path d="M16.5 14.3a5 5 0 0 1 5 5.7"/></svg>`,
   groups: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="7.5" r="3.2"/><path d="M6.5 20a5.5 5.5 0 0 1 11 0"/><circle cx="18.5" cy="9.5" r="2.2"/><path d="M22 19.5a4 4 0 0 0-3-3.8"/><circle cx="5.5" cy="9.5" r="2.2"/><path d="M2 19.5a4 4 0 0 1 3-3.8"/></svg>`,
   pages: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polygon points="15.8 8.2 13.8 13.8 8.2 15.8 10.2 10.2 15.8 8.2"/></svg>`,
+  reels: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M3 9h18"/><path d="M8.5 3 11 9"/><path d="M14.5 3 17 9"/><polygon points="10.2 12.2 15.5 15.2 10.2 18.2 10.2 12.2" fill="currentColor" stroke="none"/></svg>`,
   chat: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c5 0 9 3.6 9 8.1 0 4.5-4 8.1-9 8.1-1.4 0-2.7-.3-3.9-.8L3.5 20l1.1-3.9A7.6 7.6 0 0 1 3 11.1C3 6.6 7 3 12 3Z"/><path d="M8.5 11.2h.01M12 11.2h.01M15.5 11.2h.01"/></svg>`,
   bell: `<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8.5a6 6 0 1 0-12 0c0 6-2.5 7.5-2.5 7.5h17S18 14.5 18 8.5Z"/><path d="M10 19.5a2.1 2.1 0 0 0 4 0"/></svg>`,
   search: `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7.5"/><path d="m20.5 20.5-4.2-4.2"/></svg>`,
@@ -219,7 +220,7 @@ function subscribeSiteSettings() {
 function getCurrentPageKey() {
   const path = window.location.pathname.toLowerCase().replace(/\/+$/, "").replace(/\.html$/, "");
   const name = path.split("/").pop();
-  const known = ["friends", "groups", "pages", "messages", "profile", "saved", "login", "404"];
+  const known = ["friends", "groups", "pages", "messages", "profile", "saved", "reels", "login", "404"];
   return known.includes(name) ? name : "home";
 }
 
@@ -366,13 +367,10 @@ export function renderAppChrome() {
 
       <nav class="twin-nav-center" aria-label="Điều hướng chính">
         <a href="./index.html" class="twin-nav-link ${page === "home" ? "active" : ""}" title="Bảng tin">${ICONS.home}</a>
+        <a href="./reels.html" class="twin-nav-link ${page === "reels" ? "active" : ""}" title="Video & Video ngắn">${ICONS.reels}</a>
         <a href="./friends.html" class="twin-nav-link ${page === "friends" ? "active" : ""}" title="Bạn bè">${ICONS.friends}</a>
         <a href="./groups.html" class="twin-nav-link ${page === "groups" ? "active" : ""}" title="Nhóm">${ICONS.groups}</a>
         <a href="./pages.html" class="twin-nav-link ${page === "pages" ? "active" : ""}" title="Trang">${ICONS.pages}</a>
-        <a href="./messages.html" class="twin-nav-link ${page === "messages" ? "active" : ""}" title="Tin nhắn" style="position:relative;">
-          ${ICONS.chat}
-          <span class="twin-badge twin-nav-badge" id="twin-nav-chat-badge" style="display:none">0</span>
-        </a>
       </nav>
 
       <div class="twin-header-right" id="twin-header-right">
@@ -440,14 +438,10 @@ export function renderAppChrome() {
     mobileBar.className = "twin-mobile-bar";
     mobileBar.innerHTML = `
       <a href="./index.html" class="twin-mobile-tab ${page === "home" ? "active" : ""}">${ICONS.home}<span>Bảng tin</span></a>
+      <a href="./reels.html" class="twin-mobile-tab ${page === "reels" ? "active" : ""}">${ICONS.reels}<span>Video</span></a>
       <a href="./friends.html" class="twin-mobile-tab ${page === "friends" ? "active" : ""}">${ICONS.friends}<span>Bạn bè</span></a>
       <a href="./groups.html" class="twin-mobile-tab ${page === "groups" ? "active" : ""}">${ICONS.groups}<span>Nhóm</span></a>
       <a href="./pages.html" class="twin-mobile-tab ${page === "pages" ? "active" : ""}">${ICONS.pages}<span>Trang</span></a>
-      <a href="./messages.html" class="twin-mobile-tab ${page === "messages" ? "active" : ""}" style="position:relative;">
-        ${ICONS.chat}
-        <span>Chat</span>
-        <span class="twin-badge twin-mobile-badge" id="twin-mobile-chat-badge" style="display:none">0</span>
-      </a>
     `;
     document.body.appendChild(mobileBar);
   }
@@ -610,9 +604,10 @@ function renderLoggedInHeaderRight(user) {
   const admin = isUserAdmin(user);
 
   wrap.innerHTML = `
-    <button class="twin-icon-btn twin-gemini-btn" id="twin-gemini-btn" title="Trợ lý AI Gemini" aria-label="Trợ lý AI Gemini">
-      ${ICONS.gemini}
-    </button>
+    <a href="./messages.html" class="twin-icon-btn ${getCurrentPageKey() === "messages" ? "active" : ""}" id="twin-chat-btn" title="Tin nhắn" aria-label="Tin nhắn">
+      ${ICONS.chat}
+      <span class="twin-badge" id="twin-chat-badge" style="display:none">0</span>
+    </a>
     <button class="twin-icon-btn" id="twin-notif-btn" title="Thông báo" aria-label="Thông báo">
       ${ICONS.bell}
       <span class="twin-badge" id="twin-notif-badge" style="display:none">0</span>
@@ -702,13 +697,8 @@ function renderLoggedInHeaderRight(user) {
   notifDrop.addEventListener("click", (e) => e.stopPropagation());
 
   renderNotifPermBar();
+  updateAllBadges();
 
-  document.getElementById("twin-gemini-btn").onclick = (e) => {
-    e.stopPropagation();
-    notifDrop.classList.remove("open");
-    accDrop.classList.remove("open");
-    openGeminiAssistantModal();
-  };
   document.getElementById("twin-menu-gemini").onclick = (e) => {
     e.stopPropagation();
     accDrop.classList.remove("open");
