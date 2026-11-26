@@ -69,7 +69,16 @@
           <div id="gd-composer-note" class="twin-post-meta" style="display:none;margin-top:10px;padding:10px 12px;border-radius:10px;background:var(--surface-2);">Chỉ trưởng nhóm mới có quyền đăng bài trong nhóm này.</div>
         </div>
       </div>
+      <div class="twin-profile-tabs-wrap" style="margin:12px 0;">
+        <div class="twin-seg-tabs twin-group-tabs" role="tablist" aria-label="Mục trong nhóm">
+          <button type="button" class="twin-seg-tab active" data-gdtab="posts" role="tab" aria-selected="true">Bài viết <span id="gdtab-posts-count" class="twin-tab-badge">0</span></button>
+          <button type="button" class="twin-seg-tab" data-gdtab="photos" role="tab" aria-selected="false">Album ảnh <span id="gdtab-photos-count" class="twin-tab-badge">0</span></button>
+          <button type="button" class="twin-seg-tab" data-gdtab="videos" role="tab" aria-selected="false">Video <span id="gdtab-videos-count" class="twin-tab-badge">0</span></button>
+        </div>
+      </div>
       <div id="gd-posts"></div>
+      <div id="gd-photos" style="display:none;"></div>
+      <div id="gd-videos" style="display:none;"></div>
     </section>
   </main>
 
@@ -171,7 +180,7 @@
 
   <script type="module">
     import { initTwinPage } from "./assets/js/layout.js";
-    import { renderPostList, mountPostComposer } from "./assets/js/post-ui.js";
+    import { renderPostList, mountPostComposer, renderMediaGallery, extractMediaFromPosts } from "./assets/js/post-ui.js";
     import {
       db,
       collection,
@@ -399,15 +408,60 @@
         list.innerHTML = `<div class="twin-card" style="color:var(--text-3);text-align:center;padding:30px 18px;">Đây là nhóm <strong>Riêng tư</strong>. Bạn cần được chủ nhóm duyệt tham gia để xem và đăng bài viết.</div>`;
         return;
       }
+      let activeGdTab = "posts";
+      let groupPostsList = [];
+      const gdPhotosEl = document.getElementById("gd-photos");
+      const gdVideosEl = document.getElementById("gd-videos");
+
+      const switchGdTab = (tab) => {
+        activeGdTab = tab;
+        document.querySelectorAll(".twin-group-tabs [data-gdtab]").forEach((b) => {
+          const active = b.dataset.gdtab === tab;
+          b.classList.toggle("active", active);
+          b.setAttribute("aria-selected", active ? "true" : "false");
+        });
+        list.style.display = tab === "posts" ? "block" : "none";
+        gdPhotosEl.style.display = tab === "photos" ? "block" : "none";
+        gdVideosEl.style.display = tab === "videos" ? "block" : "none";
+        if (tab === "photos") {
+          renderMediaGallery(gdPhotosEl, groupPostsList, {
+            type: "photo",
+            title: `Album ảnh — ${g.name}`,
+            emptyText: "Chưa có ảnh nào trong nhóm này."
+          });
+        } else if (tab === "videos") {
+          renderMediaGallery(gdVideosEl, groupPostsList, {
+            type: "video",
+            title: `Album video — ${g.name}`,
+            emptyText: "Chưa có video nào trong nhóm này."
+          });
+        }
+      };
+
+      document.querySelectorAll(".twin-group-tabs [data-gdtab]").forEach((btn) => {
+        btn.onclick = () => switchGdTab(btn.dataset.gdtab);
+      });
+      switchGdTab("posts");
+
       const q = query(collection(db, "posts"), where("groupId", "==", g.id));
       unsubGroupPosts = onSnapshot(q, (snap) => {
         const items = [];
         snap.forEach((d) => items.push({ id: d.id, ...d.data() }));
         items.sort((a, b) => ((b.pinned ? 1 : 0) - (a.pinned ? 1 : 0)) || ((b.pinned && a.pinned) ? ((b.pinnedAt || 0) - (a.pinnedAt || 0)) : 0) || (toMillis(b.createdAt) - toMillis(a.createdAt)));
+        groupPostsList = items;
+
+        const { photos, videos } = extractMediaFromPosts(items);
+        document.getElementById("gdtab-posts-count").textContent = String(items.length);
+        document.getElementById("gdtab-photos-count").textContent = String(photos.length);
+        document.getElementById("gdtab-videos-count").textContent = String(videos.length);
+
         const empty = isMember
           ? '<div class="twin-card" style="color:var(--text-3);text-align:center;">Chưa có bài viết nào trong nhóm này.</div>'
           : '<div class="twin-card" style="color:var(--text-3);text-align:center;">Chưa có bài viết công khai nào trong nhóm này.</div>';
         renderPostList(list, items, me, empty);
+        if (activeGdTab === "photos" || activeGdTab === "videos") {
+          switchGdTab(activeGdTab);
+        }
       }, (err) => {
         if (guest && err?.code === "permission-denied") {
           list.innerHTML = '<div class="twin-card" style="color:var(--text-3);text-align:center;">Đăng nhập để xem bài viết trong nhóm này.</div>';

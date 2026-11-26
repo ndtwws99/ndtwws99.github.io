@@ -70,16 +70,38 @@
       </div>
     </section>
 
+    <div class="twin-profile-tabs-wrap">
+      <div class="twin-seg-tabs twin-profile-tabs" role="tablist" aria-label="Mục trang cá nhân">
+        <button type="button" class="twin-seg-tab active" data-pftab="posts" role="tab" aria-selected="true">Bài viết <span id="pftab-posts-count" class="twin-tab-badge">0</span></button>
+        <button type="button" class="twin-seg-tab" data-pftab="photos" role="tab" aria-selected="false">Album ảnh <span id="pftab-photos-count" class="twin-tab-badge">0</span></button>
+        <button type="button" class="twin-seg-tab" data-pftab="videos" role="tab" aria-selected="false">Video <span id="pftab-videos-count" class="twin-tab-badge">0</span></button>
+      </div>
+    </div>
+
     <div class="twin-grid-2">
-      <aside class="twin-card twin-profile-about">
-        <h3 style="font-size:16.5px;font-weight:800;letter-spacing:-0.02em;margin-bottom:12px;">Giới thiệu</h3>
-        <p id="pf-bio-box" style="font-size:14px;color:var(--text-2);margin-bottom:14px;line-height:1.55;"></p>
-        <div id="pf-info-list" class="twin-info-list"></div>
+      <aside class="twin-profile-left-stack">
+        <div class="twin-card twin-profile-about">
+          <h3 style="font-size:16.5px;font-weight:800;letter-spacing:-0.02em;margin-bottom:12px;">Giới thiệu</h3>
+          <p id="pf-bio-box" style="font-size:14px;color:var(--text-2);margin-bottom:14px;line-height:1.55;"></p>
+          <div id="pf-info-list" class="twin-info-list"></div>
+        </div>
+
+        <div id="pf-mini-album-card" class="twin-card" style="display:none;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+            <h3 style="font-size:15.5px;font-weight:800;letter-spacing:-0.02em;">Album ảnh</h3>
+            <button type="button" id="pf-mini-album-all" style="font-size:12.5px;font-weight:700;color:var(--primary);">Xem tất cả</button>
+          </div>
+          <div id="pf-mini-album-grid" class="twin-profile-mini-album"></div>
+        </div>
       </aside>
 
       <section>
-        <div id="pf-composer-slot"></div>
-        <div id="pf-posts"></div>
+        <div id="pf-tab-posts-panel">
+          <div id="pf-composer-slot"></div>
+          <div id="pf-posts"></div>
+        </div>
+        <div id="pf-tab-photos-panel" style="display:none;"></div>
+        <div id="pf-tab-videos-panel" style="display:none;"></div>
       </section>
     </div>
   </main>
@@ -200,7 +222,7 @@
 
   <script type="module">
     import { initTwinPage } from "./assets/js/layout.js";
-    import { renderPostList, mountPostComposer } from "./assets/js/post-ui.js";
+    import { renderPostList, mountPostComposer, renderMediaGallery, extractMediaFromPosts, openMediaLightbox } from "./assets/js/post-ui.js";
     import {
       auth,
       db,
@@ -696,6 +718,63 @@
           };
         }
 
+        let activePfTab = "posts";
+        let profilePostsList = [];
+        const pfPostsPanel = document.getElementById("pf-tab-posts-panel");
+        const pfPhotosPanel = document.getElementById("pf-tab-photos-panel");
+        const pfVideosPanel = document.getElementById("pf-tab-videos-panel");
+
+        const switchPfTab = (tab) => {
+          activePfTab = tab;
+          document.querySelectorAll(".twin-profile-tabs [data-pftab]").forEach((b) => {
+            const active = b.dataset.pftab === tab;
+            b.classList.toggle("active", active);
+            b.setAttribute("aria-selected", active ? "true" : "false");
+          });
+          pfPostsPanel.style.display = tab === "posts" ? "block" : "none";
+          pfPhotosPanel.style.display = tab === "photos" ? "block" : "none";
+          pfVideosPanel.style.display = tab === "videos" ? "block" : "none";
+          if (tab === "photos") {
+            renderMediaGallery(pfPhotosPanel, profilePostsList, {
+              type: "photo",
+              title: `Album ảnh của ${profile.name || "Thành viên"}`,
+              emptyText: "Chưa có ảnh nào trong album."
+            });
+          } else if (tab === "videos") {
+            renderMediaGallery(pfVideosPanel, profilePostsList, {
+              type: "video",
+              title: `Album video của ${profile.name || "Thành viên"}`,
+              emptyText: "Chưa có video nào được đăng."
+            });
+          }
+        };
+
+        document.querySelectorAll(".twin-profile-tabs [data-pftab]").forEach((btn) => {
+          btn.onclick = () => switchPfTab(btn.dataset.pftab);
+        });
+        document.getElementById("pf-mini-album-all")?.addEventListener("click", () => switchPfTab("photos"));
+
+        const renderMiniAlbum = (posts) => {
+          const card = document.getElementById("pf-mini-album-card");
+          const grid = document.getElementById("pf-mini-album-grid");
+          if (!card || !grid) return;
+          const { photos } = extractMediaFromPosts(posts);
+          if (!photos.length) {
+            card.style.display = "none";
+            return;
+          }
+          card.style.display = "block";
+          grid.innerHTML = "";
+          photos.slice(0, 6).forEach((item, idx) => {
+            const btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = "twin-album-tile";
+            btn.innerHTML = `<img src="${escapeHtml(item.url)}" alt="Ảnh ${idx + 1}" loading="lazy" />`;
+            btn.onclick = () => openMediaLightbox(photos, idx, `Album ảnh của ${profile.name || "Thành viên"}`);
+            grid.appendChild(btn);
+          });
+        };
+
         const q = query(collection(db, "posts"), where("authorUid", "==", targetUid));
         onSnapshot(q, (snap) => {
           const box = document.getElementById("pf-posts");
@@ -704,14 +783,25 @@
             const p = { id: d.id, ...d.data() };
             if (canViewPost(p, me)) items.push(p);
           });
-          document.getElementById("pf-posts-count").textContent = String(items.length);
           items.sort((a, b) => ((b.pinned ? 1 : 0) - (a.pinned ? 1 : 0)) || ((b.pinned && a.pinned) ? ((b.pinnedAt || 0) - (a.pinnedAt || 0)) : 0) || (toMillis(b.createdAt) - toMillis(a.createdAt)));
+          profilePostsList = items;
+
+          const { photos, videos } = extractMediaFromPosts(items);
+          document.getElementById("pf-posts-count").textContent = String(items.length);
+          document.getElementById("pftab-posts-count").textContent = String(items.length);
+          document.getElementById("pftab-photos-count").textContent = String(photos.length);
+          document.getElementById("pftab-videos-count").textContent = String(videos.length);
+
+          renderMiniAlbum(items);
           renderPostList(
             box,
             items,
             me,
             '<div class="twin-card" style="color:var(--text-3);text-align:center;padding:28px;">Chưa có bài viết nào.</div>'
           );
+          if (activePfTab === "photos" || activePfTab === "videos") {
+            switchPfTab(activePfTab);
+          }
         }, (err) => {
           if (guest && err?.code === "permission-denied") return;
           showToast(friendlyError(err));

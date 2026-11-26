@@ -58,9 +58,6 @@
       </aside>
 
       <section>
-        <!-- Thanh Stories (Tin văn bản màu + Tin ảnh) -->
-        <div class="twin-stories-row" id="twin-stories"></div>
-
         <!-- Thông báo gọn cho chế độ Khách -->
         <div id="twin-guest-composer-notice" class="twin-card twin-guest-card" style="display:none;">
           <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
@@ -116,15 +113,21 @@
             </div>
 
             <div id="post-preview-wrap" style="margin-top:10px;display:none;position:relative;">
-              <img id="post-preview-img" class="twin-post-image" alt="Xem trước" style="display:none;" />
+              <div id="post-preview-album-box" style="display:none;">
+                <div class="twin-composer-album-head">
+                  <span id="post-preview-album-count" class="twin-post-meta" style="font-weight:700;"></span>
+                  <button id="post-album-clear-btn" type="button" class="twin-btn twin-btn-ghost twin-btn-sm" style="padding:3px 9px;color:var(--danger);">Xóa tất cả ảnh</button>
+                </div>
+                <div id="post-preview-album-grid" class="twin-composer-album-grid"></div>
+              </div>
               <div id="post-preview-video-box" class="twin-composer-video-preview" style="display:none;">
                 <div class="twin-video-mode-bar">
                   <span class="twin-post-meta" style="font-weight:700;color:var(--text);">Video đính kèm</span>
                   <span id="post-preview-video-meta" class="twin-post-meta" style="font-weight:600;"></span>
                 </div>
                 <video id="post-preview-video" class="twin-post-video" controls playsinline muted></video>
+                <button id="post-preview-remove" type="button" class="twin-icon-btn" style="position:absolute;top:8px;right:8px;width:30px;height:30px;background:rgba(0,0,0,0.65);color:#fff;z-index:2;" title="Gỡ video">✕</button>
               </div>
-              <button id="post-preview-remove" type="button" class="twin-icon-btn" style="position:absolute;top:8px;right:8px;width:30px;height:30px;background:rgba(0,0,0,0.65);color:#fff;z-index:2;" title="Gỡ media">✕</button>
             </div>
 
             <div id="post-upload-progress" class="twin-upload-progress" style="display:none;">
@@ -139,8 +142,8 @@
             <div class="twin-composer-media-btns">
               <label class="twin-btn twin-btn-secondary twin-btn-sm twin-media-btn-photo" style="cursor:pointer;">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9.5"/><circle cx="9.2" cy="9.5" r="1.4"/><path d="m20 16-4.5-4.5-6.5 6.5"/></svg>
-                <span>Ảnh</span>
-                <input id="post-image-file" type="file" accept="image/*" hidden />
+                <span>Ảnh / Album</span>
+                <input id="post-image-file" type="file" accept="image/*" multiple hidden />
               </label>
               <label id="post-video-label" class="twin-btn twin-btn-secondary twin-btn-sm twin-media-btn-video" style="cursor:pointer;">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5.5" width="14" height="13" rx="2.5"/><path d="m16.5 10 5-3v10l-5-3"/></svg>
@@ -152,11 +155,13 @@
           </div>
         </div>
 
+        <!-- Thanh Stories (Tin văn bản màu + Tin ảnh) -->
+        <div class="twin-stories-row" id="twin-stories"></div>
+
         <div class="twin-filter-bar" role="tablist" aria-label="Lọc bài viết">
           <button type="button" class="feed-filter active" data-filter="all">Tất cả</button>
           <button type="button" class="feed-filter" data-filter="photo">Ảnh</button>
           <button type="button" class="feed-filter" data-filter="video">Video</button>
-          <button type="button" class="feed-filter" data-filter="pinned">Ghim</button>
           <button type="button" class="feed-filter" data-filter="group">Nhóm</button>
         </div>
 
@@ -414,7 +419,7 @@
     let allPosts = [];
     let rawStoriesList = [];
     let activeFilter = "all";
-    let selectedFile = null;
+    let selectedFiles = [];
     let selectedVideoFile = null;
     let selectedVideoDuration = 0;
     let previewObjectUrl = "";
@@ -455,7 +460,7 @@
     }
 
     function isComposerEmpty() {
-      return !postContentEl.value.trim() && !selectedFile && !selectedVideoFile && !postFeelingEl.value;
+      return !postContentEl.value.trim() && !selectedFiles.length && !selectedVideoFile && !postFeelingEl.value;
     }
 
     document.getElementById("composer-avatar-link")?.addEventListener("click", (e) => {
@@ -508,7 +513,9 @@
 
     // ---- Post image & video preview ----
     const previewWrap = document.getElementById("post-preview-wrap");
-    const previewImg = document.getElementById("post-preview-img");
+    const previewAlbumBox = document.getElementById("post-preview-album-box");
+    const previewAlbumGrid = document.getElementById("post-preview-album-grid");
+    const previewAlbumCount = document.getElementById("post-preview-album-count");
     const previewVideoBox = document.getElementById("post-preview-video-box");
     const previewVideo = document.getElementById("post-preview-video");
     const previewVideoMeta = document.getElementById("post-preview-video-meta");
@@ -519,18 +526,45 @@
     const videoInput = document.getElementById("post-video-file");
     const postVideoLabel = document.getElementById("post-video-label");
 
+    function renderComposerAlbumPreview() {
+      previewAlbumGrid.innerHTML = "";
+      if (!selectedFiles.length) {
+        previewAlbumBox.style.display = "none";
+        if (!selectedVideoFile) previewWrap.style.display = "none";
+        return;
+      }
+      previewWrap.style.display = "block";
+      previewAlbumBox.style.display = "block";
+      previewAlbumCount.textContent = selectedFiles.length > 1 ? `Album ${selectedFiles.length} ảnh` : "1 ảnh đã chọn";
+      selectedFiles.forEach((item, idx) => {
+        const tile = document.createElement("div");
+        tile.className = "twin-composer-album-tile";
+        tile.innerHTML = `
+          <img src="${item.url}" alt="Ảnh ${idx + 1}" />
+          <button type="button" class="twin-composer-album-del" title="Bỏ ảnh này" aria-label="Bỏ ảnh này">✕</button>
+        `;
+        tile.querySelector(".twin-composer-album-del").onclick = () => {
+          URL.revokeObjectURL(item.url);
+          selectedFiles.splice(idx, 1);
+          renderComposerAlbumPreview();
+        };
+        previewAlbumGrid.appendChild(tile);
+      });
+    }
+
     function clearComposerMedia() {
       if (previewObjectUrl) {
         URL.revokeObjectURL(previewObjectUrl);
         previewObjectUrl = "";
       }
-      selectedFile = null;
+      selectedFiles.forEach((it) => URL.revokeObjectURL(it.url));
+      selectedFiles = [];
       selectedVideoFile = null;
       selectedVideoDuration = 0;
       fileInput.value = "";
       videoInput.value = "";
-      previewImg.style.display = "none";
-      previewImg.removeAttribute("src");
+      previewAlbumGrid.innerHTML = "";
+      previewAlbumBox.style.display = "none";
       previewVideo.pause();
       previewVideo.removeAttribute("src");
       previewVideo.load();
@@ -538,17 +572,31 @@
       previewWrap.style.display = "none";
     }
 
+    document.getElementById("post-album-clear-btn").onclick = () => clearComposerMedia();
+
     fileInput.onchange = () => {
-      const f = fileInput.files[0] || null;
-      clearComposerMedia();
-      selectedFile = f;
-      if (selectedFile) {
-        expandComposer(false);
-        previewObjectUrl = URL.createObjectURL(selectedFile);
-        previewImg.src = previewObjectUrl;
-        previewImg.style.display = "block";
-        previewWrap.style.display = "block";
+      const picked = [...(fileInput.files || [])].filter((f) => f && f.type && f.type.startsWith("image/"));
+      fileInput.value = "";
+      if (!picked.length) return;
+      if (selectedVideoFile) {
+        if (previewObjectUrl) { URL.revokeObjectURL(previewObjectUrl); previewObjectUrl = ""; }
+        selectedVideoFile = null;
+        selectedVideoDuration = 0;
+        videoInput.value = "";
+        previewVideo.pause();
+        previewVideo.removeAttribute("src");
+        previewVideo.load();
+        previewVideoBox.style.display = "none";
       }
+      const remaining = Math.max(0, 10 - selectedFiles.length);
+      if (picked.length > remaining) {
+        showToast("Mỗi bài viết hỗ trợ tối đa 10 ảnh trong album.");
+      }
+      picked.slice(0, remaining).forEach((f) => {
+        selectedFiles.push({ file: f, url: URL.createObjectURL(f) });
+      });
+      expandComposer(false);
+      renderComposerAlbumPreview();
     };
 
     videoInput.onchange = async () => {
@@ -1497,8 +1545,7 @@
       const filtered = allPosts
         .filter((p) => {
           if (!canViewPost(p, me)) return false;
-          if (activeFilter === "pinned" && !p.pinned) return false;
-          if (activeFilter === "photo" && !p.imageUrl) return false;
+          if (activeFilter === "photo" && !p.imageUrl && !(Array.isArray(p.imageUrls) && p.imageUrls.length)) return false;
           if (activeFilter === "video" && !p.videoUrl) return false;
           if (activeFilter === "group" && !p.groupId) return false;
           if (!q) return true;
@@ -1919,6 +1966,20 @@
         const initialQ = new URLSearchParams(window.location.search).get("q");
         if (searchEl && initialQ) searchEl.value = initialQ;
         searchEl?.addEventListener("input", (e) => renderFeedList(e.target.value, { resetPagination: true }));
+        document.addEventListener("click", (e) => {
+          const tag = e.target.closest("a.twin-hashtag[data-hashtag]");
+          if (!tag) return;
+          e.preventDefault();
+          const kw = tag.dataset.hashtag || "";
+          if (searchEl) searchEl.value = kw;
+          renderFeedList(kw, { resetPagination: true });
+          window.scrollTo({ top: 0, behavior: "smooth" });
+          try {
+            const u = new URL(window.location.href);
+            u.searchParams.set("q", kw);
+            history.replaceState(null, "", u.pathname + u.search);
+          } catch {}
+        });
 
         // Publish Post (auto-detect plain text vs HTML markup + image / video)
         document.getElementById("btn-publish-post").onclick = async () => {
@@ -1930,22 +1991,35 @@
           const btn = document.getElementById("btn-publish-post");
           const content = postContentEl.value.trim();
           const feeling = postFeelingEl.value;
-          if (!content && !selectedFile && !selectedVideoFile) {
+          if (!content && !selectedFiles.length && !selectedVideoFile) {
             return showToast("Hãy nhập nội dung hoặc chọn ảnh / video.");
           }
           if (selectedVideoFile && !cfg.allowVideoPosts && !isUserAdmin(me)) {
             return showToast("Admin đang tạm tắt đăng video bài viết.");
           }
           btn.disabled = true;
-          btn.textContent = selectedVideoFile ? "Đang tải video..." : "Đang đăng...";
+          btn.textContent = selectedVideoFile ? "Đang tải video..." : (selectedFiles.length > 1 ? "Đang tải album..." : "Đang đăng...");
           try {
             let imageUrl = "";
+            let imageUrls = [];
             let videoUrl = "";
             let videoType = "";
             let videoDuration = 0;
             let videoPoster = "";
-            if (selectedFile) {
-              imageUrl = await uploadToCloudinary(selectedFile);
+            if (selectedFiles.length) {
+              if (selectedFiles.length > 1) uploadProgressEl.style.display = "flex";
+              for (let i = 0; i < selectedFiles.length; i++) {
+                if (selectedFiles.length > 1) {
+                  const pct = Math.round((i / selectedFiles.length) * 100);
+                  uploadProgressFill.style.width = `${pct}%`;
+                  uploadProgressText.textContent = `Đang tải ảnh ${i + 1}/${selectedFiles.length}...`;
+                  btn.textContent = `Đang tải ${i + 1}/${selectedFiles.length}...`;
+                }
+                const url = await uploadToCloudinary(selectedFiles[i].file);
+                if (url) imageUrls.push(url);
+              }
+              imageUrl = imageUrls[0] || "";
+              if (selectedFiles.length > 1) uploadProgressFill.style.width = "100%";
             } else if (selectedVideoFile) {
               uploadProgressEl.style.display = "flex";
               uploadProgressFill.style.width = "0%";
@@ -1976,6 +2050,7 @@
               privacy,
               allowedFriendUids: privacy === "friends" && Array.isArray(me.friends) ? me.friends : [],
               imageUrl,
+              imageUrls,
               videoUrl,
               videoType,
               videoDuration,

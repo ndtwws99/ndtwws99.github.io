@@ -109,7 +109,8 @@ service cloud.firestore {
       allow read: if isAdmin() || (isMember() && request.auth.uid in chatId.split('_'));
       allow create: if isMember() && request.auth.uid in chatId.split('_')
                     && request.resource.data.senderUid == request.auth.uid;
-      allow delete: if isAdmin();
+      allow delete: if isAdmin() || (isMember() && request.auth.uid in chatId.split('_')
+                    && resource.data.senderUid == request.auth.uid);
     }
 
     match /settings/{docId} {
