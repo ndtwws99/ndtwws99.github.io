@@ -452,7 +452,7 @@ function subscribeGlobalSearchDirectory() {
   if (!unsubSearchGroups) {
     unsubSearchGroups = onSnapshot(query(collection(db, "groups"), limit(100)), (snap) => {
       searchDirectory.groups = [];
-      snap.forEach((d) => searchDirectory.groups.push({ id: d.id, ...d.data() }));
+      snap.forEach((d) => { const g = { id: d.id, ...d.data() }; if (!g.isChatGroup) searchDirectory.groups.push(g); });
       const inp = document.getElementById("twin-global-search");
       if (inp && document.activeElement === inp && inp.value.trim()) renderGlobalSearchResults(inp.value);
     }, () => {});
@@ -493,9 +493,9 @@ export function renderAppChrome() {
 
       <nav class="twin-nav-center" aria-label="Điều hướng chính">
         <a href="./index.html" class="twin-nav-link ${page === "home" ? "active" : ""}" title="Bảng tin">${ICONS.home}</a>
-        <a href="./reels.html" class="twin-nav-link ${page === "reels" ? "active" : ""}" title="Video & Video ngắn">${ICONS.reels}</a>
+        <a href="./reels.html" class="twin-nav-link ${page === "reels" ? "active" : ""}" title="Video ngắn">${ICONS.reels}</a>
         <a href="./friends.html" class="twin-nav-link ${page === "friends" ? "active" : ""}" title="Bạn bè">${ICONS.friends}</a>
-        <a href="./groups.html" class="twin-nav-link ${page === "groups" ? "active" : ""}" title="Nhóm & Trang">${ICONS.groups}</a>
+        <a href="./groups.html" class="twin-nav-link ${page === "groups" ? "active" : ""}" title="Nhóm">${ICONS.groups}</a>
       </nav>
 
       <div class="twin-header-right" id="twin-header-right">
@@ -563,7 +563,7 @@ export function renderAppChrome() {
     mobileBar.className = "twin-mobile-bar";
     mobileBar.innerHTML = `
       <a href="./index.html" class="twin-mobile-tab ${page === "home" ? "active" : ""}">${ICONS.home}<span>Bảng tin</span></a>
-      <a href="./reels.html" class="twin-mobile-tab ${page === "reels" ? "active" : ""}">${ICONS.reels}<span>Video</span></a>
+      <a href="./reels.html" class="twin-mobile-tab ${page === "reels" ? "active" : ""}">${ICONS.reels}<span>Video ngắn</span></a>
       <a href="./friends.html" class="twin-mobile-tab ${page === "friends" ? "active" : ""}">${ICONS.friends}<span>Bạn bè</span></a>
       <a href="./groups.html" class="twin-mobile-tab ${page === "groups" ? "active" : ""}">${ICONS.groups}<span>Nhóm</span></a>
       <a href="./profile.html" class="twin-mobile-tab ${page === "profile" ? "active" : ""}">${ICONS.settings}<span>Cá nhân</span></a>
