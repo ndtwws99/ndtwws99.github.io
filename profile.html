@@ -724,7 +724,7 @@
         const pfPhotosPanel = document.getElementById("pf-tab-photos-panel");
         const pfVideosPanel = document.getElementById("pf-tab-videos-panel");
 
-        const switchPfTab = (tab) => {
+        const switchPfTab = (tab, { scrollToLatest = false } = {}) => {
           activePfTab = tab;
           document.querySelectorAll(".twin-profile-tabs [data-pftab]").forEach((b) => {
             const active = b.dataset.pftab === tab;
@@ -747,12 +747,25 @@
               emptyText: "Chưa có video nào được đăng."
             });
           }
+          if (scrollToLatest && (tab === "photos" || tab === "videos")) {
+            const targetPanel = tab === "photos" ? pfPhotosPanel : pfVideosPanel;
+            requestAnimationFrame(() => {
+              const latestEl = targetPanel.querySelector(".twin-album-tile, .twin-video-gallery-card") || targetPanel;
+              latestEl.scrollIntoView({ behavior: "smooth", block: "start" });
+              if (latestEl !== targetPanel) {
+                latestEl.classList.remove("twin-latest-pulse");
+                void latestEl.offsetWidth;
+                latestEl.classList.add("twin-latest-pulse");
+                setTimeout(() => latestEl.classList.remove("twin-latest-pulse"), 1800);
+              }
+            });
+          }
         };
 
         document.querySelectorAll(".twin-profile-tabs [data-pftab]").forEach((btn) => {
-          btn.onclick = () => switchPfTab(btn.dataset.pftab);
+          btn.onclick = () => switchPfTab(btn.dataset.pftab, { scrollToLatest: btn.dataset.pftab !== "posts" });
         });
-        document.getElementById("pf-mini-album-all")?.addEventListener("click", () => switchPfTab("photos"));
+        document.getElementById("pf-mini-album-all")?.addEventListener("click", () => switchPfTab("photos", { scrollToLatest: true }));
 
         const renderMiniAlbum = (posts) => {
           const card = document.getElementById("pf-mini-album-card");

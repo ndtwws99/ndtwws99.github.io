@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="format-detection" content="telephone=no" />
-  <title>Video ngắn — Twin</title>
+  <title>Video — Twin</title>
   <meta name="description" content="Xem và đăng tải video ngắn (Tin) và video bài đăng trên mạng xã hội Twin." />
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%23007aff'/%3E%3Cstop offset='100%25' stop-color='%235856d6'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='32' cy='32' r='28' fill='url(%23g)'/%3E%3Cpath d='M19 21h26v6H35.5v18h-7V27H19z' fill='%23ffffff'/%3E%3C/svg%3E" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -25,13 +25,20 @@
 
   <main class="twin-main twin-reels-main">
     <div class="twin-reels-toolbar">
-      <div style="display:flex;align-items:center;gap:10px;">
-        <h1 style="font-size:20px;font-weight:800;letter-spacing:-0.02em;margin:0;">Video ngắn</h1>
+      <div class="twin-seg-tabs" role="tablist" aria-label="Loại video">
+        <button type="button" id="reels-tab-short" class="twin-seg-tab active" role="tab" aria-selected="true">Video ngắn</button>
+        <button type="button" id="reels-tab-video" class="twin-seg-tab" role="tab" aria-selected="false">Video bài đăng</button>
       </div>
-      <button type="button" id="reels-open-upload" class="twin-btn twin-btn-primary twin-btn-sm">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        <span>Đăng video ngắn</span>
-      </button>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <button type="button" id="reels-autoscroll-btn" class="twin-btn twin-btn-secondary twin-btn-sm" title="Tự động chuyển sang video tiếp theo khi phát xong">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/><path d="M5 20h14"/></svg>
+          <span>Tự chuyển</span>
+        </button>
+        <button type="button" id="reels-open-upload" class="twin-btn twin-btn-primary twin-btn-sm">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          <span>Đăng video</span>
+        </button>
+      </div>
     </div>
 
     <!-- Tab 1: Video ngắn từ mục Tin (Stories video) -->
@@ -57,13 +64,13 @@
   <div class="twin-modal-backdrop" id="upload-video-modal">
     <div class="twin-modal" style="max-width:480px;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-        <h2 style="font-size:19px;font-weight:800;">Đăng video ngắn</h2>
+        <h2 style="font-size:19px;font-weight:800;">Đăng video mới</h2>
         <button type="button" id="uv-close-btn" class="twin-icon-btn" style="width:32px;height:32px;" aria-label="Đóng">✕</button>
       </div>
 
       <form id="uv-form" style="display:flex;flex-direction:column;gap:12px;">
-        <div class="twin-seg-tabs" style="display:none;">
-          <button type="button" id="uv-type-short" class="twin-seg-tab active">Video ngắn (Tin)</button>
+        <div class="twin-seg-tabs" style="width:100%;display:grid;grid-template-columns:1fr 1fr;">
+          <button type="button" id="uv-type-short" class="twin-seg-tab active">Video ngắn</button>
           <button type="button" id="uv-type-video" class="twin-seg-tab">Video bài đăng</button>
         </div>
 
@@ -188,9 +195,12 @@
     let rawVideoStories = [];
     let activeVideoStories = [];
     let allVideoPosts = [];
-    let activeTab = "short";
+    let activeTab = new URLSearchParams(window.location.search).get("tab") === "video" ? "video" : "short";
     let targetReelId = new URLSearchParams(window.location.search).get("id") || "";
     let globalMuted = true;
+    let globalSpeed = 1;
+    let autoScrollNext = false;
+    let cleanMode = false;
     let reelObserver = null;
 
     const tabShortBtn = document.getElementById("reels-tab-short");
@@ -207,12 +217,89 @@
       });
     }
 
-    function setTab() {
-      activeTab = "short";
-      if (shortPanel) shortPanel.style.display = "flex";
-      if (videoPanel) videoPanel.style.display = "none";
-      setupReelAutoPlay();
+    function setTab(next) {
+      activeTab = next === "video" ? "video" : "short";
+      tabShortBtn.classList.toggle("active", activeTab === "short");
+      tabShortBtn.setAttribute("aria-selected", activeTab === "short" ? "true" : "false");
+      tabVideoBtn.classList.toggle("active", activeTab === "video");
+      tabVideoBtn.setAttribute("aria-selected", activeTab === "video" ? "true" : "false");
+      shortPanel.style.display = activeTab === "short" ? "flex" : "none";
+      videoPanel.style.display = activeTab === "video" ? "block" : "none";
+      if (activeTab === "video") {
+        pauseAllReelVideos();
+      } else {
+        setupReelAutoPlay();
+      }
     }
+
+    tabShortBtn.onclick = () => setTab("short");
+    tabVideoBtn.onclick = () => setTab("video");
+
+    const autoScrollBtn = document.getElementById("reels-autoscroll-btn");
+    const syncAutoScrollUi = () => {
+      if (!autoScrollBtn) return;
+      autoScrollBtn.classList.toggle("twin-btn-primary", autoScrollNext);
+      autoScrollBtn.classList.toggle("twin-btn-secondary", !autoScrollNext);
+      scroller.querySelectorAll("video.twin-reel-video").forEach((v) => {
+        v.loop = !autoScrollNext;
+      });
+    };
+    if (autoScrollBtn) {
+      autoScrollBtn.onclick = () => {
+        autoScrollNext = !autoScrollNext;
+        syncAutoScrollUi();
+        showToast(autoScrollNext ? "Đã bật Tự động chuyển video (Auto-scroll)." : "Đã tắt Tự động chuyển video.");
+      };
+    }
+
+    function syncAllSpeedButtons() {
+      scroller.querySelectorAll(".btn-reel-speed").forEach((b) => {
+        b.textContent = `${globalSpeed}x`;
+      });
+      scroller.querySelectorAll("video.twin-reel-video").forEach((v) => {
+        if (!v.dataset.holding2x) v.playbackRate = globalSpeed;
+      });
+    }
+
+    function syncCleanModeUi() {
+      scroller.querySelectorAll(".twin-reel-frame").forEach((f) => {
+        f.classList.toggle("clean-mode", cleanMode);
+      });
+    }
+
+    function getActiveReelCard() {
+      const cards = [...scroller.querySelectorAll(".twin-reel-card")];
+      if (!cards.length) return null;
+      const top = scroller.scrollTop;
+      const h = scroller.clientHeight || 1;
+      const idx = Math.max(0, Math.min(cards.length - 1, Math.round(top / h)));
+      return cards[idx];
+    }
+
+    document.addEventListener("keydown", (e) => {
+      if (activeTab !== "short") return;
+      if (document.querySelector(".twin-modal-backdrop.open")) return;
+      if (["INPUT", "TEXTAREA", "SELECT"].includes(document.activeElement?.tagName)) return;
+      const card = getActiveReelCard();
+      if (!card) return;
+      const v = card.querySelector("video.twin-reel-video");
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        scroller.scrollBy({ top: scroller.clientHeight, behavior: "smooth" });
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        scroller.scrollBy({ top: -scroller.clientHeight, behavior: "smooth" });
+      } else if (e.key === " " && v) {
+        e.preventDefault();
+        if (v.paused) v.play().catch(() => {});
+        else v.pause();
+      } else if (e.key.toLowerCase() === "m") {
+        globalMuted = !globalMuted;
+        syncAllMuteButtons();
+      } else if (e.key.toLowerCase() === "l") {
+        card.querySelector(".btn-reel-like")?.click();
+      }
+    });
 
     // ---- Upload Video Modal ----
     const uploadModal = document.getElementById("upload-video-modal");
@@ -682,12 +769,21 @@
 
           <div class="twin-reel-play-indicator" aria-hidden="true">${ICON.play}</div>
 
+          <div class="twin-reel-2x-pill" aria-hidden="true">⚡ Đang tua nhanh 2x</div>
+          <div class="twin-reel-heart-layer" aria-hidden="true"></div>
+
           <div class="twin-reel-top-bar">
             <span class="twin-post-video-badge short">
               <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="6 4 20 12 6 20 6 4"/></svg>
-              <span>Tin ngắn${durText ? ` · ${escapeHtml(durText)}` : ""}</span>
+              <span>Video ngắn${durText ? ` · ${escapeHtml(durText)}` : ""}</span>
             </span>
-            <button type="button" class="twin-reel-top-btn btn-reel-mute" title="Bật âm thanh" aria-label="Âm thanh">${globalMuted ? ICON.muted : ICON.sound}</button>
+            <div style="display:flex;align-items:center;gap:6px;pointer-events:auto;">
+              <button type="button" class="twin-reel-top-btn twin-reel-speed-btn btn-reel-speed" title="Tốc độ phát (1x / 1.5x / 2x)">${globalSpeed}x</button>
+              <button type="button" class="twin-reel-top-btn btn-reel-clean" title="Chế độ xem sạch (Ẩn/Hiện chữ)" aria-label="Chế độ xem sạch">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12s3.5-6.5 9.5-6.5 9.5 6.5 9.5 6.5-3.5 6.5-9.5 6.5-9.5-6.5-9.5-6.5Z"/><circle cx="12" cy="12" r="2.8"/></svg>
+              </button>
+              <button type="button" class="twin-reel-top-btn btn-reel-mute" title="Bật âm thanh" aria-label="Âm thanh">${globalMuted ? ICON.muted : ICON.sound}</button>
+            </div>
           </div>
 
           <div class="twin-reel-rail">
@@ -695,11 +791,11 @@
               <span class="twin-reel-act-icon">${ICON.heart}</span>
               <span class="twin-reel-act-count">0</span>
             </button>
-            <button type="button" class="twin-reel-act-btn btn-reel-reply" title="Trả lời tin ngắn">
+            <button type="button" class="twin-reel-act-btn btn-reel-reply" title="Trả lời">
               <span class="twin-reel-act-icon">${ICON.reply}</span>
               <span class="twin-reel-act-count">0</span>
             </button>
-            <button type="button" class="twin-reel-act-btn btn-reel-save" title="Lưu tin">
+            <button type="button" class="twin-reel-act-btn btn-reel-save" title="Lưu">
               <span class="twin-reel-act-icon">${ICON.bookmark}</span>
               <span class="twin-reel-act-count">0</span>
             </button>
@@ -709,11 +805,14 @@
             </button>
             ${
               canManage
-                ? `<button type="button" class="twin-reel-act-btn btn-reel-del" title="Xóa tin video ngắn">
+                ? `<button type="button" class="twin-reel-act-btn btn-reel-del" title="Xóa video ngắn">
                     <span class="twin-reel-act-icon">${ICON.trash}</span>
                   </button>`
                 : ""
             }
+            <div class="twin-reel-disc" title="Âm thanh gốc">
+              <img src="${escapeHtml(story.authorAvatar || DEFAULT_AVATAR)}" alt="" />
+            </div>
           </div>
 
           <div class="twin-reel-meta">
@@ -726,21 +825,157 @@
             </a>
             ${story.caption ? `<p class="twin-reel-caption">${escapeHtml(story.caption)}</p>` : ""}
           </div>
+
+          <div class="twin-reel-scrubber" title="Kéo để tua video">
+            <div class="twin-reel-scrubber-fill"></div>
+          </div>
         </div>
       `;
 
+      const frame = card.querySelector(".twin-reel-frame");
       const video = card.querySelector("video");
       const playIndicator = card.querySelector(".twin-reel-play-indicator");
+      const speedPill = card.querySelector(".twin-reel-2x-pill");
+      const heartLayer = card.querySelector(".twin-reel-heart-layer");
+      const discEl = card.querySelector(".twin-reel-disc");
+      const scrubber = card.querySelector(".twin-reel-scrubber");
+      const scrubberFill = card.querySelector(".twin-reel-scrubber-fill");
 
-      video.addEventListener("click", () => {
-        if (video.paused) {
-          video.play().catch(() => {});
-          playIndicator.classList.remove("visible");
-        } else {
-          video.pause();
-          playIndicator.classList.add("visible");
+      video.loop = !autoScrollNext;
+      video.playbackRate = globalSpeed;
+      if (cleanMode) frame.classList.add("clean-mode");
+
+      const spawnTapHeart = (clientX, clientY) => {
+        const rect = frame.getBoundingClientRect();
+        const x = clientX ? clientX - rect.left : rect.width / 2;
+        const y = clientY ? clientY - rect.top : rect.height / 2;
+        const h = document.createElement("span");
+        h.className = "twin-reel-tap-heart";
+        h.style.left = `${x}px`;
+        h.style.top = `${y}px`;
+        h.innerHTML = `<svg width="74" height="74" viewBox="0 0 24 24" fill="#ff3040" stroke="#ffffff" stroke-width="1.2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`;
+        heartLayer.appendChild(h);
+        setTimeout(() => h.remove(), 750);
+      };
+
+      const ensureLikedOnDoubleTap = async () => {
+        if (!me || isGuestUser(me)) return;
+        const latest = activeVideoStories.find((s) => s.id === story.id) || story;
+        const likes = Array.isArray(latest.likes) ? latest.likes : [];
+        if (likes.includes(me.uid)) return;
+        try {
+          await updateDoc(doc(db, "stories", story.id), { likes: arrayUnion(me.uid) });
+          if (latest.authorUid && latest.authorUid !== me.uid) {
+            pushNotification(latest.authorUid, {
+              fromUid: me.uid,
+              fromName: me.name,
+              fromAvatar: me.avatar || DEFAULT_AVATAR,
+              type: "reaction",
+              storyId: story.id,
+              text: "đã thả tim tin video ngắn của bạn ❤️",
+              link: `./reels.html?id=${encodeURIComponent(story.id)}`
+            }).catch(() => {});
+          }
+        } catch {}
+      };
+
+      video.addEventListener("play", () => {
+        playIndicator.classList.remove("visible");
+        discEl?.classList.add("spinning");
+      });
+      video.addEventListener("pause", () => {
+        discEl?.classList.remove("spinning");
+      });
+      video.addEventListener("timeupdate", () => {
+        if (Number.isFinite(video.duration) && video.duration > 0) {
+          scrubberFill.style.width = `${(video.currentTime / video.duration) * 100}%`;
         }
       });
+      video.addEventListener("ended", () => {
+        if (autoScrollNext) {
+          scroller.scrollBy({ top: scroller.clientHeight, behavior: "smooth" });
+        }
+      });
+
+      // Interactive progress bar scrubbing
+      scrubber.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (!Number.isFinite(video.duration) || video.duration <= 0) return;
+        const rect = scrubber.getBoundingClientRect();
+        const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+        video.currentTime = ratio * video.duration;
+        scrubberFill.style.width = `${ratio * 100}%`;
+      });
+
+      // Press & hold for 2x speed + Double-tap to Heart + Single tap Play/Pause
+      let holdTimer = null;
+      let wasHolding2x = false;
+      let lastTapTime = 0;
+      let singleTapTimer = null;
+
+      const releaseHold2x = () => {
+        if (holdTimer) {
+          clearTimeout(holdTimer);
+          holdTimer = null;
+        }
+        if (video.dataset.holding2x === "1") {
+          delete video.dataset.holding2x;
+          video.playbackRate = globalSpeed;
+          speedPill.classList.remove("visible");
+          setTimeout(() => { wasHolding2x = false; }, 60);
+        }
+      };
+
+      video.addEventListener("pointerdown", () => {
+        wasHolding2x = false;
+        holdTimer = setTimeout(() => {
+          holdTimer = null;
+          if (!video.paused) {
+            wasHolding2x = true;
+            video.dataset.holding2x = "1";
+            video.playbackRate = 2;
+            speedPill.classList.add("visible");
+          }
+        }, 360);
+      });
+      ["pointerup", "pointercancel", "pointerleave"].forEach((ev) =>
+        video.addEventListener(ev, releaseHold2x)
+      );
+
+      video.addEventListener("click", (e) => {
+        if (wasHolding2x) return;
+        const now = Date.now();
+        if (now - lastTapTime < 280) {
+          clearTimeout(singleTapTimer);
+          lastTapTime = 0;
+          spawnTapHeart(e.clientX, e.clientY);
+          ensureLikedOnDoubleTap();
+          return;
+        }
+        lastTapTime = now;
+        singleTapTimer = setTimeout(() => {
+          if (video.paused) {
+            video.play().catch(() => {});
+            playIndicator.classList.remove("visible");
+          } else {
+            video.pause();
+            playIndicator.classList.add("visible");
+          }
+        }, 230);
+      });
+
+      card.querySelector(".btn-reel-speed").onclick = (e) => {
+        e.stopPropagation();
+        globalSpeed = globalSpeed === 1 ? 1.5 : globalSpeed === 1.5 ? 2 : 1;
+        syncAllSpeedButtons();
+        showToast(`Tốc độ phát: ${globalSpeed}x`);
+      };
+
+      card.querySelector(".btn-reel-clean").onclick = (e) => {
+        e.stopPropagation();
+        cleanMode = !cleanMode;
+        syncCleanModeUi();
+      };
 
       card.querySelector(".btn-reel-mute").onclick = (e) => {
         e.stopPropagation();
@@ -985,7 +1220,21 @@
           showToast(friendlyError(err));
         });
 
-
+        onSnapshot(query(collection(db, "posts"), orderBy("createdAt", "desc"), limit(200)), (snap) => {
+          allVideoPosts = [];
+          snap.forEach((d) => {
+            const p = { id: d.id, ...d.data() };
+            if (p.videoUrl && canViewPost(p, me)) allVideoPosts.push(p);
+          });
+          allVideoPosts.sort((a, b) => toMillis(b.createdAt) - toMillis(a.createdAt));
+          renderVideos(allVideoPosts);
+        }, (err) => {
+          if (guest && err?.code === "permission-denied") {
+            renderVideos([]);
+            return;
+          }
+          showToast(friendlyError(err));
+        });
       }
     });
   </script>
