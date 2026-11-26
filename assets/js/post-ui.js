@@ -753,6 +753,125 @@ export function openEditPostModal(post, currentUser = null) {
   setTimeout(() => backdrop.querySelector("#ep-content")?.focus(), 40);
 }
 
+// ==========================================================================
+// Thu gọn 1/3 nội dung chữ cho bài viết dài (chỉ thu gọn text, giữ nguyên ảnh)
+// ==========================================================================
+const expandedLongPosts = new Set();
+const LONG_POST_MIN_CHARS = 300;
+const LONG_POST_MIN_LINES = 6;
+
+function truncatePlainTextToOneThird(raw) {
+  const trimmed = String(raw || "").trim();
+  if (!trimmed) return null;
+  const lines = trimmed.split(/\r?\n/);
+  const isLong = trimmed.length >= LONG_POST_MIN_CHARS || lines.length >= LONG_POST_MIN_LINES;
+  if (!isLong) return null;
+
+  let candidate = trimmed;
+  const targetLines = Math.max(2, Math.ceil(lines.length / 3));
+  if (lines.length >= LONG_POST_MIN_LINES && lines.length > targetLines) {
+    candidate = lines.slice(0, targetLines).join("\n");
+  }
+
+  const targetChars = Math.max(100, Math.round(trimmed.length / 3));
+  if (candidate.length > targetChars) {
+    let cutIdx = targetChars;
+    const slice = candidate.slice(0, cutIdx);
+    const wsMatch = slice.search(/\s+\S*$/);
+    if (wsMatch > Math.floor(targetChars * 0.55)) {
+      cutIdx = wsMatch;
+    }
+    candidate = candidate.slice(0, cutIdx);
+  }
+
+  candidate = candidate.trimEnd();
+  if (!candidate || candidate.length >= trimmed.length - 12) return null;
+  return `${candidate}…`;
+}
+
+function buildCollapsedHtmlPreservingImages(safeHtml) {
+  const root = document.createElement("div");
+  root.innerHTML = safeHtml;
+  const plainText = (root.textContent || "").trim();
+  const blockCount = root.querySelectorAll("p, li, div, h1, h2, h3, h4, blockquote, pre, tr").length;
+  const lineCount = plainText ? plainText.split(/\r?\n/).length : 0;
+  const isLong =
+    plainText.length >= LONG_POST_MIN_CHARS ||
+    lineCount >= LONG_POST_MIN_LINES ||
+    (blockCount >= LONG_POST_MIN_LINES && plainText.length >= 160);
+  if (!isLong) return null;
+
+  const targetChars = Math.max(100, Math.round(plainText.length / 3));
+  let remaining = targetChars;
+  let truncated = false;
+
+  function walk(node) {
+    if (node.nodeType === Node.TEXT_NODE) {
+      const txt = node.nodeValue || "";
+      if (!txt) return;
+      if (truncated) {
+        node.nodeValue = "";
+        return;
+      }
+      if (txt.length <= remaining) {
+        remaining -= txt.length;
+        return;
+      }
+      let cut = txt.slice(0, remaining);
+      const wsMatch = cut.search(/\s+\S*$/);
+      if (wsMatch > Math.floor(remaining * 0.55)) {
+        cut = cut.slice(0, wsMatch);
+      }
+      node.nodeValue = `${cut.trimEnd()}…`;
+      remaining = 0;
+      truncated = true;
+      return;
+    }
+    if (node.nodeType === Node.ELEMENT_NODE) {
+      const tag = node.tagName.toUpperCase();
+      if (tag === "IMG" || tag === "PICTURE") {
+        // Không bao giờ thu gọn hay ẩn ảnh
+        return;
+      }
+      const children = Array.from(node.childNodes);
+      for (const child of children) {
+        walk(child);
+      }
+      if (truncated && tag !== "BR" && tag !== "HR") {
+        const hasMedia = Boolean(node.querySelector("img, picture, video, svg"));
+        const hasText = (node.textContent || "").trim().length > 0;
+        if (!hasMedia && !hasText) {
+          node.remove();
+        }
+      }
+    }
+  }
+
+  walk(root);
+  if (!truncated) return null;
+  Array.from(root.querySelectorAll("hr")).forEach((hr) => {
+    if (!hr.nextElementSibling || !hr.previousElementSibling) hr.remove();
+  });
+  return root.innerHTML;
+}
+
+function buildPostTextContent(post) {
+  const raw = post?.content ? String(post.content) : "";
+  if (!raw.trim()) {
+    return { isHtml: false, fullHtml: "", collapsedHtml: null };
+  }
+  const renderAsHtml = Boolean(post.isHtml || containsHtmlMarkup(raw));
+  if (renderAsHtml) {
+    const fullHtml = sanitizeHtml(raw);
+    const collapsedHtml = buildCollapsedHtmlPreservingImages(fullHtml);
+    return { isHtml: true, fullHtml, collapsedHtml };
+  }
+  const fullHtml = renderRichTextHtml(raw);
+  const shortText = truncatePlainTextToOneThird(raw);
+  const collapsedHtml = shortText ? renderRichTextHtml(shortText) : null;
+  return { isHtml: false, fullHtml, collapsedHtml };
+}
+
 export function renderPostCard(post, currentUser) {
   bindPickerCloser();
   const card = document.createElement("article");
@@ -793,13 +912,22 @@ export function renderPostCard(post, currentUser) {
       </div>`
     : "";
 
-  const renderAsHtml = Boolean(post.isHtml || (post.content && containsHtmlMarkup(post.content)));
+  const textState = buildPostTextContent(post);
+  const isCollapsible = Boolean(textState.collapsedHtml);
+  let isTextExpanded = Boolean(!isCollapsible || expandedLongPosts.has(post.id));
+  const initialBodyInner = isCollapsible && !isTextExpanded ? textState.collapsedHtml : textState.fullHtml;
   const bodyHtml =
     marketBannerHtml +
-    (post.content
-      ? renderAsHtml
-        ? `<div class="twin-post-body twin-post-html">${sanitizeHtml(post.content)}</div>`
-        : `<div class="twin-post-body">${renderRichTextHtml(post.content)}</div>`
+    (textState.fullHtml
+      ? isCollapsible
+        ? `<div class="twin-post-body-wrap${isTextExpanded ? " is-expanded" : " is-collapsed"}">
+            <div class="twin-post-body${textState.isHtml ? " twin-post-html" : ""}">${initialBodyInner}</div>
+            <button type="button" class="twin-post-expand-btn" aria-expanded="${isTextExpanded ? "true" : "false"}">
+              <span class="twin-post-expand-label">${isTextExpanded ? "Thu gọn" : "Xem thêm"}</span>
+              <svg class="twin-post-expand-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+            </button>
+          </div>`
+        : `<div class="twin-post-body${textState.isHtml ? " twin-post-html" : ""}">${textState.fullHtml}</div>`
       : "");
 
   card.innerHTML = `
@@ -943,6 +1071,35 @@ export function renderPostCard(post, currentUser) {
       }
     </div>
   `;
+
+  if (isCollapsible) {
+    const bodyWrap = card.querySelector(".twin-post-body-wrap");
+    const bodyEl = bodyWrap?.querySelector(".twin-post-body");
+    const expandBtn = bodyWrap?.querySelector(".twin-post-expand-btn");
+    const expandLabel = expandBtn?.querySelector(".twin-post-expand-label");
+    if (bodyWrap && bodyEl && expandBtn && expandLabel) {
+      expandBtn.addEventListener("click", () => {
+        isTextExpanded = !isTextExpanded;
+        if (isTextExpanded) {
+          expandedLongPosts.add(post.id);
+          bodyEl.innerHTML = textState.fullHtml;
+        } else {
+          expandedLongPosts.delete(post.id);
+          bodyEl.innerHTML = textState.collapsedHtml;
+        }
+        bodyWrap.classList.toggle("is-expanded", isTextExpanded);
+        bodyWrap.classList.toggle("is-collapsed", !isTextExpanded);
+        expandBtn.setAttribute("aria-expanded", isTextExpanded ? "true" : "false");
+        expandLabel.textContent = isTextExpanded ? "Thu gọn" : "Xem thêm";
+        if (!isTextExpanded) {
+          const rect = card.getBoundingClientRect();
+          if (rect.top < 72) {
+            card.scrollIntoView({ behavior: "smooth", block: "nearest" });
+          }
+        }
+      });
+    }
+  }
 
   const postImgs = getPostImages(post);
   if (postImgs.length) {

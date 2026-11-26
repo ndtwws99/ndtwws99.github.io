@@ -1137,7 +1137,7 @@ svg { display: block; flex-shrink: 0; }
   min-width: 0;
   overflow-x: auto;
   overflow-y: hidden;
-  padding: 4px 2px 12px;
+  padding: 8px 6px 14px;
   margin: 0 0 8px;
   scroll-snap-type: x proximity;
   overscroll-behavior-x: contain;
@@ -1167,10 +1167,14 @@ svg { display: block; flex-shrink: 0; }
   background: #000000;
   border: 1px solid var(--border);
   cursor: pointer;
-  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  transform-origin: center center;
+  transition: transform 0.26s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.26s ease;
+  will-change: transform;
 }
 .twin-story-card:hover {
-  transform: translateY(-2px);
+  transform: translateY(-3px) scale(1.045);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
+  z-index: 2;
 }
 .twin-story-card:active {
   transform: scale(0.97);
@@ -1182,10 +1186,42 @@ svg { display: block; flex-shrink: 0; }
   object-fit: cover;
   object-position: center;
   display: block;
-  transition: transform 0.24s ease;
+  transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .twin-story-card:hover img.story-bg,
-.twin-story-card:hover video.story-bg { transform: scale(1.04); }
+.twin-story-card:hover video.story-bg { transform: scale(1.05); }
+.twin-story-card-progress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.28);
+  z-index: 5;
+  opacity: 0;
+  pointer-events: none;
+  overflow: hidden;
+  transition: opacity 0.2s ease;
+}
+.twin-story-card-progress-fill {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, #ffffff 0%, #feda75 50%, #fa7e1e 80%, #d62976 100%);
+  transform-origin: left center;
+  transform: scaleX(0);
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.7);
+}
+.twin-story-card:hover .twin-story-card-progress {
+  opacity: 1;
+}
+.twin-story-card:hover .twin-story-card-progress-fill {
+  animation: twinStoryHoverProgress var(--story-duration, 5s) linear forwards;
+}
+@keyframes twinStoryHoverProgress {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
 .twin-story-video-pill {
   position: absolute;
   bottom: 29px;
@@ -1667,6 +1703,39 @@ svg { display: block; flex-shrink: 0; }
   margin-bottom: 12px;
   word-break: break-word;
   line-height: 1.55;
+}
+.twin-post-body-wrap {
+  margin-bottom: 12px;
+}
+.twin-post-body-wrap .twin-post-body {
+  margin-bottom: 6px;
+}
+.twin-post-expand-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: none;
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.2;
+  cursor: pointer;
+  transition: background-color 0.16s ease, transform 0.16s ease;
+}
+.twin-post-expand-btn:hover {
+  filter: brightness(0.96);
+}
+.twin-post-expand-btn:active {
+  transform: scale(0.97);
+}
+.twin-post-expand-ico {
+  transition: transform 0.2s ease;
+}
+.twin-post-body-wrap.is-expanded .twin-post-expand-ico {
+  transform: rotate(180deg);
 }
 .twin-post-body.twin-post-html { white-space: normal; }
 .twin-post-html h1, .twin-post-html h2, .twin-post-html h3, .twin-post-html h4 {
@@ -3651,8 +3720,8 @@ label.twin-setting-row { cursor: pointer; }
   }
 
   .twin-story-card:hover {
-    transform: translateY(-5px) scale(1.03);
-    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
+    transform: translateY(-4px) scale(1.045);
+    box-shadow: 0 12px 26px rgba(0, 0, 0, 0.24);
   }
 }
 
