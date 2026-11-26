@@ -35,7 +35,7 @@
         <div class="twin-side-group">
           <a href="./reels.html" class="twin-side-item">
             <span class="twin-side-icon ios-rose"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M3 9h18"/><path d="M8.5 3 11 9"/><path d="M14.5 3 17 9"/><polygon points="10.2 12.2 15.5 15.2 10.2 18.2 10.2 12.2" fill="currentColor" stroke="none"/></svg></span>
-            <span>Video & Video ngắn</span>
+            <span>Video ngắn</span>
           </a>
           <a href="./friends.html" class="twin-side-item">
             <span class="twin-side-icon ios-blue"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="7.5" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17" cy="8.5" r="2.7"/><path d="M21.5 20a4.7 4.7 0 0 0-3.5-4.5"/></svg></span>
@@ -43,7 +43,7 @@
           </a>
           <a href="./groups.html" class="twin-side-item">
             <span class="twin-side-icon ios-indigo"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="7.5" r="3.2"/><path d="M6.5 20a5.5 5.5 0 0 1 11 0"/><circle cx="18.5" cy="9.5" r="2.2"/><path d="M22 19.5a4 4 0 0 0-3-3.8"/><circle cx="5.5" cy="9.5" r="2.2"/><path d="M2 19.5a4 4 0 0 1 3-3.8"/></svg></span>
-            <span>Nhóm &amp; Trang</span>
+            <span>Nhóm</span>
           </a>
           <a href="./messages.html" class="twin-side-item">
             <span class="twin-side-icon ios-green"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.5 8.5 0 0 1-12.6 7.4L3 20.5l1.6-4.8A8.5 8.5 0 1 1 21 11.5Z"/></svg></span>
@@ -327,23 +327,28 @@
         </div>
       </div>
       <div id="story-modal-caption" style="padding:12px 14px 4px;font-size:14px;display:none;"></div>
-      <div class="twin-story-footer">
-        <div id="story-modal-like-summary" class="twin-post-meta twin-story-stats-line" style="font-weight:600;min-width:0;flex:1;">0 tim · 0 chia sẻ · 0 lượt lưu</div>
+      <div class="twin-story-footer twin-story-footer-v2">
+        <div class="twin-story-stats-row">
+          <div id="story-modal-like-summary" class="twin-post-meta twin-story-stats-line">0 tim · 0 chia sẻ · 0 lượt lưu</div>
+          <button type="button" id="story-replies-toggle" class="twin-story-reply-pill" style="display:none;">0 phản hồi</button>
+        </div>
         <div class="twin-story-footer-actions">
-          <button type="button" id="story-replies-toggle" class="twin-btn twin-btn-secondary twin-btn-sm" style="display:none;">0 phản hồi</button>
           <button type="button" id="story-modal-like-btn" class="twin-story-like-btn" title="Thả tim tin này" aria-label="Thả tim">
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
               <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
             </svg>
-            <span id="story-modal-like-count">0</span>
+            <span>Thích</span>
+            <strong id="story-modal-like-count">0</strong>
           </button>
           <button type="button" id="story-modal-share-btn" class="twin-story-act-pill" title="Chia sẻ tin" aria-label="Chia sẻ tin">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7.5 7.5 4.5-4.5 4.5 4.5"/><path d="M5 13.5V18a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4.5"/></svg>
-            <span id="story-modal-share-count">0</span>
+            <span>Chia sẻ</span>
+            <strong id="story-modal-share-count">0</strong>
           </button>
           <button type="button" id="story-modal-save-btn" class="twin-story-act-pill" title="Lưu tin" aria-label="Lưu tin">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 4h11A1.5 1.5 0 0 1 19 5.5v15l-7-4-7 4v-15A1.5 1.5 0 0 1 6.5 4Z"/></svg>
-            <span id="story-modal-save-count">0</span>
+            <span>Lưu</span>
+            <strong id="story-modal-save-count">0</strong>
           </button>
         </div>
       </div>
