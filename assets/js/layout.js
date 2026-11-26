@@ -192,7 +192,8 @@ export const ICONS = {
   sliders: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/><circle cx="9" cy="6" r="2" fill="currentColor"/><circle cx="15" cy="12" r="2" fill="currentColor"/><circle cx="10" cy="18" r="2" fill="currentColor"/></svg>`,
   eye: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12s3.5-6.5 9.5-6.5 9.5 6.5 9.5 6.5-3.5 6.5-9.5 6.5-9.5-6.5-9.5-6.5Z"/><circle cx="12" cy="12" r="2.8"/></svg>`,
   lock: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="14.5" r="5.5"/><path d="M8.5 10.2V7.8a3.5 3.5 0 0 1 7 0v2.4"/><circle cx="12" cy="14.5" r="1.2" fill="currentColor"/></svg>`,
-  gemini: `<svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2.2c.6 4.4 3.4 7.8 7.8 8.8l2 .5-2 .5c-4.4 1-7.2 4.4-7.8 8.8l-.2 1-.2-1c-.6-4.4-3.4-7.8-7.8-8.8l-2-.5 2-.5c4.4-1 7.2-4.4 7.8-8.8l.2-1 .2 1Z"/></svg>`
+  gemini: `<svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2.2c.6 4.4 3.4 7.8 7.8 8.8l2 .5-2 .5c-4.4 1-7.2 4.4-7.8 8.8l-.2 1-.2-1c-.6-4.4-3.4-7.8-7.8-8.8l-2-.5 2-.5c4.4-1 7.2-4.4 7.8-8.8l.2-1 .2 1Z"/></svg>`,
+  help: `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><path d="M9.5 9.2a2.6 2.6 0 0 1 5 .9c0 1.7-2.5 2.2-2.5 3.6"/><circle cx="12" cy="17.2" r=".9" fill="currentColor" stroke="none"/></svg>`
 };
 
 let currentUserData = null;
@@ -498,7 +499,7 @@ export function renderAppChrome() {
 
       <nav class="twin-nav-center" aria-label="Điều hướng chính">
         <a href="./index.html" class="twin-nav-link ${page === "home" ? "active" : ""}" title="Bảng tin">${ICONS.home}</a>
-        <a href="./reels.html" class="twin-nav-link ${page === "reels" ? "active" : ""}" title="Video ngắn">${ICONS.reels}</a>
+        <a href="./reels.html" class="twin-nav-link ${page === "reels" ? "active" : ""}" title="Video">${ICONS.reels}</a>
         <a href="./friends.html" class="twin-nav-link ${page === "friends" ? "active" : ""}" title="Bạn bè">${ICONS.friends}</a>
         <a href="./groups.html" class="twin-nav-link ${page === "groups" ? "active" : ""}" title="Nhóm">${ICONS.groups}</a>
       </nav>
@@ -568,7 +569,7 @@ export function renderAppChrome() {
     mobileBar.className = "twin-mobile-bar";
     mobileBar.innerHTML = `
       <a href="./index.html" class="twin-mobile-tab ${page === "home" ? "active" : ""}">${ICONS.home}<span>Bảng tin</span></a>
-      <a href="./reels.html" class="twin-mobile-tab ${page === "reels" ? "active" : ""}">${ICONS.reels}<span>Video ngắn</span></a>
+      <a href="./reels.html" class="twin-mobile-tab ${page === "reels" ? "active" : ""}">${ICONS.reels}<span>Video</span></a>
       <a href="./friends.html" class="twin-mobile-tab ${page === "friends" ? "active" : ""}">${ICONS.friends}<span>Bạn bè</span></a>
       <a href="./groups.html" class="twin-mobile-tab ${page === "groups" ? "active" : ""}">${ICONS.groups}<span>Nhóm</span></a>
       <a href="./profile.html" class="twin-mobile-tab ${page === "profile" ? "active" : ""}">${ICONS.settings}<span>Cá nhân</span></a>
@@ -866,6 +867,7 @@ function renderLoggedInHeaderRight(user) {
         </div>
         <hr style="border:none;border-top:1px solid var(--border);margin:8px 0;" />
         <a href="./login.html" class="twin-dropdown-item" style="color:var(--primary);font-weight:700;">${ICONS.key}<span>Đăng nhập / Tạo tài khoản</span></a>
+        <button class="twin-dropdown-item" id="twin-menu-help">${ICONS.help}<span>Trợ giúp &amp; Hướng dẫn</span></button>
         <button class="twin-dropdown-item" id="twin-menu-theme">${isDark ? ICONS.sun : ICONS.moon}<span id="twin-theme-label">${isDark ? "Chế độ Sáng" : "Chế độ Tối"}</span></button>
         <button class="twin-dropdown-item" id="twin-logout-btn" style="color:var(--danger)">${ICONS.logout}<span>Thoát chế độ Khách</span></button>
       </div>
@@ -899,7 +901,17 @@ function renderLoggedInHeaderRight(user) {
         }
       });
     }
-    document.getElementById("twin-menu-theme").onclick = toggleTheme;
+    document.getElementById("twin-menu-help").onclick = (e) => {
+      e.stopPropagation();
+      accDrop.classList.remove("open");
+      openHelpModal();
+    };
+    document.getElementById("twin-menu-help").onclick = (e) => {
+    e.stopPropagation();
+    accDrop.classList.remove("open");
+    openHelpModal();
+  };
+  document.getElementById("twin-menu-theme").onclick = toggleTheme;
     document.getElementById("twin-logout-btn").onclick = async () => {
       writeCachedMe(null);
       await exitGuestSession();
@@ -946,6 +958,7 @@ function renderLoggedInHeaderRight(user) {
       <button class="twin-dropdown-item" id="twin-menu-settings">${ICONS.settings}<span>Cài đặt tài khoản</span></button>
       ${admin ? `<button class="twin-dropdown-item" id="twin-menu-admin" style="color:var(--primary);">${ICONS.shield}<span>Quản trị Admin</span></button>` : ""}
       <a href="./saved.html" class="twin-dropdown-item">${ICONS.bookmark}<span>Bài viết đã lưu</span></a>
+      <button class="twin-dropdown-item" id="twin-menu-help">${ICONS.help}<span>Trợ giúp &amp; Hướng dẫn</span></button>
       <button class="twin-dropdown-item" id="twin-menu-theme">${isDark ? ICONS.sun : ICONS.moon}<span id="twin-theme-label">${isDark ? "Chế độ Sáng" : "Chế độ Tối"}</span></button>
       <button class="twin-dropdown-item" id="twin-reset-pass-btn">${ICONS.key}<span>Đặt / Đổi mật khẩu</span></button>
       <button class="twin-dropdown-item" id="twin-logout-btn" style="color:var(--danger)">${ICONS.logout}<span>Đăng xuất</span></button>
@@ -1945,6 +1958,220 @@ function formatGeminiMessageHtml(rawText = "") {
     out = out.replace(`@@CODEBLOCK_${idx}@@`, html);
   });
   return out;
+}
+
+
+// ---- Help & Guide Modal (Cách sử dụng, Đăng bài HTML, Video kiểu TikTok) ----
+const HTML_POST_TEMPLATES = [
+  {
+    title: "Thẻ thông báo nổi bật",
+    desc: "Khung tiêu đề màu sắc kèm danh sách gạch đầu dòng gọn đẹp.",
+    code: `<div style="padding:14px 16px;border-radius:12px;background:linear-gradient(135deg,#0095f6,#6366f1);color:#fff;">
+  <h3 style="margin:0 0 6px;">📢 Thông báo mới</h3>
+  <p style="margin:0;">Chào mừng mọi người đến với bài viết định dạng <b>HTML</b> trên Twin!</p>
+</div>
+<ul style="margin-top:10px;">
+  <li>Hỗ trợ chữ <b>in đậm</b>, <i>in nghiêng</i>, <mark>đánh dấu</mark>.</li>
+  <li>Tự động xem trước trực tiếp trước khi đăng.</li>
+</ul>`
+  },
+  {
+    title: "Bảng thông tin gọn gàng",
+    desc: "Phù hợp đăng lịch trình, bảng giá hoặc danh sách công việc.",
+    code: `<h3>📅 Lịch trình cuối tuần</h3>
+<table>
+  <thead>
+    <tr><th>Thời gian</th><th>Hoạt động</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>07:00</td><td>Tập trung &amp; xuất phát</td></tr>
+    <tr><td>12:00</td><td>Ăn trưa cùng nhóm</td></tr>
+    <tr><td>16:30</td><td>Check-in ngắm hoàng hôn</td></tr>
+  </tbody>
+</table>`
+  },
+  {
+    title: "Nhúng video YouTube",
+    desc: "Thay VIDEO_ID bằng mã video YouTube bạn muốn nhúng.",
+    code: `<h3>🎬 Video nổi bật</h3>
+<p>Cùng xem đoạn video này nhé!</p>
+<iframe src="https://www.youtube.com/embed/dQw4w9WgXcQ" allowfullscreen></iframe>`
+  }
+];
+
+export function openHelpModal(initialTab = "guide") {
+  let backdrop = document.getElementById("twin-help-modal");
+  if (!backdrop) {
+    backdrop = document.createElement("div");
+    backdrop.id = "twin-help-modal";
+    backdrop.className = "twin-modal-backdrop";
+    document.body.appendChild(backdrop);
+  }
+
+  const canInsert = Boolean(document.getElementById("post-content") || document.getElementById("pfc-content"));
+
+  backdrop.innerHTML = `
+    <div class="twin-modal twin-settings-modal twin-help-modal" role="dialog" aria-modal="true" aria-labelledby="th-modal-title">
+      <div class="twin-settings-head">
+        <div style="display:flex;align-items:center;gap:9px;min-width:0;">
+          <span class="twin-side-icon ios-blue" style="width:32px;height:32px;">${ICONS.help}</span>
+          <h2 id="th-modal-title">Trợ giúp &amp; Hướng dẫn</h2>
+        </div>
+        <button type="button" id="th-close-btn" class="twin-icon-btn" style="width:34px;height:34px;" aria-label="Đóng">✕</button>
+      </div>
+
+      <div class="twin-settings-tabs-wrap">
+        <div class="twin-settings-tabs" role="tablist">
+          <button type="button" class="twin-settings-tab ${initialTab === "guide" ? "active" : ""}" data-htab="guide">Cách sử dụng</button>
+          <button type="button" class="twin-settings-tab ${initialTab === "html" ? "active" : ""}" data-htab="html">Đăng bài HTML</button>
+          <button type="button" class="twin-settings-tab ${initialTab === "tiktok" ? "active" : ""}" data-htab="tiktok">Video &amp; Mẹo hay</button>
+        </div>
+      </div>
+
+      <div class="twin-settings-body">
+        <!-- TAB 1: CÁCH SỬ DỤNG -->
+        <div class="twin-settings-panel ${initialTab === "guide" ? "active" : ""}" data-hpanel="guide">
+          <div class="twin-help-card">
+            <h3>1. Đăng bài, Album ảnh &amp; Quyền xem</h3>
+            <ul class="twin-help-list">
+              <li>Nhấn vào khung <strong>"Bạn đang nghĩ gì thế?"</strong> ở Bảng tin, Trang cá nhân hoặc Nhóm để mở rộng trình soạn thảo.</li>
+              <li>Chọn <strong>Ảnh / Album</strong> (tối đa 10 ảnh/bài) hoặc <strong>Video</strong> trực tiếp từ 2 icon nhanh bên phải.</li>
+              <li>Chọn quyền xem: <strong>Công khai</strong>, <strong>Bạn bè</strong> hoặc <strong>Riêng tư</strong> và chọn <strong>Cảm xúc</strong> đi kèm.</li>
+            </ul>
+          </div>
+
+          <div class="twin-help-card">
+            <h3>2. Hashtag (#) &amp; Nhắc tên (@)</h3>
+            <ul class="twin-help-list">
+              <li>Gõ <code>#tukhoa</code> trong bài viết, bình luận hoặc tin nhắn — khi ấn vào sẽ tự động lọc tìm các bài chứa từ khóa đó.</li>
+              <li>Gõ <code>@</code> để hiện danh sách gợi ý bạn bè, chọn nhanh để nhắc tên và mở thẳng trang cá nhân khi ấn vào.</li>
+            </ul>
+          </div>
+
+          <div class="twin-help-card">
+            <h3>3. Nhóm, Bạn bè &amp; Tin nhắn</h3>
+            <ul class="twin-help-list">
+              <li><strong>Nhóm:</strong> Hỗ trợ nhóm Công khai / Riêng tư và phân quyền đăng bài (Mọi thành viên hoặc Chỉ trưởng nhóm), có sẵn tab <strong>Album ảnh</strong> và <strong>Video</strong>.</li>
+              <li><strong>Tin nhắn:</strong> Nhấn <strong>+ Nhóm chat</strong> để tạo nhóm trò chuyện nhiều người, nhấn biểu tượng <strong>Bảng màu</strong> để đổi nền riêng từng cuộc trò chuyện, nhấn biểu tượng <strong>Ảnh</strong> để mở Kho ảnh &amp; video, và nhấn biểu tượng <strong>Thùng rác</strong> trên tin nhắn của bạn để xóa.</li>
+              <li><strong>Trợ lý AI Gemini:</strong> Mở ngay trong menu tài khoản để nhờ viết caption, tạo mã HTML hoặc hỏi đáp nhanh.</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- TAB 2: CÁCH ĐĂNG BÀI BẰNG MÃ HTML -->
+        <div class="twin-settings-panel ${initialTab === "html" ? "active" : ""}" data-hpanel="html">
+          <div class="twin-help-card">
+            <h3>Tự động nhận diện mã HTML</h3>
+            <p class="twin-help-desc">
+              Bạn không cần bật công tắc riêng — chỉ cần dán hoặc gõ trực tiếp các thẻ HTML vào khung đăng bài (ở <strong>Bảng tin</strong>, <strong>Trang cá nhân</strong> hoặc <strong>Nhóm</strong>). Nút <strong>Xem trước HTML</strong> sẽ tự động xuất hiện để bạn kiểm tra bố cục trước khi đăng.
+            </p>
+            <div class="twin-help-tags">
+              <code>&lt;h1&gt;–&lt;h6&gt;</code>
+              <code>&lt;div&gt;</code>
+              <code>&lt;p&gt;</code>
+              <code>&lt;b&gt; / &lt;i&gt;</code>
+              <code>&lt;ul&gt; / &lt;ol&gt;</code>
+              <code>&lt;table&gt;</code>
+              <code>&lt;blockquote&gt;</code>
+              <code>&lt;a&gt;</code>
+              <code>&lt;img&gt;</code>
+              <code>&lt;iframe&gt;</code>
+              <code>style="..."</code>
+            </div>
+            <p class="twin-help-desc" style="margin-top:8px;">
+              <strong>Nhúng video / iframe an toàn:</strong> Hỗ trợ nguồn từ <em>YouTube, Vimeo, Facebook, TikTok, Google Drive, Spotify, SoundCloud</em>. Các thẻ nguy hiểm như <code>&lt;script&gt;</code> sẽ tự động được lọc bỏ để bảo vệ tài khoản.
+            </p>
+          </div>
+
+          ${HTML_POST_TEMPLATES.map(
+            (tpl, idx) => `
+            <div class="twin-help-card">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:6px;">
+                <div>
+                  <h3 style="margin:0;">Mẫu ${idx + 1}: ${escapeHtml(tpl.title)}</h3>
+                  <div class="twin-post-meta">${escapeHtml(tpl.desc)}</div>
+                </div>
+                <div style="display:flex;gap:6px;">
+                  <button type="button" class="twin-btn twin-btn-secondary twin-btn-sm th-copy-tpl" data-idx="${idx}">Sao chép</button>
+                  ${canInsert ? `<button type="button" class="twin-btn twin-btn-primary twin-btn-sm th-use-tpl" data-idx="${idx}">Dùng thử</button>` : ""}
+                </div>
+              </div>
+              <pre class="twin-help-code"><code>${escapeHtml(tpl.code)}</code></pre>
+            </div>`
+          ).join("")}
+        </div>
+
+        <!-- TAB 3: VIDEO KIỂU TIKTOK & PHÍM TẮT -->
+        <div class="twin-settings-panel ${initialTab === "tiktok" ? "active" : ""}" data-hpanel="tiktok">
+          <div class="twin-help-card">
+            <h3>Tính năng Video ngắn kiểu TikTok</h3>
+            <ul class="twin-help-list">
+              <li><strong>Chạm đúp (Double-tap):</strong> Nhấn 2 lần liên tiếp vào video để thả tim kèm hiệu ứng tim bay ngay tại vị trí chạm.</li>
+              <li><strong>Nhấn giữ tua nhanh 2x:</strong> Nhấn và giữ lên màn hình video để phát nhanh <strong>2x</strong> (thả tay sẽ quay về tốc độ cũ), hoặc đổi cố định <code>1x / 1.5x / 2x</code> trên thanh góc trên.</li>
+              <li><strong>Tự động cuộn (Auto-Scroll):</strong> Bật nút <strong>Tự chuyển</strong> trên thanh công cụ để tự động lướt sang video tiếp theo khi xem hết.</li>
+              <li><strong>Chế độ xem sạch (Clean Mode):</strong> Nhấn biểu tượng con mắt để ẩn toàn bộ chữ và nút bấm, xem trọn khung hình video.</li>
+              <li><strong>Thanh tua tiến trình:</strong> Kéo hoặc nhấn trực tiếp vào thanh mảnh ở sát đáy video để tua đến đoạn bất kỳ.</li>
+            </ul>
+          </div>
+
+          <div class="twin-help-card">
+            <h3>Phím tắt trên máy tính</h3>
+            <div class="twin-help-shortcuts">
+              <div><kbd>↑</kbd> / <kbd>↓</kbd><span>Chuyển video trước / tiếp theo</span></div>
+              <div><kbd>Space</kbd><span>Phát / Tạm dừng video hoặc Tin</span></div>
+              <div><kbd>M</kbd><span>Tắt / Bật âm thanh video</span></div>
+              <div><kbd>L</kbd><span>Thả tim video đang xem</span></div>
+              <div><kbd>←</kbd> / <kbd>→</kbd><span>Chuyển ảnh trong Album &amp; Tin</span></div>
+              <div><kbd>Esc</kbd><span>Đóng cửa sổ đang mở</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  backdrop.classList.add("open");
+  backdrop.querySelector("#th-close-btn").onclick = () => backdrop.classList.remove("open");
+
+  backdrop.querySelectorAll("[data-htab]").forEach((btn) => {
+    btn.onclick = () => {
+      const target = btn.dataset.htab;
+      backdrop.querySelectorAll("[data-htab]").forEach((b) => b.classList.toggle("active", b === btn));
+      backdrop.querySelectorAll("[data-hpanel]").forEach((p) => p.classList.toggle("active", p.dataset.hpanel === target));
+    };
+  });
+
+  backdrop.querySelectorAll(".th-copy-tpl").forEach((btn) => {
+    btn.onclick = async () => {
+      const tpl = HTML_POST_TEMPLATES[Number(btn.dataset.idx)];
+      if (!tpl) return;
+      try {
+        await navigator.clipboard.writeText(tpl.code);
+        showToast("Đã sao chép mẫu HTML!");
+      } catch {
+        showToast("Không thể sao chép tự động.");
+      }
+    };
+  });
+
+  backdrop.querySelectorAll(".th-use-tpl").forEach((btn) => {
+    btn.onclick = () => {
+      const tpl = HTML_POST_TEMPLATES[Number(btn.dataset.idx)];
+      const postBox = document.getElementById("post-content") || document.getElementById("pfc-content");
+      const card = document.getElementById("twin-composer-card") || document.getElementById("pf-composer-card");
+      if (!tpl || !postBox) return;
+      if (card && !card.classList.contains("expanded")) {
+        card.classList.add("expanded");
+        postBox.rows = 4;
+      }
+      postBox.value = tpl.code;
+      postBox.dispatchEvent(new Event("input", { bubbles: true }));
+      backdrop.classList.remove("open");
+      postBox.scrollIntoView({ behavior: "smooth", block: "center" });
+      postBox.focus();
+      showToast("Đã dán mẫu HTML vào khung đăng bài!");
+    };
+  });
 }
 
 export function openGeminiAssistantModal() {

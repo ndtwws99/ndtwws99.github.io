@@ -40,13 +40,6 @@ const svgUri = (svg) => `data:image/svg+xml,${encodeURIComponent(svg.trim())}`;
 
 export const REACTIONS = [
   {
-    key: "like",
-    emoji: "👍",
-    label: "Thích",
-    color: "#1877f2",
-    icon: svgUri(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#38bdf8"/><stop offset="55%" stop-color="#1877f2"/><stop offset="100%" stop-color="#1d4ed8"/></linearGradient></defs><circle cx="32" cy="32" r="30" fill="url(#g)"/><ellipse cx="24" cy="14" rx="14" ry="7" fill="#fff" opacity=".26"/><path d="M18 30h6v18h-6a2 2 0 0 1-2-2V32a2 2 0 0 1 2-2zm9 0 5.4-10.8c1-2 3.8-2.2 4.8-.2.8 1.5.7 3.5-.1 5.6L35.6 28h10.2c2.5 0 4.4 2.2 4 4.7l-1.9 11.4c-.4 2.3-2.4 3.9-4.7 3.9H27V30z" fill="#fff"/></svg>`)
-  },
-  {
     key: "love",
     emoji: "❤️",
     label: "Yêu thích",
@@ -83,13 +76,194 @@ export const REACTIONS = [
   }
 ];
 
+
+// ==========================================================================
+// High-Quality Glossy SVG Feelings for Composer & Post Cards
+// ==========================================================================
+export const FEELINGS = [
+  {
+    value: "hạnh phúc",
+    label: "Hạnh phúc",
+    icon: svgUri(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><defs><radialGradient id="g" cx="35%" cy="26%" r="74%"><stop offset="0%" stop-color="#fef08a"/><stop offset="56%" stop-color="#facc15"/><stop offset="100%" stop-color="#f59e0b"/></radialGradient></defs><circle cx="32" cy="32" r="30" fill="url(#g)"/><ellipse cx="24" cy="13" rx="13" ry="6" fill="#fff" opacity=".34"/><ellipse cx="16.5" cy="36" rx="5" ry="3" fill="#fb7185" opacity=".46"/><ellipse cx="47.5" cy="36" rx="5" ry="3" fill="#fb7185" opacity=".46"/><path d="M17 28c1.5-3.4 5.5-3.4 7 0" fill="none" stroke="#451a03" stroke-width="3.4" stroke-linecap="round"/><path d="M40 28c1.5-3.4 5.5-3.4 7 0" fill="none" stroke="#451a03" stroke-width="3.4" stroke-linecap="round"/><path d="M20 37.5c2.6 6.8 21.4 6.8 24 0" fill="none" stroke="#451a03" stroke-width="3.6" stroke-linecap="round"/></svg>`)
+  },
+  {
+    value: "hào hứng",
+    label: "Hào hứng",
+    icon: svgUri(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><defs><radialGradient id="g" cx="35%" cy="26%" r="74%"><stop offset="0%" stop-color="#fef08a"/><stop offset="56%" stop-color="#facc15"/><stop offset="100%" stop-color="#ea580c"/></radialGradient><linearGradient id="s" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#fb7185"/><stop offset="100%" stop-color="#e11d48"/></linearGradient></defs><circle cx="32" cy="32" r="30" fill="url(#g)"/><ellipse cx="24" cy="13" rx="13" ry="6" fill="#fff" opacity=".32"/><path d="M20.5 18l2.5 5 5.5.8-4 3.9.9 5.5-4.9-2.6-4.9 2.6.9-5.5-4-3.9 5.5-.8z" fill="url(#s)"/><path d="M43.5 18l2.5 5 5.5.8-4 3.9.9 5.5-4.9-2.6-4.9 2.6.9-5.5-4-3.9 5.5-.8z" fill="url(#s)"/><path d="M19 38h26c0 8.2-5.8 14-13 14s-13-5.8-13-14z" fill="#451a03"/><path d="M22 38h20v3.2c0 .9-.7 1.5-1.5 1.5h-17c-.8 0-1.5-.6-1.5-1.5V38z" fill="#fff"/><path d="M24.5 47.5c2-2 4.6-3 7.5-3s5.5 1 7.5 3c-2 2.4-4.6 4.2-7.5 4.2s-5.5-1.8-7.5-4.2z" fill="#fb7185"/></svg>`)
+  },
+  {
+    value: "đang yêu",
+    label: "Đang yêu",
+    icon: svgUri(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><defs><radialGradient id="g" cx="35%" cy="26%" r="74%"><stop offset="0%" stop-color="#fef08a"/><stop offset="56%" stop-color="#facc15"/><stop offset="100%" stop-color="#f59e0b"/></radialGradient><linearGradient id="h" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#fb7185"/><stop offset="100%" stop-color="#e11d48"/></linearGradient></defs><circle cx="32" cy="32" r="30" fill="url(#g)"/><ellipse cx="24" cy="13" rx="13" ry="6" fill="#fff" opacity=".32"/><path d="M21 32c-.4 0-.8-.1-1.1-.4-3.8-3.1-6.4-5.5-6.4-8.8 0-2.5 1.9-4.4 4.3-4.4 1.3 0 2.5.7 3.2 1.7.7-1 1.9-1.7 3.2-1.7 2.4 0 4.3 1.9 4.3 4.4 0 3.3-2.6 5.7-6.4 8.8-.3.3-.7.4-1.1.4z" fill="url(#h)"/><path d="M43 32c-.4 0-.8-.1-1.1-.4-3.8-3.1-6.4-5.5-6.4-8.8 0-2.5 1.9-4.4 4.3-4.4 1.3 0 2.5.7 3.2 1.7.7-1 1.9-1.7 3.2-1.7 2.4 0 4.3 1.9 4.3 4.4 0 3.3-2.6 5.7-6.4 8.8-.3.3-.7.4-1.1.4z" fill="url(#h)"/><path d="M21 39c2.5 6.2 19.5 6.2 22 0" fill="none" stroke="#451a03" stroke-width="3.6" stroke-linecap="round"/></svg>`)
+  },
+  {
+    value: "thư giãn",
+    label: "Thư giãn",
+    icon: svgUri(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><defs><radialGradient id="g" cx="35%" cy="26%" r="74%"><stop offset="0%" stop-color="#a7f3d0"/><stop offset="56%" stop-color="#34d399"/><stop offset="100%" stop-color="#059669"/></radialGradient></defs><circle cx="32" cy="32" r="30" fill="url(#g)"/><ellipse cx="24" cy="13" rx="13" ry="6" fill="#fff" opacity=".3"/><ellipse cx="16.5" cy="36" rx="4.6" ry="2.6" fill="#f43f5e" opacity=".32"/><ellipse cx="47.5" cy="36" rx="4.6" ry="2.6" fill="#f43f5e" opacity=".32"/><path d="M17 28.5c1.8 2.6 5.4 2.6 7.2 0" fill="none" stroke="#064e3b" stroke-width="3.4" stroke-linecap="round"/><path d="M39.8 28.5c1.8 2.6 5.4 2.6 7.2 0" fill="none" stroke="#064e3b" stroke-width="3.4" stroke-linecap="round"/><path d="M23 40c2.5 4 15.5 4 18 0" fill="none" stroke="#064e3b" stroke-width="3.4" stroke-linecap="round"/></svg>`)
+  },
+  {
+    value: "tự hào",
+    label: "Tự hào",
+    icon: svgUri(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><defs><radialGradient id="g" cx="35%" cy="26%" r="74%"><stop offset="0%" stop-color="#fde68a"/><stop offset="56%" stop-color="#fbbf24"/><stop offset="100%" stop-color="#d97706"/></radialGradient></defs><circle cx="32" cy="32" r="30" fill="url(#g)"/><ellipse cx="24" cy="13" rx="13" ry="6" fill="#fff" opacity=".32"/><rect x="12" y="22" width="18" height="12" rx="4" fill="#1e293b"/><rect x="34" y="22" width="18" height="12" rx="4" fill="#1e293b"/><path d="M30 26h4" stroke="#1e293b" stroke-width="3.2"/><path d="M15 25.5l4.5-1.2M37 25.5l4.5-1.2" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity=".55"/><path d="M22 42c3.2 4.6 16.8 4.6 20 0" fill="none" stroke="#451a03" stroke-width="3.6" stroke-linecap="round"/></svg>`)
+  },
+  {
+    value: "biết ơn",
+    label: "Biết ơn",
+    icon: svgUri(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><defs><radialGradient id="g" cx="35%" cy="26%" r="74%"><stop offset="0%" stop-color="#ddd6fe"/><stop offset="55%" stop-color="#a78bfa"/><stop offset="100%" stop-color="#7c3aed"/></radialGradient></defs><circle cx="32" cy="32" r="30" fill="url(#g)"/><ellipse cx="24" cy="13" rx="13" ry="6" fill="#fff" opacity=".3"/><path d="M32 16l3.4 9.6L45 29l-9.6 3.4L32 42l-3.4-9.6L19 29l9.6-3.4z" fill="#fff"/><circle cx="47" cy="43" r="3.2" fill="#fde047"/><circle cx="17" cy="44" r="2.5" fill="#fde047"/></svg>`)
+  },
+  {
+    value: "tuyệt vời",
+    label: "Tuyệt vời",
+    icon: svgUri(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#38bdf8"/><stop offset="55%" stop-color="#0284c7"/><stop offset="100%" stop-color="#2563eb"/></linearGradient></defs><circle cx="32" cy="32" r="30" fill="url(#g)"/><ellipse cx="24" cy="13" rx="13" ry="6" fill="#fff" opacity=".28"/><path d="M32 15l4.8 10.2 11.2 1.5-8.2 7.8 2 11.2L32 40.3l-9.8 5.4 2-11.2-8.2-7.8 11.2-1.5z" fill="#fef08a"/></svg>`)
+  },
+  {
+    value: "buồn nhẹ",
+    label: "Buồn nhẹ",
+    icon: svgUri(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><defs><radialGradient id="g" cx="35%" cy="26%" r="74%"><stop offset="0%" stop-color="#bae6fd"/><stop offset="56%" stop-color="#60a5fa"/><stop offset="100%" stop-color="#3b82f6"/></radialGradient></defs><circle cx="32" cy="32" r="30" fill="url(#g)"/><ellipse cx="24" cy="13" rx="13" ry="6" fill="#fff" opacity=".28"/><circle cx="22.5" cy="30" r="3.8" fill="#1e3a8a"/><circle cx="21.4" cy="28.8" r="1.2" fill="#fff"/><circle cx="41.5" cy="30" r="3.8" fill="#1e3a8a"/><circle cx="40.4" cy="28.8" r="1.2" fill="#fff"/><path d="M23 45c2.6-3.4 15.4-3.4 18 0" fill="none" stroke="#1e3a8a" stroke-width="3.4" stroke-linecap="round"/></svg>`)
+  }
+];
+
+const FEELING_DEFAULT_ICON = svgUri(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><defs><radialGradient id="g" cx="35%" cy="26%" r="74%"><stop offset="0%" stop-color="#fef08a"/><stop offset="56%" stop-color="#facc15"/><stop offset="100%" stop-color="#f59e0b"/></radialGradient></defs><circle cx="32" cy="32" r="30" fill="url(#g)"/><ellipse cx="24" cy="13" rx="13" ry="6" fill="#fff" opacity=".32"/><circle cx="22.5" cy="27.5" r="3.6" fill="#451a03"/><circle cx="41.5" cy="27.5" r="3.6" fill="#451a03"/><path d="M21 37.5c2.6 5.8 19.4 5.8 22 0" fill="none" stroke="#451a03" stroke-width="3.6" stroke-linecap="round"/></svg>`);
+
+export function findFeelingObj(raw = "") {
+  const clean = String(raw || "").trim().toLowerCase();
+  if (!clean) return null;
+  return FEELINGS.find((f) => clean.startsWith(f.value) || clean.includes(f.value)) || null;
+}
+
+export function renderFeelingBadgeHtml(rawFeeling = "") {
+  const txt = String(rawFeeling || "").trim();
+  if (!txt) return "";
+  const f = findFeelingObj(txt);
+  if (f) {
+    return `<span class="twin-post-feeling-badge"><span style="font-weight:400;color:var(--text-3)"> đang cảm thấy </span><img class="twin-feeling-inline-ico" src="${f.icon}" alt="${escapeHtml(f.label)}" draggable="false" /><strong>${escapeHtml(f.label)}</strong></span>`;
+  }
+  return `<span style="font-weight:400;color:var(--text-3)"> đang cảm thấy ${escapeHtml(txt)}</span>`;
+}
+
+let feelingPopoverCloserBound = false;
+function bindFeelingPopoverCloser() {
+  if (feelingPopoverCloserBound) return;
+  feelingPopoverCloserBound = true;
+  document.addEventListener("click", (e) => {
+    document.querySelectorAll(".twin-feeling-wrap.open").forEach((w) => {
+      if (!w.contains(e.target)) w.classList.remove("open");
+    });
+  });
+}
+
+export function enhanceFeelingSelect(selectEl) {
+  if (!selectEl || selectEl.dataset.enhancedFeeling === "1") return null;
+  bindFeelingPopoverCloser();
+  selectEl.dataset.enhancedFeeling = "1";
+
+  // Populate select options from FEELINGS so .value always matches
+  const initialVal = selectEl.value || "";
+  selectEl.innerHTML = `<option value="">Cảm xúc...</option>` + FEELINGS.map((f) => `<option value="${escapeHtml(f.value)}">${escapeHtml(f.label)}</option>`).join("");
+  const matchedInit = findFeelingObj(initialVal);
+  selectEl.value = matchedInit ? matchedInit.value : "";
+
+  const pill = selectEl.closest(".twin-feeling-pill") || selectEl.parentElement;
+  if (!pill) return null;
+
+  const wrap = document.createElement("div");
+  wrap.className = "twin-feeling-wrap";
+  pill.parentNode.insertBefore(wrap, pill);
+
+  selectEl.style.display = "none";
+  wrap.appendChild(selectEl);
+  pill.remove();
+
+  const trigger = document.createElement("button");
+  trigger.type = "button";
+  trigger.className = "twin-feeling-trigger";
+  trigger.setAttribute("aria-haspopup", "listbox");
+  trigger.setAttribute("aria-expanded", "false");
+  wrap.appendChild(trigger);
+
+  const popover = document.createElement("div");
+  popover.className = "twin-feeling-popover";
+  popover.setAttribute("role", "listbox");
+  popover.innerHTML = `
+    <div class="twin-feeling-pop-head">
+      <span>Bạn đang cảm thấy thế nào?</span>
+      <button type="button" class="twin-feeling-clear-btn">Bỏ chọn</button>
+    </div>
+    <div class="twin-feeling-grid">
+      ${FEELINGS.map(
+        (f) => `
+        <button type="button" class="twin-feeling-opt" data-val="${escapeHtml(f.value)}">
+          <img class="twin-feeling-opt-ico" src="${f.icon}" alt="${escapeHtml(f.label)}" draggable="false" />
+          <span>${escapeHtml(f.label)}</span>
+        </button>`
+      ).join("")}
+    </div>
+  `;
+  wrap.appendChild(popover);
+
+  const syncUi = () => {
+    const f = findFeelingObj(selectEl.value);
+    if (f) {
+      trigger.classList.add("has-value");
+      trigger.innerHTML = `
+        <img class="twin-feeling-ico" src="${f.icon}" alt="${escapeHtml(f.label)}" draggable="false" />
+        <span>${escapeHtml(f.label)}</span>
+        <span class="twin-feeling-caret" aria-hidden="true">▾</span>
+      `;
+    } else {
+      trigger.classList.remove("has-value");
+      trigger.innerHTML = `
+        <img class="twin-feeling-ico" src="${FEELING_DEFAULT_ICON}" alt="Cảm xúc" draggable="false" />
+        <span>Cảm xúc</span>
+        <span class="twin-feeling-caret" aria-hidden="true">▾</span>
+      `;
+    }
+    popover.querySelectorAll(".twin-feeling-opt").forEach((b) => {
+      b.classList.toggle("active", Boolean(f && b.dataset.val === f.value));
+    });
+  };
+
+  trigger.onclick = (e) => {
+    e.stopPropagation();
+    const opening = !wrap.classList.contains("open");
+    document.querySelectorAll(".twin-feeling-wrap.open").forEach((w) => w.classList.remove("open"));
+    wrap.classList.toggle("open", opening);
+    trigger.setAttribute("aria-expanded", opening ? "true" : "false");
+  };
+
+  popover.querySelectorAll(".twin-feeling-opt").forEach((btn) => {
+    btn.onclick = (e) => {
+      e.stopPropagation();
+      selectEl.value = btn.dataset.val || "";
+      selectEl.dispatchEvent(new Event("change", { bubbles: true }));
+      syncUi();
+      wrap.classList.remove("open");
+      trigger.setAttribute("aria-expanded", "false");
+    };
+  });
+
+  popover.querySelector(".twin-feeling-clear-btn").onclick = (e) => {
+    e.stopPropagation();
+    selectEl.value = "";
+    selectEl.dispatchEvent(new Event("change", { bubbles: true }));
+    syncUi();
+    wrap.classList.remove("open");
+    trigger.setAttribute("aria-expanded", "false");
+  };
+
+  selectEl.addEventListener("change", syncUi);
+  selectEl._syncFeelingUi = syncUi;
+  syncUi();
+  return { sync: syncUi };
+}
+
 export function renderReactionIcon(key, className = "twin-rx-icon") {
   const r = REACTIONS.find((x) => x.key === key) || REACTIONS[0];
   return `<img class="${className}" src="${r.icon}" alt="${r.label}" draggable="false" />`;
 }
 
 const SVG = {
-  like: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 10.5V20"/><path d="M14.8 5.6 14 10h5.4a2 2 0 0 1 1.95 2.45l-1.8 7.5A2 2 0 0 1 17.6 21.5H5a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h2.7a2 2 0 0 0 1.8-1.1L12 3.2a2.5 2.5 0 0 1 2.8 2.4Z"/></svg>`,
+  like: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`,
   comment: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5c4.9 0 8.8 3.5 8.8 7.9 0 4.4-3.9 7.9-8.8 7.9-1.3 0-2.6-.3-3.7-.8L4 20l1.1-3.7a7.3 7.3 0 0 1-1.9-4.9c0-4.4 3.9-7.9 8.8-7.9Z"/></svg>`,
   share: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7.5 7.5 4.5-4.5 4.5 4.5"/><path d="M5 13.5V18a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4.5"/></svg>`,
   save: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 4h11A1.5 1.5 0 0 1 19 5.5v15l-7-4-7 4v-15A1.5 1.5 0 0 1 6.5 4Z"/></svg>`,
@@ -529,6 +703,7 @@ function ensureEditModal() {
     }
   };
 
+  enhanceFeelingSelect(backdrop.querySelector("#ep-feeling"));
   backdrop._syncHtmlAutoUi = syncHtmlAutoUi;
   return backdrop;
 }
@@ -542,7 +717,10 @@ export function openEditPostModal(post, currentUser = null) {
   editRemoveVideo = false;
 
   backdrop.querySelector("#ep-content").value = post.content || "";
-  backdrop.querySelector("#ep-feeling").value = post.feeling || "";
+  const epFeelEl = backdrop.querySelector("#ep-feeling");
+  const matchedEpFeel = findFeelingObj(post.feeling || "");
+  epFeelEl.value = matchedEpFeel ? matchedEpFeel.value : "";
+  epFeelEl._syncFeelingUi?.();
   const epPriv = backdrop.querySelector("#ep-privacy");
   if (epPriv) epPriv.value = post.privacy || "public";
   backdrop.querySelector("#ep-file-input").value = "";
@@ -618,7 +796,7 @@ export function renderPostCard(post, currentUser) {
             ${escapeHtml(displayName)}${!post.pageName ? renderAdminIconHtml(post.authorUid) : ""}
             ${post.pageName ? `<span class="twin-pill-tag" style="margin-left:4px;">Trang</span>` : ""}
             ${post.isHtml ? `<span class="twin-pill-tag" style="margin-left:4px;font-family:monospace;">HTML</span>` : ""}
-            ${post.feeling ? `<span style="font-weight:400;color:var(--text-3)"> đang cảm thấy ${escapeHtml(post.feeling)}</span>` : ""}
+            ${post.feeling ? renderFeelingBadgeHtml(post.feeling) : ""}
             ${post.groupName ? `<span style="font-weight:400;color:var(--text-3)"> trong <strong>${escapeHtml(post.groupName)}</strong></span>` : ""}
           </div>
           <div class="twin-post-meta">
@@ -800,7 +978,7 @@ export function renderPostCard(post, currentUser) {
   mainBtn.addEventListener("contextmenu", (e) => { if (longPressed) e.preventDefault(); });
   mainBtn.onclick = () => {
     if (longPressed) { longPressed = false; return; }
-    setReaction(myReactionKey || "like");
+    setReaction(myReactionKey || "love");
   };
   card.querySelectorAll(".twin-react-emoji").forEach((btn) => {
     btn.onclick = () => {
@@ -1084,7 +1262,15 @@ export function mountPostComposer(container, currentUser, { isProfilePage = fals
                 <img class="twin-avatar" id="pfc-avatar" src="${escapeHtml(currentUser.avatar || DEFAULT_AVATAR)}" alt="" />
               </a>`
         }
-        <textarea id="pfc-content" class="twin-textarea" placeholder="Bạn đang nghĩ gì?"></textarea>
+        <textarea id="pfc-content" class="twin-textarea" rows="1" placeholder="${escapeHtml((String(currentUser.name || "").trim().split(/\s+/).pop() || "Bạn") + " ơi, bạn đang nghĩ gì thế?")}"></textarea>
+        <div class="twin-composer-quick-icons">
+          <label for="pfc-file" class="twin-composer-quick-btn" title="Thêm ảnh / album" aria-label="Thêm ảnh / album">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="5" width="14" height="14" rx="2.5" fill="#45bd62" opacity="0.28"/><rect x="6" y="4" width="15" height="15" rx="3" fill="#45bd62"/><circle cx="10.5" cy="9" r="1.6" fill="#ffffff"/><path d="M7.8 16.5 11.4 12.6a1 1 0 0 1 1.45 0l1.95 2.05 1.45-1.5a1 1 0 0 1 1.45 0l2 2.15v1.2H7.8Z" fill="#ffffff"/></svg>
+          </label>
+          <label for="pfc-video" id="pfc-quick-video-btn" class="twin-composer-quick-btn" title="Thêm video" aria-label="Thêm video">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="4" fill="#f3425f"/><path d="M3 9h18" stroke="#ffffff" stroke-width="1.6"/><path d="M8.5 4 10.5 9M14 4l2 5" stroke="#ffffff" stroke-width="1.6" stroke-linecap="round"/><polygon points="10.2 11.8 15.6 14.8 10.2 17.8 10.2 11.8" fill="#ffffff"/></svg>
+          </label>
+        </div>
       </div>
 
       <div class="twin-composer-extras">
@@ -1139,6 +1325,7 @@ export function mountPostComposer(container, currentUser, { isProfilePage = fals
   const contentEl = container.querySelector("#pfc-content");
   const privacyEl = container.querySelector("#pfc-privacy");
   const feelingEl = container.querySelector("#pfc-feeling");
+  enhanceFeelingSelect(feelingEl);
   const htmlBtn = container.querySelector("#pfc-html-preview-btn");
   const htmlWrap = container.querySelector("#pfc-html-preview-wrap");
   const htmlBody = container.querySelector("#pfc-html-preview-body");
@@ -1173,6 +1360,8 @@ export function mountPostComposer(container, currentUser, { isProfilePage = fals
     const cfg = getSiteSettings();
     const allowVid = cfg.allowVideoPosts || isUserAdmin(currentUser);
     if (videoLabel) videoLabel.style.display = allowVid ? "inline-flex" : "none";
+    const qVid = container.querySelector("#pfc-quick-video-btn");
+    if (qVid) qVid.style.display = allowVid ? "inline-grid" : "none";
   };
   syncPolicy();
   window.addEventListener("twin-site-settings-changed", syncPolicy);
@@ -1204,7 +1393,7 @@ export function mountPostComposer(container, currentUser, { isProfilePage = fals
     htmlWrap.style.display = "none";
   };
   card.addEventListener("click", (e) => {
-    if (e.target.closest(".twin-composer-avatar-link")) return;
+    if (e.target.closest(".twin-composer-avatar-link") || e.target.closest(".twin-composer-quick-icons")) return;
     if (!card.classList.contains("expanded")) expand(true);
   });
   contentEl.addEventListener("focus", () => expand(false));
@@ -1404,6 +1593,7 @@ export function mountPostComposer(container, currentUser, { isProfilePage = fals
 
       contentEl.value = "";
       feelingEl.value = "";
+      feelingEl._syncFeelingUi?.();
       if (privacyEl) privacyEl.value = "public";
       syncHtml();
       htmlWrap.style.display = "none";
