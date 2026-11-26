@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="format-detection" content="telephone=no" />
+  <title>Twin</title>
+  <meta name="description" content="Trung tâm Trợ giúp & Hướng dẫn sử dụng mạng xã hội Twin." />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='ig' x1='0%25' y1='100%25' x2='100%25' y2='0%25'%3E%3Cstop offset='0%25' stop-color='%23feda75'/%3E%3Cstop offset='25%25' stop-color='%23fa7e1e'/%3E%3Cstop offset='52%25' stop-color='%23d62976'/%3E%3Cstop offset='78%25' stop-color='%23962fbf'/%3E%3Cstop offset='100%25' stop-color='%234f5bd5'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='32' cy='32' r='30' fill='url(%23ig)'/%3E%3Cellipse cx='25' cy='15' rx='15' ry='7' fill='%23ffffff' opacity='.22'/%3E%3Cpath d='M18.5 21.5h27v6.6h-9.7v19.4h-7.6V28.1h-9.7z' fill='%23ffffff'/%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./assets/css/twin.css" />
+  <link rel="modulepreload" href="./assets/js/firebase-service.js" />
+  <link rel="modulepreload" href="./assets/js/layout.js" />
+</head>
+<body class="page-help">
+  <header id="twin-header" class="twin-header"></header>
+
+  <main class="twin-main twin-help-page-main">
+    <section class="twin-help-hero">
+      <div class="twin-help-hero-badge">Trung tâm hỗ trợ</div>
+      <h1>Trợ giúp &amp; Hướng dẫn sử dụng Twin</h1>
+      <p>Khám phá nhanh mọi tính năng từ đăng bài, tạo album ảnh/video, soạn bài bằng mã HTML cho đến trải nghiệm lướt Video ngắn kiểu TikTok.</p>
+      <div class="twin-seg-tabs twin-help-page-tabs" role="tablist" aria-label="Danh mục hướng dẫn">
+        <button type="button" class="twin-seg-tab active" data-hptab="guide">Cách sử dụng</button>
+        <button type="button" class="twin-seg-tab" data-hptab="html">Đăng bài HTML</button>
+        <button type="button" class="twin-seg-tab" data-hptab="tiktok">Video kiểu TikTok</button>
+        <button type="button" class="twin-seg-tab" data-hptab="faq">Mẹo &amp; Phím tắt</button>
+      </div>
+    </section>
+
+    <!-- TAB 1: CÁCH SỬ DỤNG -->
+    <section class="twin-help-page-panel active" data-hppanel="guide">
+      <div class="twin-help-grid-2">
+        <article class="twin-card twin-help-card">
+          <div class="twin-help-card-ico ios-blue">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 1 1 3 3L7 19l-4 1 1-4Z"/></svg>
+          </div>
+          <h3>1. Đăng bài, Album ảnh &amp; Quyền xem</h3>
+          <ul class="twin-help-list">
+            <li>Nhấn vào khung <strong>"Bạn đang nghĩ gì thế?"</strong> ở Bảng tin, Trang cá nhân hoặc Nhóm để mở rộng khung soạn thảo.</li>
+            <li>Nhấn nhanh icon <strong>Ảnh / Album</strong> (chọn tối đa 10 ảnh/bài) hoặc icon <strong>Video</strong> ngay bên phải khung đăng bài.</li>
+            <li>Chọn quyền xem: <strong>Công khai</strong>, <strong>Bạn bè</strong> hoặc <strong>Riêng tư</strong> và chọn <strong>Cảm xúc</strong> với bộ icon 3D sắc nét.</li>
+          </ul>
+        </article>
+
+        <article class="twin-card twin-help-card">
+          <div class="twin-help-card-ico ios-indigo">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>
+          </div>
+          <h3>2. Hashtag (#) &amp; Nhắc tên (@)</h3>
+          <ul class="twin-help-list">
+            <li>Gõ <code>#tukhoa</code> trong bài viết, bình luận hoặc tin nhắn — chỉ cần ấn vào là hệ thống tự động tìm kiếm từ khóa đó.</li>
+            <li>Gõ <code>@</code> khi đang viết để hiện bảng gợi ý bạn bè, chọn nhanh để nhắc tên và mở thẳng trang cá nhân khi bấm vào.</li>
+          </ul>
+        </article>
+
+        <article class="twin-card twin-help-card">
+          <div class="twin-help-card-ico ios-green">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.5 8.5 0 0 1-12.6 7.4L3 20.5l1.6-4.8A8.5 8.5 0 1 1 21 11.5Z"/></svg>
+          </div>
+          <h3>3. Tin nhắn, Nhóm chat &amp; Đổi nền</h3>
+          <ul class="twin-help-list">
+            <li>Nhấn nút <strong>+ Nhóm chat</strong> ở đầu danh sách Tin nhắn để tạo nhóm trò chuyện nhiều thành viên.</li>
+            <li>Nhấn biểu tượng <strong>Bảng màu</strong> trên thanh tiêu đề để đổi nền khung chat (8 màu sẵn có hoặc tải ảnh nền riêng).</li>
+            <li>Nhấn biểu tượng <strong>Ảnh</strong> để xem lại toàn bộ <em>Kho ảnh &amp; video</em> đã gửi, và nhấn icon <strong>Thùng rác</strong> trên tin nhắn của bạn để xóa.</li>
+          </ul>
+        </article>
+
+        <article class="twin-card twin-help-card">
+          <div class="twin-help-card-ico ios-orange">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="7.5" r="3.2"/><path d="M6.5 20a5.5 5.5 0 0 1 11 0"/><circle cx="18.5" cy="9.5" r="2.2"/><path d="M22 19.5a4 4 0 0 0-3-3.8"/><circle cx="5.5" cy="9.5" r="2.2"/><path d="M2 19.5a4 4 0 0 1 3-3.8"/></svg>
+          </div>
+          <h3>4. Nhóm, Album &amp; Hồ sơ cá nhân</h3>
+          <ul class="twin-help-list">
+            <li>Trong mục <strong>Nhóm</strong>, trưởng nhóm có thể tùy chọn nhóm Công khai / Riêng tư và phân quyền đăng bài (Mọi thành viên hoặc Chỉ trưởng nhóm).</li>
+            <li>Cả <strong>Trang cá nhân</strong> và <strong>Nhóm</strong> đều có 3 tab: <strong>Bài viết</strong>, <strong>Album ảnh</strong> và <strong>Video</strong> kèm trình xem phóng to Lightbox.</li>
+            <li>Mở <strong>Trợ lý AI Gemini</strong> trong menu tài khoản để hỗ trợ viết bài, gợi ý ý tưởng hoặc tạo mã HTML.</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <!-- TAB 2: ĐĂNG BÀI BẰNG MÃ HTML -->
+    <section class="twin-help-page-panel" data-hppanel="html">
+      <article class="twin-card twin-help-card" style="margin-bottom:14px;">
+        <h3>Cách đăng bài bằng mã HTML trên Twin</h3>
+        <p class="twin-help-desc">
+          Hệ thống <strong>tự động nhận diện mã HTML</strong> ở mọi khung đăng bài (Bảng tin, Trang cá nhân và Nhóm). Chỉ cần dán mã HTML vào ô nội dung, nút <strong>Xem trước HTML</strong> sẽ tự hiện lên để bạn kiểm tra trực tiếp trước khi bấm Đăng.
+        </p>
+        <div class="twin-help-tags">
+          <code>&lt;h1&gt;–&lt;h6&gt;</code>
+          <code>&lt;div&gt;</code>
+          <code>&lt;section&gt;</code>
+          <code>&lt;p&gt;</code>
+          <code>&lt;b&gt; / &lt;i&gt;</code>
+          <code>&lt;mark&gt;</code>
+          <code>&lt;ul&gt; / &lt;ol&gt;</code>
+          <code>&lt;table&gt;</code>
+          <code>&lt;blockquote&gt;</code>
+          <code>&lt;a&gt;</code>
+          <code>&lt;img&gt;</code>
+          <code>&lt;iframe&gt;</code>
+          <code>style="..."</code>
+        </div>
+        <p class="twin-help-desc" style="margin-top:10px;">
+          <strong>Nhúng video / iframe an toàn:</strong> Hỗ trợ nguồn từ <em>YouTube, Vimeo, Facebook, TikTok, Google Drive, Spotify, SoundCloud</em>. Các thẻ nguy hiểm như <code>&lt;script&gt;</code> sẽ tự động được loại bỏ để đảm bảo an toàn.
+        </p>
+      </article>
+
+      <div id="hp-html-templates" class="twin-help-tpl-list"></div>
+    </section>
+
+    <!-- TAB 3: VIDEO KIỂU TIKTOK -->
+    <section class="twin-help-page-panel" data-hppanel="tiktok">
+      <div class="twin-help-grid-2">
+        <article class="twin-card twin-help-card">
+          <h3>Trải nghiệm lướt Video ngắn kiểu TikTok</h3>
+          <ul class="twin-help-list">
+            <li><strong>Chạm đúp (Double-tap):</strong> Nhấn 2 lần liên tiếp lên video để thả tim kèm hiệu ứng tim bay ngay tại vị trí chạm.</li>
+            <li><strong>Nhấn giữ tua nhanh 2x:</strong> Nhấn và giữ lên khung video để phát tốc độ <strong>2x</strong> (thả tay quay về tốc độ cũ), hoặc đổi cố định <code>1x / 1.5x / 2x</code> ở góc trên.</li>
+            <li><strong>Tự động chuyển (Auto-Scroll):</strong> Bật nút <strong>Tự chuyển</strong> trên thanh công cụ để tự động lướt sang video kế tiếp khi xem hết.</li>
+            <li><strong>Chế độ xem sạch (Clean Mode):</strong> Nhấn biểu tượng con mắt để ẩn toàn bộ chữ và nút bấm, xem trọn khung hình video.</li>
+            <li><strong>Thanh tua tiến trình:</strong> Chạm hoặc kéo vào thanh mảnh sát đáy video để tua chính xác đoạn cần xem.</li>
+          </ul>
+        </article>
+
+        <article class="twin-card twin-help-card">
+          <h3>Video ngắn &amp; Video bài đăng</h3>
+          <ul class="twin-help-list">
+            <li>Mục <strong>Video</strong> trên thanh điều hướng gồm đầy đủ 2 tab: <strong>Video ngắn</strong> (cuộn dọc toàn màn hình) và <strong>Video bài đăng</strong> (danh sách video thường).</li>
+            <li>Nhấn nút <strong>+ Đăng video</strong> để tải lên video ngắn hoặc video bài đăng kèm chọn quyền xem Công khai / Bạn bè / Riêng tư.</li>
+            <li>Hỗ trợ thả tim, lưu video, chia sẻ liên kết và phản hồi trực tiếp ngay trên khung phát.</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <!-- TAB 4: MẸO & PHÍM TẮT -->
+    <section class="twin-help-page-panel" data-hppanel="faq">
+      <article class="twin-card twin-help-card" style="margin-bottom:14px;">
+        <h3>Phím tắt tiện lợi trên máy tính</h3>
+        <div class="twin-help-shortcuts">
+          <div><kbd>↑</kbd> / <kbd>↓</kbd><span>Chuyển video ngắn trước / tiếp theo</span></div>
+          <div><kbd>Space</kbd><span>Phát / Tạm dừng Video hoặc Tin</span></div>
+          <div><kbd>M</kbd><span>Tắt / Bật âm thanh video đang phát</span></div>
+          <div><kbd>L</kbd><span>Thả tim nhanh video đang xem</span></div>
+          <div><kbd>←</kbd> / <kbd>→</kbd><span>Chuyển ảnh trong Album &amp; Tin</span></div>
+          <div><kbd>Esc</kbd><span>Đóng cửa sổ hộp thoại đang mở</span></div>
+        </div>
+      </article>
+
+      <article class="twin-card twin-help-card">
+        <h3>Cài đặt giao diện &amp; Quyền riêng tư</h3>
+        <ul class="twin-help-list">
+          <li>Vào <strong>Cài đặt tài khoản</strong> trong menu góc trên bên phải để chuyển đổi <strong>Chế độ Sáng / Tối OLED</strong>, chỉnh cỡ chữ, mật độ hiển thị và số bài tải mỗi lượt.</li>
+          <li>Quản lý quyền riêng tư: ẩn/hiện email, thông tin cá nhân, chọn ai được nhắn tin, tắt/bật trạng thái hoạt động và đặt/đổi mật khẩu trực tiếp.</li>
+        </ul>
+      </article>
+    </section>
+  </main>
+
+  <script type="module">
+    import { initTwinPage } from "./assets/js/layout.js";
+    import { escapeHtml, sanitizeHtml, showToast } from "./assets/js/firebase-service.js";
+
+    const TEMPLATES = [
+      {
+        title: "Thẻ thông báo nổi bật",
+        desc: "Khung tiêu đề màu chuyển sắc kèm danh sách gạch đầu dòng.",
+        code: `<div style="padding:14px 16px;border-radius:12px;background:linear-gradient(135deg,#0095f6,#6366f1);color:#fff;">
+  <h3 style="margin:0 0 6px;">📢 Thông báo mới</h3>
+  <p style="margin:0;">Chào mừng mọi người đến với bài viết định dạng <b>HTML</b> trên Twin!</p>
+</div>
+<ul style="margin-top:10px;">
+  <li>Hỗ trợ chữ <b>in đậm</b>, <i>in nghiêng</i>, <mark>đánh dấu nổi bật</mark>.</li>
+  <li>Tự động xem trước trực tiếp trước khi đăng.</li>
+</ul>`
+      },
+      {
+        title: "Bảng lịch trình gọn gàng",
+        desc: "Phù hợp đăng lịch đi chơi, bảng phân công hoặc thông số.",
+        code: `<h3>📅 Lịch trình cuối tuần</h3>
+<table>
+  <thead>
+    <tr><th>Thời gian</th><th>Hoạt động</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>07:00</td><td>Tập trung &amp; xuất phát</td></tr>
+    <tr><td>12:00</td><td>Ăn trưa cùng nhóm</td></tr>
+    <tr><td>16:30</td><td>Check-in ngắm hoàng hôn</td></tr>
+  </tbody>
+</table>`
+      },
+      {
+        title: "Nhúng video YouTube",
+        desc: "Thay mã video sau /embed/ bằng mã video YouTube bạn muốn nhúng.",
+        code: `<h3>🎬 Video nổi bật</h3>
+<p>Cùng xem đoạn video thú vị này nhé!</p>
+<iframe src="https://www.youtube.com/embed/dQw4w9WgXcQ" allowfullscreen></iframe>`
+      }
+    ];
+
+    initTwinPage({ requireAuth: false });
+
+    document.querySelectorAll("[data-hptab]").forEach((btn) => {
+      btn.onclick = () => {
+        const target = btn.dataset.hptab;
+        document.querySelectorAll("[data-hptab]").forEach((b) => b.classList.toggle("active", b === btn));
+        document.querySelectorAll("[data-hppanel]").forEach((p) => p.classList.toggle("active", p.dataset.hppanel === target));
+      };
+    });
+
+    const tplWrap = document.getElementById("hp-html-templates");
+    TEMPLATES.forEach((tpl, idx) => {
+      const card = document.createElement("article");
+      card.className = "twin-card twin-help-card";
+      card.innerHTML = `
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:8px;">
+          <div>
+            <h3 style="margin:0;">Mẫu ${idx + 1}: ${escapeHtml(tpl.title)}</h3>
+            <div class="twin-post-meta">${escapeHtml(tpl.desc)}</div>
+          </div>
+          <div style="display:flex;gap:6px;">
+            <button type="button" class="twin-btn twin-btn-secondary twin-btn-sm btn-hp-preview">Xem trước</button>
+            <button type="button" class="twin-btn twin-btn-primary twin-btn-sm btn-hp-copy">Sao chép mã</button>
+          </div>
+        </div>
+        <pre class="twin-help-code"><code>${escapeHtml(tpl.code)}</code></pre>
+        <div class="twin-html-preview hp-live-preview" style="display:none;">
+          <div class="twin-html-preview-label">Kết quả hiển thị thực tế</div>
+          <div class="twin-post-body twin-post-html" style="margin-bottom:0;"></div>
+        </div>
+      `;
+      const prevBox = card.querySelector(".hp-live-preview");
+      const prevBody = card.querySelector(".twin-post-html");
+      card.querySelector(".btn-hp-preview").onclick = () => {
+        const show = prevBox.style.display === "none";
+        prevBox.style.display = show ? "block" : "none";
+        if (show) prevBody.innerHTML = sanitizeHtml(tpl.code);
+      };
+      card.querySelector(".btn-hp-copy").onclick = async () => {
+        try {
+          await navigator.clipboard.writeText(tpl.code);
+          showToast("Đã sao chép mẫu HTML!");
+        } catch {
+          showToast("Không thể sao chép tự động.");
+        }
+      };
+      tplWrap.appendChild(card);
+    });
+  </script>
+</body>
+</html>
