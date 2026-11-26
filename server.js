@@ -20,6 +20,9 @@ const HTML_PAGES = new Set([
   "profile",
   "saved",
   "reels",
+  "market",
+  "learn",
+  "help",
   "404"
 ]);
 
@@ -29,7 +32,10 @@ app.use(
   express.static(path.join(__dirname, "assets"), {
     etag: true,
     lastModified: true,
-    maxAge: "10m"
+    maxAge: 0,
+    setHeaders: (res) => {
+      res.setHeader("Cache-Control", "no-cache, must-revalidate");
+    }
   })
 );
 
@@ -73,6 +79,13 @@ const TWIN_GEMINI_SYSTEM_INSTRUCTION =
   "Bạn có thể giúp người dùng viết bài đăng, tạo mã HTML đẹp và an toàn cho bài viết Twin, " +
   "gợi ý câu trả lời tin nhắn, tóm tắt thông tin và giải đáp thắc mắc hằng ngày.";
 
+const TWIN_TUTOR_SYSTEM_INSTRUCTION =
+  "Bạn là gia sư ngoại ngữ AI chuyên nghiệp dạy Tiếng Trung (Phổ thông - Giản thể kèm Pinyin có dấu thanh điệu) " +
+  "và Tiếng Anh (kèm phiên âm IPA chuẩn) cho người Việt trên Twin. " +
+  "Luôn trình bày ngắn gọn, rõ ràng, dễ học: với tiếng Trung luôn kèm Chữ Hán + Pinyin + Nghĩa Việt + Mẹo nhớ ngắn; " +
+  "với tiếng Anh luôn kèm Từ/Câu + IPA + Nghĩa Việt + Ví dụ thực tế. " +
+  "Nếu người dùng yêu cầu tạo danh sách từ vựng JSON để thêm vào thẻ ghi nhớ, hãy trả về đúng định dạng được yêu cầu.";
+
 app.post("/api/gemini/chat", async (req, res) => {
   const clientIp = req.ip || req.socket?.remoteAddress || "unknown";
   if (!checkGeminiRateLimit(clientIp)) {
@@ -92,6 +105,10 @@ app.post("/api/gemini/chat", async (req, res) => {
     const body = req.body && typeof req.body === "object" ? req.body : {};
     const rawMessages = Array.isArray(body.messages) ? body.messages : null;
     const rawPrompt = typeof body.prompt === "string" ? body.prompt.trim() : "";
+    const systemInstruction =
+      body.context === "language-tutor"
+        ? TWIN_TUTOR_SYSTEM_INSTRUCTION
+        : TWIN_GEMINI_SYSTEM_INSTRUCTION;
 
     let contents = [];
     if (rawMessages && rawMessages.length > 0) {
@@ -115,7 +132,7 @@ app.post("/api/gemini/chat", async (req, res) => {
       model: "gemini-4-hydrogen",
       contents,
       config: {
-        systemInstruction: TWIN_GEMINI_SYSTEM_INSTRUCTION
+        systemInstruction
       }
     });
 
