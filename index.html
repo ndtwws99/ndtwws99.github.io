@@ -43,11 +43,7 @@
           </a>
           <a href="./groups.html" class="twin-side-item">
             <span class="twin-side-icon ios-indigo"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="7.5" r="3.2"/><path d="M6.5 20a5.5 5.5 0 0 1 11 0"/><circle cx="18.5" cy="9.5" r="2.2"/><path d="M22 19.5a4 4 0 0 0-3-3.8"/><circle cx="5.5" cy="9.5" r="2.2"/><path d="M2 19.5a4 4 0 0 1 3-3.8"/></svg></span>
-            <span>Nhóm</span>
-          </a>
-          <a href="./pages.html" class="twin-side-item">
-            <span class="twin-side-icon ios-orange"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 14.5s1.2-1 4-1 5 2 8 2 3-1 3-1v-10s-1 1-3 1-5-2-8-2-4 1-4 1z"/><path d="M4.5 21.5v-7"/></svg></span>
-            <span>Trang</span>
+            <span>Nhóm &amp; Trang</span>
           </a>
           <a href="./messages.html" class="twin-side-item">
             <span class="twin-side-icon ios-green"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.5 8.5 0 0 1-12.6 7.4L3 20.5l1.6-4.8A8.5 8.5 0 1 1 21 11.5Z"/></svg></span>
@@ -161,7 +157,7 @@
           <button type="button" class="feed-filter" data-filter="photo">Ảnh</button>
           <button type="button" class="feed-filter" data-filter="video">Video</button>
           <button type="button" class="feed-filter" data-filter="pinned">Ghim</button>
-          <button type="button" class="feed-filter" data-filter="page">Trang</button>
+          <button type="button" class="feed-filter" data-filter="group">Nhóm</button>
         </div>
 
         <div id="twin-feed"></div>
@@ -1499,7 +1495,7 @@
           if (activeFilter === "pinned" && !p.pinned) return false;
           if (activeFilter === "photo" && !p.imageUrl) return false;
           if (activeFilter === "video" && !p.videoUrl) return false;
-          if (activeFilter === "page" && !p.pageId) return false;
+          if (activeFilter === "group" && !p.groupId) return false;
           if (!q) return true;
           return (
             (p.content || "").toLowerCase().includes(q) ||

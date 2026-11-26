@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="format-detection" content="telephone=no" />
-  <title>Nhóm — Twin</title>
+  <title>Nhóm &amp; Trang — Twin</title>
   <meta name="description" content="Twin — Mạng xã hội kết nối bạn bè, chia sẻ khoảnh khắc, nhóm, trang và nhắn tin thời gian thực." />
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%23007aff'/%3E%3Cstop offset='100%25' stop-color='%235856d6'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='32' cy='32' r='28' fill='url(%23g)'/%3E%3Cpath d='M19 21h26v6H35.5v18h-7V27H19z' fill='%23ffffff'/%3E%3C/svg%3E" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -26,8 +26,8 @@
   <main class="twin-main" style="max-width:1080px;">
     <div class="twin-page-head">
       <div>
-        <h1>Nhóm</h1>
-        <p class="twin-post-meta" style="font-size:13.5px;">Tham gia nhóm công khai ngay lập tức hoặc gửi yêu cầu vào nhóm riêng tư.</p>
+        <h1>Nhóm &amp; Trang</h1>
+        <p class="twin-post-meta" style="font-size:13.5px;">Cộng đồng kiêm Trang: tham gia nhóm công khai hoặc riêng tư, tùy chọn quyền đăng bài (mọi thành viên hoặc chỉ trưởng nhóm).</p>
       </div>
       <button id="btn-open-create-group" class="twin-btn twin-btn-primary">Tạo nhóm mới</button>
     </div>
@@ -65,10 +65,8 @@
               <button id="gd-close" class="twin-btn twin-btn-secondary twin-btn-sm">Đóng</button>
             </div>
           </div>
-          <div id="gd-composer" style="margin-top:14px;display:flex;gap:8px;">
-            <input id="gd-post-input" class="twin-input" placeholder="Viết bài thảo luận trong nhóm..." />
-            <button id="gd-post-btn" class="twin-btn twin-btn-primary">Đăng</button>
-          </div>
+          <div id="gd-composer" style="margin-top:14px;"></div>
+          <div id="gd-composer-note" class="twin-post-meta" style="display:none;margin-top:10px;padding:10px 12px;border-radius:10px;background:var(--surface-2);">Chỉ trưởng nhóm mới có quyền đăng bài trong nhóm này.</div>
         </div>
       </div>
       <div id="gd-posts"></div>
@@ -94,6 +92,13 @@
             <label class="twin-field-label" for="cg-max-members">Giới hạn thành viên</label>
             <input id="cg-max-members" class="twin-input" type="number" min="0" max="10000" placeholder="0 = Không giới hạn" />
           </div>
+        </div>
+        <div>
+          <label class="twin-field-label" for="cg-post-perm">Quyền đăng bài trong nhóm</label>
+          <select id="cg-post-perm" class="twin-select">
+            <option value="members">Tất cả thành viên trong nhóm</option>
+            <option value="owner">Chỉ trưởng nhóm (Chế độ Trang / Kênh thông báo)</option>
+          </select>
         </div>
         <label class="twin-btn twin-btn-secondary twin-btn-sm" style="cursor:pointer;">
           <span id="cg-cover-label">Chọn ảnh bìa nhóm (tùy chọn)</span>
@@ -131,6 +136,13 @@
             <input id="gm-max-members" class="twin-input" type="number" min="0" max="10000" />
           </div>
         </div>
+        <div>
+          <label class="twin-field-label" for="gm-post-perm">Quyền đăng bài</label>
+          <select id="gm-post-perm" class="twin-select">
+            <option value="members">Tất cả thành viên trong nhóm</option>
+            <option value="owner">Chỉ trưởng nhóm (Chế độ Trang / Kênh thông báo)</option>
+          </select>
+        </div>
         <div style="display:flex;justify-content:flex-end;">
           <button type="submit" id="gm-save-btn" class="twin-btn twin-btn-primary twin-btn-sm">Lưu cài đặt nhóm</button>
         </div>
@@ -159,7 +171,7 @@
 
   <script type="module">
     import { initTwinPage } from "./assets/js/layout.js";
-    import { renderPostList } from "./assets/js/post-ui.js";
+    import { renderPostList, mountPostComposer } from "./assets/js/post-ui.js";
     import {
       db,
       collection,
@@ -231,6 +243,15 @@
     }
     function canManageGroup(g) {
       return Boolean(me && !isGuestUser(me) && g && (g.ownerUid === me.uid || isUserAdmin(me)));
+    }
+    function isOwnerOnlyPosting(g) {
+      return Boolean(g && g.postPermission === "owner");
+    }
+    function canPostInGroup(g) {
+      if (!me || isGuestUser(me) || !g) return false;
+      if (canManageGroup(g)) return true;
+      if (isOwnerOnlyPosting(g)) return false;
+      return (g.members || []).includes(me.uid);
     }
 
     function renderApprovals() {
@@ -339,9 +360,25 @@
       const privPill = document.getElementById("gd-privacy-pill");
       privPill.textContent = isPub ? "Công khai" : "Riêng tư";
       privPill.className = `twin-privacy-pill ${isPub ? "public" : "private"}`;
-      document.getElementById("gd-desc").textContent = `${formatMemberCap(g)}${g.description ? " · " + g.description : ""}`;
+      const postPermLabel = isOwnerOnlyPosting(g) ? "Chỉ trưởng nhóm đăng bài" : "Thành viên được đăng bài";
+      document.getElementById("gd-desc").textContent = `${formatMemberCap(g)} · ${postPermLabel}${g.description ? " · " + g.description : ""}`;
       document.getElementById("gd-manage-btn").style.display = canManage ? "inline-flex" : "none";
-      document.getElementById("gd-composer").style.display = isMember ? "flex" : "none";
+
+      const gdComposer = document.getElementById("gd-composer");
+      const gdNote = document.getElementById("gd-composer-note");
+      if (canPostInGroup(g)) {
+        gdComposer.style.display = "block";
+        if (gdNote) gdNote.style.display = "none";
+        if (gdComposer.dataset.groupId !== g.id) {
+          gdComposer.dataset.groupId = g.id;
+          mountPostComposer(gdComposer, me, { groupId: g.id, groupName: g.name });
+        }
+      } else {
+        gdComposer.style.display = "none";
+        gdComposer.innerHTML = "";
+        gdComposer.dataset.groupId = "";
+        if (gdNote) gdNote.style.display = isMember && isOwnerOnlyPosting(g) ? "block" : "none";
+      }
     }
 
     function openGroupDetail(g, { scroll = true } = {}) {
@@ -387,6 +424,7 @@
       document.getElementById("gm-desc").value = g.description || "";
       document.getElementById("gm-privacy").value = isGroupPublic(g) ? "public" : "private";
       document.getElementById("gm-max-members").value = String(getGroupMax(g));
+      document.getElementById("gm-post-perm").value = isOwnerOnlyPosting(g) ? "owner" : "members";
 
       // Pending requests
       const pending = Array.isArray(g.pendingMembers) ? g.pendingMembers : [];
@@ -534,6 +572,7 @@
       const name = document.getElementById("gm-name").value.trim();
       const description = document.getElementById("gm-desc").value.trim();
       const privacy = document.getElementById("gm-privacy").value === "public" ? "public" : "private";
+      const postPermission = document.getElementById("gm-post-perm").value === "owner" ? "owner" : "members";
       const maxMembers = Math.max(0, Math.floor(Number(document.getElementById("gm-max-members").value) || 0));
       if (maxMembers > 0 && maxMembers < (activeGroup.members || []).length) {
         return showToast(`Giới hạn không thể nhỏ hơn số thành viên hiện có (${(activeGroup.members || []).length}).`);
@@ -541,7 +580,7 @@
       const btn = document.getElementById("gm-save-btn");
       btn.disabled = true;
       try {
-        await updateDoc(doc(db, "groups", activeGroup.id), { name, description, privacy, maxMembers });
+        await updateDoc(doc(db, "groups", activeGroup.id), { name, description, privacy, postPermission, maxMembers });
         showToast("Đã lưu cài đặt nhóm!");
       } catch (err) {
         showToast(friendlyError(err));
@@ -559,7 +598,7 @@
         const coverUrl = await uploadToCloudinary(file);
         await updateDoc(doc(db, "groups", activeGroup.id), { coverUrl });
         activeGroup.coverUrl = coverUrl;
-        renderGroupDetail(activeGroup);
+        renderGroupDetailHeader(activeGroup);
         showToast("Đã cập nhật ảnh bìa nhóm!");
       } catch (err) {
         showToast(friendlyError(err));
@@ -577,7 +616,7 @@
       try {
         await updateDoc(doc(db, "groups", activeGroup.id), { coverUrl: "" });
         activeGroup.coverUrl = "";
-        renderGroupDetail(activeGroup);
+        renderGroupDetailHeader(activeGroup);
         showToast("Đã gỡ ảnh bìa nhóm.");
       } catch (err) {
         showToast(friendlyError(err));
@@ -728,6 +767,7 @@
           const name = document.getElementById("cg-name").value.trim();
           const description = document.getElementById("cg-desc").value.trim();
           const privacy = document.getElementById("cg-privacy").value === "public" ? "public" : "private";
+          const postPermission = document.getElementById("cg-post-perm").value === "owner" ? "owner" : "members";
           const maxMembers = Math.max(0, Math.floor(Number(document.getElementById("cg-max-members").value) || 0));
           const coverFile = document.getElementById("cg-cover").files[0];
           const submitBtn = e.target.querySelector('button[type="submit"]');
@@ -740,6 +780,7 @@
               name,
               description,
               privacy,
+              postPermission,
               maxMembers,
               coverUrl,
               ownerUid: me.uid,
@@ -758,39 +799,7 @@
           }
         };
 
-        const publishGroupPost = async () => {
-          if (!activeGroup) return;
-          if (!requireMemberAction(me, "đăng bài trong nhóm")) return;
-          const input = document.getElementById("gd-post-input");
-          const content = input.value.trim();
-          if (!content) return;
-          input.value = "";
-          try {
-            await addDoc(collection(db, "posts"), {
-              authorUid: me.uid,
-              authorName: me.name,
-              authorAvatar: me.avatar || DEFAULT_AVATAR,
-              groupId: activeGroup.id,
-              groupName: activeGroup.name,
-              content,
-              pinned: false,
-              reactions: {},
-              comments: [],
-              createdAt: serverTimestamp()
-            });
-            showToast("Đã đăng bài trong nhóm!");
-          } catch (err) {
-            input.value = content;
-            showToast(friendlyError(err));
-          }
-        };
-        document.getElementById("gd-post-btn").onclick = publishGroupPost;
-        document.getElementById("gd-post-input").addEventListener("keydown", (e) => {
-          if (e.key === "Enter" && !e.isComposing) {
-            e.preventDefault();
-            publishGroupPost();
-          }
-        });
+
 
         onSnapshot(query(collection(db, "groups"), orderBy("createdAt", "desc")), (snap) => {
           groupsList = [];
