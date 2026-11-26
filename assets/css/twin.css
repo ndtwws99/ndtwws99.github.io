@@ -4454,3 +4454,627 @@ label.twin-setting-row { cursor: pointer; }
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+
+/* ==========================================================================
+   V3 PATCH: MESSENGER ROUNDED WHITE CARDS (LIKE NGƯỜI LIÊN HỆ),
+   HIGH-CONTRAST TEXT & POLISHED LAYOUT
+========================================================================== */
+
+/* 1. Khung Tin nhắn: Nền trắng, bo góc & viền nổi giống mục Người liên hệ */
+body.page-messages {
+  background: var(--bg);
+}
+.twin-messenger-wrap {
+  width: 100%;
+  max-width: 1140px;
+  margin: 0 auto;
+  padding: 16px;
+  gap: 16px;
+  grid-template-columns: 330px minmax(0, 1fr);
+  background: transparent;
+}
+.twin-messenger-sidebar {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-xs);
+  overflow: hidden;
+}
+.twin-messenger-sidebar-head {
+  background: var(--surface);
+  padding: 14px 16px 12px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.twin-messenger-sidebar-head .twin-input {
+  background: var(--surface-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  padding: 9px 14px;
+  color: var(--text);
+}
+.twin-messenger-sidebar-head .twin-input:focus {
+  background: var(--surface);
+  border-color: var(--primary);
+}
+.twin-messenger-list {
+  padding: 8px;
+  background: var(--surface);
+}
+.twin-conv-item {
+  border-radius: 12px;
+  padding: 10px 11px;
+  margin-bottom: 3px;
+  border: 1px solid transparent;
+}
+.twin-conv-item:hover {
+  background: var(--surface-2);
+}
+.twin-conv-item.active {
+  background: var(--primary-soft);
+  border-color: rgba(0, 149, 246, 0.24);
+}
+.twin-conv-name {
+  color: var(--text);
+}
+.twin-conv-preview {
+  color: var(--text-2);
+  opacity: 0.85;
+}
+.twin-conv-time {
+  color: var(--text-3);
+}
+
+/* Khung nội dung chat bên phải cũng bo góc đồng bộ */
+.twin-messenger-main {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-xs);
+  overflow: hidden;
+}
+.twin-messenger-topbar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border-subtle);
+  padding: 12px 16px;
+}
+.twin-messenger-feed {
+  background-color: var(--surface-subtle);
+}
+[data-theme="dark"] .twin-messenger-feed {
+  background-color: #0c0e14;
+}
+
+/* Mobile Messenger: tối ưu khung bo góc gọn gàng */
+@media (max-width: 820px) {
+  .twin-messenger-wrap {
+    padding: 10px 10px calc(var(--mobile-bar-h) + env(safe-area-inset-bottom, 0px) + 10px);
+    gap: 10px;
+  }
+  body.page-messages.mobile-chat-active .twin-messenger-wrap {
+    padding: 0;
+  }
+  body.page-messages.mobile-chat-active .twin-messenger-main {
+    border-radius: 0;
+    border: none;
+  }
+}
+
+/* 2. Tăng độ tương phản màu chữ toàn trang (không bị trùng nền) */
+:root,
+[data-theme="light"] {
+  --text: #0f172a;
+  --text-2: #334155;
+  --text-3: #526075;
+}
+.twin-post-meta,
+.twin-side-heading,
+.twin-setting-desc,
+.twin-conv-time {
+  color: var(--text-3);
+}
+.twin-input::placeholder,
+.twin-textarea::placeholder,
+.twin-search-box input::placeholder {
+  color: var(--text-3);
+  opacity: 0.9;
+}
+.twin-btn-secondary {
+  color: var(--text);
+  border: 1px solid var(--border-subtle);
+}
+.twin-btn-secondary:hover {
+  border-color: var(--border);
+}
+.twin-filter-bar .feed-filter {
+  color: var(--text-2);
+}
+.twin-filter-bar .feed-filter.active {
+  background: var(--primary);
+  color: #ffffff;
+}
+[data-theme="dark"] .twin-conv-preview {
+  color: #cbd5e1;
+}
+[data-theme="dark"] .twin-conv-time {
+  color: #94a3b8;
+}
+[data-theme="dark"] .twin-messenger-sidebar,
+[data-theme="dark"] .twin-messenger-sidebar-head,
+[data-theme="dark"] .twin-messenger-list,
+[data-theme="dark"] .twin-messenger-main,
+[data-theme="dark"] .twin-messenger-topbar {
+  background: var(--surface);
+}
+
+
+/* ==========================================================================
+   V4 PATCH: PHOTO ALBUMS, VIDEO GALLERIES, MULTI-PHOTO COMPOSER & LIGHTBOX
+========================================================================== */
+
+/* Multi-photo Album Grid inside Post Cards */
+.twin-post-album-trigger {
+  cursor: zoom-in;
+}
+.twin-album-post-grid {
+  display: grid;
+  gap: 5px;
+  margin-bottom: 10px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--border-subtle);
+  background: var(--surface-2);
+}
+.twin-album-post-grid.count-2 {
+  grid-template-columns: repeat(2, 1fr);
+}
+.twin-album-post-grid.count-3 {
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: 220px 180px;
+}
+.twin-album-post-grid.count-3 .twin-album-post-item:first-child {
+  grid-column: 1 / -1;
+}
+.twin-album-post-grid.count-4 {
+  grid-template-columns: repeat(2, 1fr);
+}
+.twin-album-post-item {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  background: var(--surface-2);
+  padding: 0;
+  display: block;
+}
+.twin-album-post-grid.count-3 .twin-album-post-item {
+  aspect-ratio: auto;
+  height: 100%;
+}
+.twin-album-post-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.twin-album-post-item:hover img {
+  transform: scale(1.05);
+}
+.twin-album-more-badge {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.54);
+  color: #ffffff;
+  font-size: 26px;
+  font-weight: 800;
+  display: grid;
+  place-items: center;
+  backdrop-filter: blur(2px);
+}
+
+/* Composer Multi-Photo Album Preview */
+.twin-composer-album-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.twin-composer-album-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  gap: 8px;
+}
+.twin-composer-album-tile {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+}
+.twin-composer-album-tile img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.twin-composer-album-del {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.72);
+  color: #ffffff;
+  font-size: 11px;
+  display: grid;
+  place-items: center;
+}
+.twin-composer-album-del:hover {
+  background: var(--danger);
+}
+
+/* Profile & Group Tabs (Bài viết | Album ảnh | Video) */
+.twin-profile-tabs-wrap {
+  margin-bottom: 14px;
+}
+.twin-profile-tabs,
+.twin-group-tabs {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 4px;
+  border-radius: 12px;
+  box-shadow: var(--shadow-xs);
+}
+.twin-profile-tabs .twin-seg-tab,
+.twin-group-tabs .twin-seg-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: 9px;
+}
+.twin-profile-tabs .twin-seg-tab.active,
+.twin-group-tabs .twin-seg-tab.active {
+  background: var(--primary);
+  color: #ffffff;
+}
+.twin-tab-badge {
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  background: var(--surface-2);
+  color: var(--text-2);
+}
+.twin-seg-tab.active .twin-tab-badge {
+  background: rgba(255, 255, 255, 0.24);
+  color: #ffffff;
+}
+
+.twin-profile-left-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.twin-profile-mini-album {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+/* Photo Album Grid & Video Gallery Grid */
+.twin-album-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.twin-album-tile {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--surface-2);
+  border: 1px solid var(--border-subtle);
+  padding: 0;
+  display: block;
+  cursor: zoom-in;
+}
+.twin-album-tile img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.twin-album-tile:hover img {
+  transform: scale(1.07);
+}
+
+.twin-video-gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.twin-video-gallery-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-xs);
+}
+.twin-video-gallery-media {
+  position: relative;
+  background: #000000;
+  aspect-ratio: 16 / 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.twin-video-gallery-media video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  background: #000000;
+}
+.twin-video-gallery-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.72);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  pointer-events: none;
+}
+.twin-video-gallery-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px;
+}
+.twin-video-gallery-cap {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+  flex: 1;
+}
+.twin-gallery-empty {
+  text-align: center;
+  padding: 36px 18px;
+  color: var(--text-3);
+  font-size: 14px;
+}
+
+/* Full-screen Media Lightbox */
+.twin-modal-backdrop.twin-media-lightbox {
+  background: rgba(0, 0, 0, 0.92);
+  padding: 16px;
+  align-items: center;
+  justify-items: center;
+  z-index: 1500;
+}
+.twin-media-lb-shell {
+  width: 100%;
+  max-width: 920px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: panelReveal 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.twin-media-lb-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: #ffffff;
+}
+.twin-media-lb-title {
+  font-size: 15.5px;
+  font-weight: 700;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.twin-media-lb-counter {
+  font-size: 12.5px;
+  font-weight: 700;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+.twin-media-lb-stage {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 240px;
+}
+.twin-media-lb-stage img,
+.twin-media-lb-stage video {
+  max-width: min(92vw, 860px);
+  max-height: 74dvh;
+  width: auto;
+  height: auto;
+  border-radius: 14px;
+  background: #0a0a0a;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.7);
+}
+@media (min-width: 1024px) {
+  .twin-media-lb-stage img,
+  .twin-media-lb-stage video {
+    max-height: calc(74dvh / 1.25);
+  }
+}
+.twin-media-lb-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+  display: grid;
+  place-items: center;
+  z-index: 3;
+  transition: background 0.15s ease, transform 0.14s ease;
+}
+.twin-media-lb-nav:hover {
+  background: rgba(255, 255, 255, 0.32);
+  transform: translateY(-50%) scale(1.06);
+}
+.twin-media-lb-nav.prev { left: 10px; }
+.twin-media-lb-nav.next { right: 10px; }
+.twin-media-lb-caption {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 13.5px;
+  line-height: 1.45;
+  padding: 0 12px;
+}
+
+@media (max-width: 600px) {
+  .twin-album-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 5px;
+  }
+  .twin-album-tile {
+    border-radius: 8px;
+  }
+  .twin-video-gallery-grid {
+    grid-template-columns: 1fr;
+  }
+  .twin-album-post-grid.count-3 {
+    grid-template-rows: 190px 145px;
+  }
+  .twin-media-lb-nav {
+    width: 34px;
+    height: 34px;
+  }
+}
+
+
+/* ==========================================================================
+   V5 PATCH: #HASHTAG, @MENTION, MENTION AUTOCOMPLETE & MESSAGE DELETE
+========================================================================== */
+
+.twin-hashtag,
+.twin-mention {
+  color: var(--primary);
+  font-weight: 700;
+  text-decoration: none;
+  border-radius: 5px;
+  padding: 0 2px;
+  transition: background 0.14s ease, text-decoration 0.14s ease;
+}
+.twin-hashtag:hover,
+.twin-mention:hover {
+  background: var(--primary-soft);
+  text-decoration: underline;
+}
+.twin-msg.me .twin-hashtag,
+.twin-msg.me .twin-mention {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.18);
+  padding: 0 4px;
+}
+.twin-msg.me .twin-hashtag:hover,
+.twin-msg.me .twin-mention:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* @Mention Autocomplete Dropdown */
+.twin-mention-menu {
+  position: fixed;
+  z-index: 1600;
+  width: 240px;
+  max-width: calc(100vw - 16px);
+  max-height: 220px;
+  overflow-y: auto;
+  background: var(--surface-elevated);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow-lg);
+  padding: 5px;
+  display: none;
+}
+.twin-mention-menu.open {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.twin-mention-opt {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 7px 9px;
+  border-radius: 9px;
+  text-align: left;
+  color: var(--text);
+  font-size: 13.5px;
+  font-weight: 600;
+  transition: background 0.12s ease;
+}
+.twin-mention-opt:hover {
+  background: var(--surface-2);
+}
+.twin-mention-opt-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Message Footer with Delete Button */
+.twin-msg-foot {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-top: 4px;
+}
+.twin-msg-foot .twin-msg-time {
+  margin-top: 0;
+}
+.twin-msg-del-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  color: inherit;
+  opacity: 0.65;
+  transition: opacity 0.14s ease, background 0.14s ease, color 0.14s ease;
+}
+.twin-msg-del-btn:hover {
+  opacity: 1;
+  background: rgba(237, 73, 86, 0.18);
+  color: var(--danger);
+}
+.twin-msg.me .twin-msg-del-btn:hover {
+  background: rgba(255, 255, 255, 0.24);
+  color: #ffffff;
+}
