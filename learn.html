@@ -9,10 +9,12 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="format-detection" content="telephone=no" />
   <title>Học Tiếng Trung · Tiếng Anh — Twin</title>
-  <meta name="description" content="Học Tiếng Trung (HSK, Pinyin, phát âm) và Tiếng Anh (IPA, giao tiếp, IELTS) với thẻ ghi nhớ SRS, trắc nghiệm, gia sư AI và đồng hồ Pomodoro tập trung." />
+  <meta name="description" content="Học Tiếng Trung (HSK, Pinyin, phát âm) và Tiếng Anh (IPA, giao tiếp, IELTS) với thẻ ghi nhớ SRS, trắc nghiệm và đồng hồ Pomodoro tập trung." />
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='ig' x1='0%25' y1='100%25' x2='100%25' y2='0%25'%3E%3Cstop offset='0%25' stop-color='%23feda75'/%3E%3Cstop offset='25%25' stop-color='%23fa7e1e'/%3E%3Cstop offset='52%25' stop-color='%23d62976'/%3E%3Cstop offset='78%25' stop-color='%23962fbf'/%3E%3Cstop offset='100%25' stop-color='%234f5bd5'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='32' cy='32' r='30' fill='url(%23ig)'/%3E%3Cellipse cx='25' cy='15' rx='15' ry='7' fill='%23ffffff' opacity='.22'/%3E%3Cpath d='M18.5 21.5h27v6.6h-9.7v19.4h-7.6V28.1h-9.7z' fill='%23ffffff'/%3E%3C/svg%3E" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://www.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="./assets/css/twin.css" />
   <link rel="modulepreload" href="./assets/js/firebase-service.js" />
@@ -26,7 +28,7 @@
       <div class="twin-learn-hero-top">
         <div>
           <h1>Học Tiếng Trung · Tiếng Anh</h1>
-          <p class="twin-post-meta" style="margin-top:3px;">Lặp lại ngắt quãng (SRS), phát âm chuẩn, luyện nói, trắc nghiệm phản xạ, gia sư AI và đồng hồ tập trung Pomodoro.</p>
+          <p class="twin-post-meta" style="margin-top:3px;">Lặp lại ngắt quãng (SRS), phát âm chuẩn, luyện nói, trắc nghiệm phản xạ và đồng hồ tập trung Pomodoro.</p>
         </div>
         <div class="twin-lang-switch" role="tablist" aria-label="Chọn ngôn ngữ học">
           <button type="button" class="twin-lang-btn active" data-lang="zh">🇨🇳 Tiếng Trung (中文)</button>
@@ -57,7 +59,6 @@
     <div class="twin-learn-tabs" role="tablist" aria-label="Chế độ học">
       <button type="button" class="twin-learn-tab active" data-tab="flashcards">🃏 Thẻ ghi nhớ</button>
       <button type="button" class="twin-learn-tab" data-tab="quiz">⚡ Trắc nghiệm</button>
-      <button type="button" class="twin-learn-tab" data-tab="tutor">✨ Gia sư AI</button>
       <button type="button" class="twin-learn-tab" data-tab="toolkit">⏱ Học hiệu quả</button>
     </div>
 
@@ -129,38 +130,7 @@
       </div>
     </section>
 
-    <!-- TAB 3: AI TUTOR -->
-    <section id="panel-tutor" class="twin-learn-panel">
-      <div class="twin-card">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
-          <div>
-            <h2 style="font-size:17px;font-weight:800;">Gia sư AI Tiếng Trung &amp; Tiếng Anh</h2>
-            <p class="twin-post-meta">Hỏi ngữ pháp, dịch kèm Pinyin/IPA, sửa câu sai hoặc tạo ngay bộ thẻ từ vựng mới theo chủ đề bạn muốn.</p>
-          </div>
-          <button type="button" id="ai-gen-deck-open" class="twin-btn twin-btn-primary twin-btn-sm">✨ Tạo bộ thẻ bằng AI</button>
-        </div>
-
-        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;">
-          <button type="button" class="twin-btn twin-btn-secondary twin-btn-sm ai-quick-prompt" data-prompt="Giải thích nhanh 4 thanh điệu tiếng Trung và cách phát âm dễ nhớ nhất cho người Việt.">4 thanh điệu tiếng Trung</button>
-          <button type="button" class="twin-btn twin-btn-secondary twin-btn-sm ai-quick-prompt" data-prompt="Tạo một đoạn hội thoại ngắn mua sắm bằng tiếng Trung có Chữ Hán, Pinyin và dịch tiếng Việt.">Hội thoại mua sắm (Trung)</button>
-          <button type="button" class="twin-btn twin-btn-secondary twin-btn-sm ai-quick-prompt" data-prompt="Cho 5 mẫu câu tiếng Anh giao tiếp công sở chuyên nghiệp kèm phiên âm IPA và nghĩa tiếng Việt.">Câu giao tiếp công sở (Anh)</button>
-          <button type="button" class="twin-btn twin-btn-secondary twin-btn-sm ai-quick-prompt" data-prompt="Chỉ tôi mẹo phân biệt thì Hiện tại hoàn thành và Quá khứ đơn trong tiếng Anh cực dễ nhớ.">Phân biệt thì tiếng Anh</button>
-        </div>
-
-        <div id="ai-tutor-chat" class="twin-tutor-chat">
-          <div class="twin-gemini-msg model">
-            <div class="twin-gemini-bubble">Xin chào! Tôi là Gia sư AI Trung · Anh của Twin. Bạn muốn hỏi nghĩa từ, cách đọc Pinyin/IPA, sửa câu viết hay luyện hội thoại chủ đề nào hôm nay?</div>
-          </div>
-        </div>
-
-        <form id="ai-tutor-form" style="display:flex;gap:8px;align-items:flex-end;">
-          <textarea id="ai-tutor-input" class="twin-textarea" style="min-height:44px;max-height:120px;resize:none;" rows="1" placeholder="Nhập câu hỏi tiếng Trung / tiếng Anh hoặc câu cần dịch, sửa lỗi..."></textarea>
-          <button type="submit" id="ai-tutor-send" class="twin-btn twin-btn-primary" style="height:44px;">Gửi</button>
-        </form>
-      </div>
-    </section>
-
-    <!-- TAB 4: EFFECTIVE STUDY TOOLKIT -->
+    <!-- TAB 3: EFFECTIVE STUDY TOOLKIT -->
     <section id="panel-toolkit" class="twin-learn-panel">
       <div class="twin-toolkit-grid">
         <div class="twin-card">
@@ -238,21 +208,6 @@
           <input id="add-tip" class="twin-input" type="text" maxlength="160" placeholder="Liên tưởng giúp nhớ lâu..." />
         </div>
         <button type="submit" class="twin-btn twin-btn-primary" style="width:100%;">Lưu vào bộ thẻ của tôi</button>
-      </form>
-    </div>
-  </div>
-
-  <!-- Modal Tạo bộ từ bằng AI -->
-  <div class="twin-modal-backdrop" id="ai-deck-modal">
-    <div class="twin-modal" style="max-width:460px;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-        <h2>✨ Tạo bộ thẻ tự động bằng AI</h2>
-        <button type="button" id="ai-deck-close" class="twin-icon-btn" style="width:32px;height:32px;" aria-label="Đóng">✕</button>
-      </div>
-      <p class="twin-post-meta" style="margin-bottom:12px;">Nhập chủ đề bạn muốn học, AI sẽ tạo ngay 5 thẻ kèm phiên âm, câu ví dụ và thêm thẳng vào bộ thẻ ghi nhớ.</p>
-      <form id="ai-deck-form" style="display:flex;flex-direction:column;gap:10px;">
-        <input id="ai-deck-topic" class="twin-input" type="text" required maxlength="80" placeholder="VD: Phỏng vấn xin việc, Đặt phòng khách sạn, Ẩm thực..." />
-        <button type="submit" id="ai-deck-submit" class="twin-btn twin-btn-primary" style="width:100%;">Tạo 5 thẻ từ vựng</button>
       </form>
     </div>
   </div>
@@ -341,8 +296,6 @@
     let quizScore = 0;
     let quizCombo = 0;
     let currentQuiz = null;
-
-    let aiHistory = [];
 
     let pomoMinutes = 25;
     let pomoSecondsLeft = 25 * 60;
@@ -662,43 +615,6 @@
       });
     }
 
-    // ---------------- AI TUTOR ----------------
-    function appendTutorMessage(role, text) {
-      const box = document.getElementById("ai-tutor-chat");
-      const wrap = document.createElement("div");
-      wrap.className = `twin-gemini-msg ${role}`;
-      const formatted = escapeHtml(text).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>").replace(/\n/g, "<br/>");
-      wrap.innerHTML = `<div class="twin-gemini-bubble">${formatted}</div>`;
-      box.appendChild(wrap);
-      box.scrollTop = box.scrollHeight;
-    }
-
-    async function sendTutorPrompt(text) {
-      const clean = text.trim();
-      if (!clean) return;
-      appendTutorMessage("user", clean);
-      aiHistory.push({ role: "user", text: clean });
-      const sendBtn = document.getElementById("ai-tutor-send");
-      sendBtn.disabled = true;
-      sendBtn.textContent = "...";
-      try {
-        const res = await fetch("/api/gemini/chat", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ context: "language-tutor", messages: aiHistory.slice(-12) })
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || "Lỗi kết nối gia sư AI.");
-        aiHistory.push({ role: "model", text: data.reply });
-        appendTutorMessage("model", data.reply);
-      } catch (err) {
-        appendTutorMessage("model", `⚠️ ${err.message || "Không thể gọi AI lúc này."}`);
-      } finally {
-        sendBtn.disabled = false;
-        sendBtn.textContent = "Gửi";
-      }
-    }
-
     // ---------------- POMODORO & NOTES ----------------
     function updatePomoDisplay() {
       const m = Math.floor(pomoSecondsLeft / 60);
@@ -853,79 +769,6 @@
     // Quiz bindings
     document.getElementById("qz-mode").addEventListener("change", nextQuizQuestion);
     document.getElementById("qz-restart").onclick = nextQuizQuestion;
-
-    // AI Tutor bindings
-    document.querySelectorAll(".ai-quick-prompt").forEach((btn) => {
-      btn.addEventListener("click", () => sendTutorPrompt(btn.dataset.prompt));
-    });
-    document.getElementById("ai-tutor-form").addEventListener("submit", (e) => {
-      e.preventDefault();
-      const inp = document.getElementById("ai-tutor-input");
-      const val = inp.value.trim();
-      if (!val) return;
-      inp.value = "";
-      sendTutorPrompt(val);
-    });
-
-    // AI Deck Generator
-    document.getElementById("ai-gen-deck-open").onclick = () => {
-      document.getElementById("ai-deck-modal").classList.add("open");
-      setTimeout(() => document.getElementById("ai-deck-topic")?.focus(), 40);
-    };
-    document.getElementById("ai-deck-close").onclick = () => document.getElementById("ai-deck-modal").classList.remove("open");
-    document.getElementById("ai-deck-form").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const topic = document.getElementById("ai-deck-topic").value.trim();
-      if (!topic) return;
-      const btn = document.getElementById("ai-deck-submit");
-      btn.disabled = true;
-      btn.textContent = "Đang tạo thẻ bằng AI...";
-      try {
-        const langName = currentLang === "zh" ? "Tiếng Trung Giản thể (kèm Pinyin có dấu thanh điệu)" : "Tiếng Anh (kèm phiên âm IPA)";
-        const prompt = `Tạo đúng 5 từ/cụm từ ${langName} thực tế về chủ đề "${topic}". CHỈ trả về một mảng JSON hợp lệ (không giải thích thêm, không markdown), mỗi phần tử gồm các key: "term", "phonetic", "vi", "ex", "tip".`;
-        const res = await fetch("/api/gemini/chat", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ context: "language-tutor", prompt })
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || "Không thể tạo bộ từ lúc này.");
-        const raw = (data.reply || "").trim();
-        const match = raw.match(/\[[\s\S]*\]/);
-        if (!match) throw new Error("AI trả về định dạng chưa chuẩn, hãy thử lại.");
-        const parsed = JSON.parse(match[0]);
-        if (!Array.isArray(parsed) || !parsed.length) throw new Error("Danh sách từ rỗng.");
-        profile.customCards[currentLang] = profile.customCards[currentLang] || [];
-        let added = 0;
-        parsed.slice(0, 6).forEach((item, i) => {
-          if (item?.term && item?.vi) {
-            profile.customCards[currentLang].unshift({
-              id: `ai_${currentLang}_${Date.now()}_${i}`,
-              topic: `AI: ${topic}`,
-              term: String(item.term),
-              phonetic: String(item.phonetic || ""),
-              vi: String(item.vi),
-              ex: String(item.ex || ""),
-              tip: String(item.tip || "")
-            });
-            added += 1;
-          }
-        });
-        saveProfile();
-        activeTopic = `AI: ${topic}`;
-        populateTopics();
-        rebuildDeck();
-        document.getElementById("ai-deck-form").reset();
-        document.getElementById("ai-deck-modal").classList.remove("open");
-        document.querySelector('.twin-learn-tab[data-tab="flashcards"]').click();
-        showToast(`Đã tạo và nhập ${added} thẻ "${topic}" thành công!`);
-      } catch (err) {
-        showToast(err.message || "Không thể tạo bộ thẻ.");
-      } finally {
-        btn.disabled = false;
-        btn.textContent = "Tạo 5 thẻ từ vựng";
-      }
-    });
 
     // Pomodoro bindings
     document.querySelectorAll(".pomo-mode").forEach((btn) => {

@@ -1,5 +1,7 @@
 import express from "express";
 import path from "path";
+import fs from "fs";
+import zlib from "zlib";
 import { fileURLToPath } from "url";
 import { GoogleGenAI } from "@google/genai";
 
@@ -7,6 +9,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+app.disable("x-powered-by");
 const PORT = Number(process.env.PORT) || 3000;
 const HOST = "0.0.0.0";
 
@@ -26,7 +29,80 @@ const HTML_PAGES = new Set([
   "404"
 ]);
 
+const MIME_BY_EXT = {
+  ".html": "text/html; charset=utf-8",
+  ".css": "text/css; charset=utf-8",
+  ".js": "application/javascript; charset=utf-8",
+  ".mjs": "application/javascript; charset=utf-8",
+  ".json": "application/json; charset=utf-8",
+  ".svg": "image/svg+xml; charset=utf-8"
+};
+
+// Lightweight in-memory gzip cache keyed by file path + mtime/size so edits reflect immediately
+const GZIP_CACHE = new Map();
+
+function sendCompressedFile(req, res, filePath, statusCode = 200) {
+  fs.stat(filePath, (statErr, stat) => {
+    if (statErr || !stat.isFile()) {
+      return res.status(404).end();
+    }
+    const ext = path.extname(filePath).toLowerCase();
+    const contentType = MIME_BY_EXT[ext];
+    const etag = `W/"${stat.size.toString(16)}-${Math.floor(stat.mtimeMs).toString(16)}"`;
+
+    res.setHeader("ETag", etag);
+    res.setHeader("Last-Modified", stat.mtime.toUTCString());
+    res.setHeader("Cache-Control", "no-cache, must-revalidate");
+    res.setHeader("Vary", "Accept-Encoding");
+    if (contentType) res.setHeader("Content-Type", contentType);
+
+    if (statusCode === 200 && req.headers["if-none-match"] === etag) {
+      return res.status(304).end();
+    }
+
+    const acceptsGzip = /\bgzip\b/i.test(String(req.headers["accept-encoding"] || ""));
+    if (!acceptsGzip || !contentType || stat.size < 1024) {
+      return res.status(statusCode).sendFile(filePath);
+    }
+
+    const cached = GZIP_CACHE.get(filePath);
+    if (cached && cached.mtimeMs === stat.mtimeMs && cached.size === stat.size) {
+      res.setHeader("Content-Encoding", "gzip");
+      res.setHeader("Content-Length", String(cached.buf.length));
+      return res.status(statusCode).end(req.method === "HEAD" ? undefined : cached.buf);
+    }
+
+    fs.readFile(filePath, (readErr, raw) => {
+      if (readErr) return res.status(500).end();
+      zlib.gzip(raw, { level: 6 }, (gzErr, gzBuf) => {
+        if (gzErr) {
+          return res.status(statusCode).end(req.method === "HEAD" ? undefined : raw);
+        }
+        if (GZIP_CACHE.size > 64) GZIP_CACHE.clear();
+        GZIP_CACHE.set(filePath, { mtimeMs: stat.mtimeMs, size: stat.size, buf: gzBuf });
+        res.setHeader("Content-Encoding", "gzip");
+        res.setHeader("Content-Length", String(gzBuf.length));
+        return res.status(statusCode).end(req.method === "HEAD" ? undefined : gzBuf);
+      });
+    });
+  });
+}
+
 app.use(express.json({ limit: "256kb" }));
+
+// Fast gzip delivery for compressible static text files under /assets
+app.use("/assets", (req, res, next) => {
+  if (req.method !== "GET" && req.method !== "HEAD") return next();
+  const relPath = decodeURIComponent(req.path || "").replace(/^\/+/, "");
+  const ext = path.extname(relPath).toLowerCase();
+  if (!MIME_BY_EXT[ext]) return next();
+  const assetsRoot = path.resolve(__dirname, "assets");
+  const resolved = path.resolve(assetsRoot, relPath);
+  if (!resolved.startsWith(assetsRoot + path.sep)) return next();
+  if (!fs.existsSync(resolved)) return next();
+  return sendCompressedFile(req, res, resolved, 200);
+});
+
 app.use(
   "/assets",
   express.static(path.join(__dirname, "assets"), {
@@ -79,13 +155,6 @@ const TWIN_GEMINI_SYSTEM_INSTRUCTION =
   "Bạn có thể giúp người dùng viết bài đăng, tạo mã HTML đẹp và an toàn cho bài viết Twin, " +
   "gợi ý câu trả lời tin nhắn, tóm tắt thông tin và giải đáp thắc mắc hằng ngày.";
 
-const TWIN_TUTOR_SYSTEM_INSTRUCTION =
-  "Bạn là gia sư ngoại ngữ AI chuyên nghiệp dạy Tiếng Trung (Phổ thông - Giản thể kèm Pinyin có dấu thanh điệu) " +
-  "và Tiếng Anh (kèm phiên âm IPA chuẩn) cho người Việt trên Twin. " +
-  "Luôn trình bày ngắn gọn, rõ ràng, dễ học: với tiếng Trung luôn kèm Chữ Hán + Pinyin + Nghĩa Việt + Mẹo nhớ ngắn; " +
-  "với tiếng Anh luôn kèm Từ/Câu + IPA + Nghĩa Việt + Ví dụ thực tế. " +
-  "Nếu người dùng yêu cầu tạo danh sách từ vựng JSON để thêm vào thẻ ghi nhớ, hãy trả về đúng định dạng được yêu cầu.";
-
 app.post("/api/gemini/chat", async (req, res) => {
   const clientIp = req.ip || req.socket?.remoteAddress || "unknown";
   if (!checkGeminiRateLimit(clientIp)) {
@@ -105,10 +174,6 @@ app.post("/api/gemini/chat", async (req, res) => {
     const body = req.body && typeof req.body === "object" ? req.body : {};
     const rawMessages = Array.isArray(body.messages) ? body.messages : null;
     const rawPrompt = typeof body.prompt === "string" ? body.prompt.trim() : "";
-    const systemInstruction =
-      body.context === "language-tutor"
-        ? TWIN_TUTOR_SYSTEM_INSTRUCTION
-        : TWIN_GEMINI_SYSTEM_INSTRUCTION;
 
     let contents = [];
     if (rawMessages && rawMessages.length > 0) {
@@ -132,7 +197,7 @@ app.post("/api/gemini/chat", async (req, res) => {
       model: "gemini-4-hydrogen",
       contents,
       config: {
-        systemInstruction
+        systemInstruction: TWIN_GEMINI_SYSTEM_INSTRUCTION
       }
     });
 
@@ -165,21 +230,21 @@ app.post("/api/gemini/chat", async (req, res) => {
   }
 });
 
-app.get("/", (_req, res) => {
-  res.sendFile(path.join(__dirname, "index.html"));
+app.get("/", (req, res) => {
+  sendCompressedFile(req, res, path.join(__dirname, "index.html"), 200);
 });
 
 app.get("/:page", (req, res, next) => {
   const raw = req.params.page || "";
   const normalized = raw.endsWith(".html") ? raw.slice(0, -5) : raw;
   if (HTML_PAGES.has(normalized)) {
-    return res.sendFile(path.join(__dirname, `${normalized}.html`));
+    return sendCompressedFile(req, res, path.join(__dirname, `${normalized}.html`), 200);
   }
   return next();
 });
 
-app.use((_req, res) => {
-  res.status(404).sendFile(path.join(__dirname, "404.html"));
+app.use((req, res) => {
+  sendCompressedFile(req, res, path.join(__dirname, "404.html"), 404);
 });
 
 app.listen(PORT, HOST, () => {

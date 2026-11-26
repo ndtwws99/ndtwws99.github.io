@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
-  <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
+  <meta name="theme-color" content="#151a24" media="(prefers-color-scheme: dark)" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="mobile-web-app-capable" content="yes" />
@@ -14,6 +14,8 @@
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='ig' x1='0%25' y1='100%25' x2='100%25' y2='0%25'%3E%3Cstop offset='0%25' stop-color='%23feda75'/%3E%3Cstop offset='25%25' stop-color='%23fa7e1e'/%3E%3Cstop offset='52%25' stop-color='%23d62976'/%3E%3Cstop offset='78%25' stop-color='%23962fbf'/%3E%3Cstop offset='100%25' stop-color='%234f5bd5'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='32' cy='32' r='30' fill='url(%23ig)'/%3E%3Cellipse cx='25' cy='15' rx='15' ry='7' fill='%23ffffff' opacity='.22'/%3E%3Cpath d='M18.5 21.5h27v6.6h-9.7v19.4h-7.6V28.1h-9.7z' fill='%23ffffff'/%3E%3C/svg%3E" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://www.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="./assets/css/twin.css" />
   <link rel="modulepreload" href="./assets/js/firebase-service.js" />
@@ -354,26 +356,28 @@
       <div id="story-modal-caption" style="padding:12px 14px 4px;font-size:14px;display:none;"></div>
       <div class="twin-story-footer twin-story-footer-v2">
         <div class="twin-story-stats-row">
-          <div id="story-modal-like-summary" class="twin-post-meta twin-story-stats-line">0 tim · 0 chia sẻ · 0 lượt lưu</div>
+          <div id="story-modal-like-summary" class="twin-post-meta twin-story-stats-line">Chưa có cảm xúc · 0 chia sẻ · 0 lượt lưu</div>
           <button type="button" id="story-replies-toggle" class="twin-story-reply-pill" style="display:none;">0 phản hồi</button>
         </div>
         <div class="twin-story-footer-actions">
-          <button type="button" id="story-modal-like-btn" class="twin-story-like-btn" title="Thả tim tin này" aria-label="Thả tim">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-            </svg>
-            <span>Thích</span>
-            <strong id="story-modal-like-count">0</strong>
-          </button>
+          <div class="twin-react-wrap twin-story-react-wrap" id="story-react-wrap">
+            <div class="twin-react-picker twin-story-react-picker" id="story-react-picker"></div>
+            <button type="button" id="story-modal-like-btn" class="twin-story-like-btn" title="Thả cảm xúc tin này" aria-label="Thả cảm xúc">
+              <span id="story-modal-like-ico" class="twin-story-react-ico">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                </svg>
+              </span>
+              <span id="story-modal-like-label">Thích</span>
+            </button>
+          </div>
           <button type="button" id="story-modal-share-btn" class="twin-story-act-pill" title="Chia sẻ tin" aria-label="Chia sẻ tin">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7.5 7.5 4.5-4.5 4.5 4.5"/><path d="M5 13.5V18a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4.5"/></svg>
             <span>Chia sẻ</span>
-            <strong id="story-modal-share-count">0</strong>
           </button>
           <button type="button" id="story-modal-save-btn" class="twin-story-act-pill" title="Lưu tin" aria-label="Lưu tin">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 4h11A1.5 1.5 0 0 1 19 5.5v15l-7-4-7 4v-15A1.5 1.5 0 0 1 6.5 4Z"/></svg>
             <span>Lưu</span>
-            <strong id="story-modal-save-count">0</strong>
           </button>
         </div>
       </div>
@@ -390,7 +394,7 @@
 
   <script type="module">
     import { initTwinPage, openTwinChat, getWebPrefs, getSiteSettings } from "./assets/js/layout.js";
-    import { renderPostList, enhanceFeelingSelect } from "./assets/js/post-ui.js";
+    import { renderPostList, enhanceFeelingSelect, REACTIONS, renderReactionIcon } from "./assets/js/post-ui.js";
     import {
       db,
       collection,
@@ -402,6 +406,7 @@
       deleteDoc,
       arrayUnion,
       arrayRemove,
+      deleteField,
       increment,
       query,
       orderBy,
@@ -839,8 +844,11 @@
     const STORY_MUTED_SVG = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="22" y1="9" x2="16" y2="15"/><line x1="16" y1="9" x2="22" y2="15"/></svg>`;
 
     const storyModal = document.getElementById("story-modal");
+    const storyReactWrap = document.getElementById("story-react-wrap");
+    const storyReactPicker = document.getElementById("story-react-picker");
     const storyLikeBtn = document.getElementById("story-modal-like-btn");
-    const storyLikeCountEl = document.getElementById("story-modal-like-count");
+    const storyLikeIcoEl = document.getElementById("story-modal-like-ico");
+    const storyLikeLabelEl = document.getElementById("story-modal-like-label");
     const storyLikeSummaryEl = document.getElementById("story-modal-like-summary");
     const storyHeartBurstEl = document.getElementById("story-modal-heart-burst");
     const storyProgressEl = document.getElementById("story-modal-progress");
@@ -858,9 +866,7 @@
     const storyRepliesDrawer = document.getElementById("story-replies-drawer");
     const storyGuestReplyHint = document.getElementById("story-guest-reply-hint");
     const storyShareBtn = document.getElementById("story-modal-share-btn");
-    const storyShareCountEl = document.getElementById("story-modal-share-count");
     const storySaveBtn = document.getElementById("story-modal-save-btn");
-    const storySaveCountEl = document.getElementById("story-modal-save-count");
     let storySaveBusy = false;
 
     let storyTimerRaf = null;
@@ -1167,78 +1173,167 @@
       }
     };
 
+    const STORY_HEART_OUTLINE_SVG = `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`;
+    const STORY_LOCAL_REACTIONS_KEY = "twin_story_reactions_v1";
+
+    function loadLocalStoryReactions() {
+      try {
+        return JSON.parse(localStorage.getItem(STORY_LOCAL_REACTIONS_KEY) || "{}") || {};
+      } catch {
+        return {};
+      }
+    }
+    function saveLocalStoryReaction(storyId, uid, key) {
+      if (!storyId || !uid) return;
+      const map = loadLocalStoryReactions();
+      if (!map[storyId] || typeof map[storyId] !== "object") map[storyId] = {};
+      if (key) map[storyId][uid] = key;
+      else delete map[storyId][uid];
+      try {
+        localStorage.setItem(STORY_LOCAL_REACTIONS_KEY, JSON.stringify(map));
+      } catch {}
+    }
+
+    function getStoryReactionsMap(s) {
+      const merged = {};
+      const likes = Array.isArray(s?.likes) ? s.likes : [];
+      const localForStory = s?.id ? loadLocalStoryReactions()[s.id] || {} : {};
+      likes.forEach((uid) => {
+        if (uid) merged[uid] = localForStory[uid] || "love";
+      });
+      if (s?.reactions && typeof s.reactions === "object") {
+        Object.entries(s.reactions).forEach(([uid, key]) => {
+          if (uid && key) merged[uid] = key;
+        });
+      }
+      return merged;
+    }
+
+    if (storyReactPicker) {
+      storyReactPicker.innerHTML = REACTIONS.map(
+        (r) =>
+          `<button type="button" class="twin-react-emoji" data-react="${r.key}" title="${r.label}" aria-label="${r.label}"><img class="twin-rx-picker-img" src="${r.icon}" alt="${r.label}" draggable="false" /><span class="twin-react-tip">${r.label}</span></button>`
+      ).join("");
+    }
+
     function renderStoryLikeState(s) {
       if (!s) return;
-      const likes = Array.isArray(s.likes) ? s.likes : [];
+      const reactionsMap = getStoryReactionsMap(s);
+      const reactionValues = Object.values(reactionsMap);
       const savedBy = Array.isArray(s.savedBy) ? s.savedBy : [];
       const sharesCount = Number(s.sharesCount) || 0;
-      const liked = Boolean(me && !isGuestUser(me) && likes.includes(me.uid));
+      const myKey = me && !isGuestUser(me) ? reactionsMap[me.uid] || null : null;
+      const myReactionObj = REACTIONS.find((r) => r.key === myKey) || null;
       const saved = Boolean(me && !isGuestUser(me) && savedBy.includes(me.uid));
-      const count = likes.length;
+      const count = reactionValues.length;
 
-      storyLikeBtn.classList.toggle("liked", liked);
-      storyLikeBtn.setAttribute("aria-pressed", liked ? "true" : "false");
-      storyLikeBtn.title = liked ? "Bỏ thả tim" : "Thả tim tin này";
-      storyLikeCountEl.textContent = String(count);
+      storyLikeBtn.classList.toggle("liked", Boolean(myReactionObj));
+      storyLikeBtn.classList.toggle("reacted", Boolean(myReactionObj));
+      storyLikeBtn.setAttribute("aria-pressed", myReactionObj ? "true" : "false");
+      storyLikeBtn.title = myReactionObj ? `${myReactionObj.label} (nhấn để bỏ)` : "Thả cảm xúc tin này";
+      storyLikeBtn.style.color = myReactionObj ? myReactionObj.color : "";
+      if (storyLikeIcoEl) {
+        storyLikeIcoEl.innerHTML = myReactionObj
+          ? renderReactionIcon(myReactionObj.key, "twin-rx-active-img twin-story-rx-active")
+          : STORY_HEART_OUTLINE_SVG;
+      }
+      if (storyLikeLabelEl) {
+        storyLikeLabelEl.textContent = myReactionObj ? myReactionObj.label : "Thích";
+      }
 
-      if (storyShareCountEl) storyShareCountEl.textContent = String(sharesCount);
       if (storySaveBtn) {
         storySaveBtn.classList.toggle("saved", saved);
         storySaveBtn.setAttribute("aria-pressed", saved ? "true" : "false");
         storySaveBtn.title = saved ? "Bỏ lưu tin" : "Lưu tin";
       }
-      if (storySaveCountEl) storySaveCountEl.textContent = String(savedBy.length);
 
-      storyLikeSummaryEl.textContent = `${count} tim · ${sharesCount} chia sẻ · ${savedBy.length} lượt lưu`;
+      const uniqueBadges = [...new Set(reactionValues)]
+        .slice(0, 3)
+        .map((k) => renderReactionIcon(k, "twin-rx-badge"))
+        .join("");
+      const reactSummaryHtml =
+        count > 0
+          ? `<span class="twin-rx-stack">${uniqueBadges}</span><span>${count} cảm xúc</span>`
+          : `<span>Chưa có cảm xúc</span>`;
+      storyLikeSummaryEl.innerHTML = `${reactSummaryHtml} <span aria-hidden="true">·</span> <span>${sharesCount} chia sẻ</span> <span aria-hidden="true">·</span> <span>${savedBy.length} lượt lưu</span>`;
     }
 
-    function playStoryHeartEffect() {
+    function playStoryHeartEffect(key = "love") {
+      const rObj = REACTIONS.find((r) => r.key === key) || REACTIONS[0];
       storyLikeBtn.classList.remove("pop");
       void storyLikeBtn.offsetWidth;
       storyLikeBtn.classList.add("pop");
 
+      storyHeartBurstEl.innerHTML = `<img src="${rObj.icon}" alt="${rObj.label}" style="width:78px;height:78px;border-radius:50%;filter:drop-shadow(0 8px 20px rgba(0,0,0,0.38));" draggable="false" />`;
       storyHeartBurstEl.classList.remove("burst");
       void storyHeartBurstEl.offsetWidth;
       storyHeartBurstEl.classList.add("burst");
     }
 
-    async function toggleStoryLike({ onlyLike = false } = {}) {
+    async function setStoryReaction(key = "love", { onlyAdd = false } = {}) {
       if (!viewingStory || storyLikeBusy) return;
-      if (!requireMemberAction(me, "thả tim tin")) return;
-      const prevLikes = Array.isArray(viewingStory.likes) ? [...viewingStory.likes] : [];
-      const alreadyLiked = prevLikes.includes(me.uid);
+      if (!requireMemberAction(me, "thả cảm xúc tin")) return;
 
-      if (onlyLike && alreadyLiked) {
-        playStoryHeartEffect();
+      const prevLikes = Array.isArray(viewingStory.likes) ? [...viewingStory.likes] : [];
+      const prevReactions = viewingStory.reactions && typeof viewingStory.reactions === "object" ? { ...viewingStory.reactions } : {};
+      const currentMap = getStoryReactionsMap(viewingStory);
+      const currentKey = currentMap[me.uid] || null;
+
+      if (onlyAdd && currentKey) {
+        playStoryHeartEffect(currentKey);
         return;
       }
 
-      const nextLikes = alreadyLiked
+      const removing = currentKey === key;
+      const nextReactions = { ...prevReactions };
+      if (removing) {
+        delete nextReactions[me.uid];
+      } else {
+        nextReactions[me.uid] = key;
+      }
+      const nextLikes = removing
         ? prevLikes.filter((uid) => uid !== me.uid)
-        : [...prevLikes, me.uid];
+        : prevLikes.includes(me.uid)
+          ? prevLikes
+          : [...prevLikes, me.uid];
 
-      viewingStory = { ...viewingStory, likes: nextLikes };
+      saveLocalStoryReaction(viewingStory.id, me.uid, removing ? null : key);
+      viewingStory = { ...viewingStory, likes: nextLikes, reactions: nextReactions };
       renderStoryLikeState(viewingStory);
-      if (!alreadyLiked) playStoryHeartEffect();
+      if (storyReactWrap) storyReactWrap.classList.remove("open");
+      if (!removing) playStoryHeartEffect(key);
 
       storyLikeBusy = true;
       try {
-        await updateDoc(doc(db, "stories", viewingStory.id), {
-          likes: alreadyLiked ? arrayRemove(me.uid) : arrayUnion(me.uid)
-        });
-        if (!alreadyLiked && viewingStory.authorUid && viewingStory.authorUid !== me.uid) {
+        try {
+          await updateDoc(doc(db, "stories", viewingStory.id), {
+            [`reactions.${me.uid}`]: removing ? deleteField() : key,
+            likes: removing ? arrayRemove(me.uid) : arrayUnion(me.uid)
+          });
+        } catch (err) {
+          if (err?.code === "permission-denied") {
+            await updateDoc(doc(db, "stories", viewingStory.id), {
+              likes: removing ? arrayRemove(me.uid) : arrayUnion(me.uid)
+            });
+          } else {
+            throw err;
+          }
+        }
+        if (!removing && viewingStory.authorUid && viewingStory.authorUid !== me.uid) {
+          const rObj = REACTIONS.find((r) => r.key === key) || REACTIONS[0];
           pushNotification(viewingStory.authorUid, {
             fromUid: me.uid,
             fromName: me.name,
             fromAvatar: me.avatar || DEFAULT_AVATAR,
             type: "reaction",
             storyId: viewingStory.id,
-            text: "đã thả tim tin của bạn ❤️",
+            text: `đã bày tỏ ${rObj.label} ${rObj.emoji} về tin của bạn`,
             link: `./index.html?story=${encodeURIComponent(viewingStory.id)}`
           }).catch(() => {});
         }
       } catch (err) {
-        viewingStory = { ...viewingStory, likes: prevLikes };
+        saveLocalStoryReaction(viewingStory.id, me.uid, currentKey);
+        viewingStory = { ...viewingStory, likes: prevLikes, reactions: prevReactions };
         renderStoryLikeState(viewingStory);
         showToast(friendlyError(err));
       } finally {
@@ -1246,10 +1341,71 @@
       }
     }
 
-    storyLikeBtn.onclick = () => toggleStoryLike();
-    storyImgEl.ondblclick = () => toggleStoryLike({ onlyLike: true });
-    storyVideoEl.ondblclick = () => toggleStoryLike({ onlyLike: true });
-    storyTextStageEl.ondblclick = () => toggleStoryLike({ onlyLike: true });
+    let storyReactHoldTimer = null;
+    let storyReactHeld = false;
+
+    storyLikeBtn.addEventListener("pointerdown", (e) => {
+      if (e.pointerType === "mouse") return;
+      storyReactHeld = false;
+      clearTimeout(storyReactHoldTimer);
+      storyReactHoldTimer = setTimeout(() => {
+        storyReactHeld = true;
+        storyReactWrap?.classList.add("open");
+      }, 300);
+    });
+    const clearStoryReactHold = () => clearTimeout(storyReactHoldTimer);
+    storyLikeBtn.addEventListener("pointerup", clearStoryReactHold);
+    storyLikeBtn.addEventListener("pointercancel", clearStoryReactHold);
+
+    storyLikeBtn.onclick = (e) => {
+      e.stopPropagation();
+      if (storyReactHeld) {
+        storyReactHeld = false;
+        return;
+      }
+      if (!viewingStory) return;
+      const currentKey = getStoryReactionsMap(viewingStory)[me?.uid] || null;
+      setStoryReaction(currentKey || "love");
+    };
+
+    if (storyReactPicker) {
+      storyReactPicker.querySelectorAll(".twin-react-emoji").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          setStoryReaction(btn.dataset.react || "love");
+        });
+      });
+    }
+
+    if (storyReactWrap) {
+      storyReactWrap.addEventListener("mouseenter", () => {
+        if (!storyModal.classList.contains("open") || !viewingStory) return;
+        storyPausedByReply = true;
+        if (storyTimerRaf !== null) {
+          cancelAnimationFrame(storyTimerRaf);
+          storyTimerRaf = null;
+        }
+        if (isVideoStory(viewingStory)) try { storyVideoEl.pause(); } catch {}
+      });
+      storyReactWrap.addEventListener("mouseleave", () => {
+        if (storyRepliesDrawer && storyRepliesDrawer.style.display !== "none") return;
+        if (document.activeElement === storyReplyInput) return;
+        storyPausedByReply = false;
+        if (!storyPaused && storyModal.classList.contains("open") && viewingStory) {
+          startStoryTimer(false);
+        }
+      });
+    }
+
+    document.addEventListener("click", (e) => {
+      if (storyReactWrap && storyReactWrap.classList.contains("open") && !storyReactWrap.contains(e.target)) {
+        storyReactWrap.classList.remove("open");
+      }
+    });
+
+    storyImgEl.ondblclick = () => setStoryReaction("love", { onlyAdd: true });
+    storyVideoEl.ondblclick = () => setStoryReaction("love", { onlyAdd: true });
+    storyTextStageEl.ondblclick = () => setStoryReaction("love", { onlyAdd: true });
 
     if (storyShareBtn) {
       storyShareBtn.onclick = async (e) => {
@@ -1813,9 +1969,11 @@
 
         storiesById.set(s.id, s);
         storyOrder.push(s);
-        const likesCount = Array.isArray(s.likes) ? s.likes.length : 0;
+        const storyReactVals = Object.values(getStoryReactionsMap(s));
+        const likesCount = storyReactVals.length;
+        const topReactObj = REACTIONS.find((r) => r.key === storyReactVals[0]) || REACTIONS[0];
         const likesBadge = likesCount > 0
-          ? `<span class="twin-story-likes-badge">❤️ ${likesCount}</span>`
+          ? `<span class="twin-story-likes-badge">${topReactObj.emoji} ${likesCount}</span>`
           : "";
         const privMode = s.privacy || "public";
         const privBadge = privMode !== "public"

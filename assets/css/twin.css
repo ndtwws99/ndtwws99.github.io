@@ -4198,6 +4198,10 @@ label.twin-setting-row { cursor: pointer; }
   gap: 8px;
 }
 .twin-story-stats-line {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
   font-size: 12px;
   font-weight: 600;
   color: var(--text-3);
@@ -4216,6 +4220,30 @@ label.twin-setting-row { cursor: pointer; }
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
 }
+.twin-story-react-wrap {
+  position: relative;
+  width: 100%;
+}
+.twin-story-react-wrap .twin-story-like-btn {
+  width: 100%;
+}
+.twin-story-react-picker {
+  left: 0;
+  bottom: calc(100% + 10px);
+  z-index: 45;
+  padding: 5px 8px;
+  gap: 5px;
+}
+.twin-story-react-ico {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.twin-story-rx-active {
+  width: 18px !important;
+  height: 18px !important;
+}
 .twin-story-footer-actions .twin-story-like-btn,
 .twin-story-act-pill {
   display: inline-flex;
@@ -4230,14 +4258,11 @@ label.twin-setting-row { cursor: pointer; }
   color: var(--text);
   font-size: 12.5px;
   font-weight: 600;
+  white-space: nowrap;
   transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, transform 0.12s ease;
 }
-.twin-story-footer-actions .twin-story-like-btn strong,
-.twin-story-act-pill strong {
-  font-size: 12px;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  opacity: 0.85;
+.twin-story-footer-actions .twin-story-like-btn.pop .twin-story-react-ico {
+  animation: heartPop 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .twin-story-act-pill:hover {
   background: var(--surface-hover);
@@ -4257,6 +4282,51 @@ label.twin-setting-row { cursor: pointer; }
 }
 .twin-story-act-pill.saved svg {
   fill: currentColor;
+}
+
+/* Conversation delete button in Messages */
+.twin-conv-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.twin-conv-row .twin-conv-item {
+  width: 100%;
+  padding-right: 40px;
+}
+.twin-conv-del-btn {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: var(--text-3);
+  background: transparent;
+  opacity: 0;
+  transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
+  z-index: 2;
+}
+.twin-conv-row:hover .twin-conv-del-btn,
+.twin-conv-row:focus-within .twin-conv-del-btn,
+.twin-conv-del-btn:focus-visible {
+  opacity: 1;
+}
+@media (hover: none), (max-width: 820px) {
+  .twin-conv-del-btn {
+    opacity: 0.82;
+  }
+}
+.twin-conv-del-btn:hover {
+  background: rgba(239, 68, 68, 0.14);
+  color: var(--danger);
+}
+.twin-msg-top-act.danger:hover {
+  background: rgba(239, 68, 68, 0.14);
+  color: var(--danger);
 }
 .twin-story-reply-form {
   display: flex;
@@ -6541,19 +6611,6 @@ body.page-messages {
   border: 1px solid var(--border-subtle);
   margin-bottom: 8px;
 }
-.twin-tutor-chat {
-  min-height: 280px;
-  max-height: 440px;
-  overflow-y: auto;
-  padding: 14px;
-  border-radius: 14px;
-  background: var(--surface-subtle);
-  border: 1px solid var(--border);
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-bottom: 12px;
-}
 
 @media (max-width: 820px) {
   .twin-market-grid {
@@ -6563,15 +6620,12 @@ body.page-messages {
   .twin-learn-stats {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  .twin-learn-tabs {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
   .twin-quiz-options,
   .twin-toolkit-grid {
     grid-template-columns: 1fr;
   }
   .twin-flashcard {
-    min-height: 250px;
+    min-height: 245px;
     padding: 22px 16px;
   }
   .twin-srs-row {
@@ -6583,4 +6637,389 @@ body.page-messages {
     grid-template-columns: 1fr;
   }
 }
+
+/* ==========================================================================
+   V11 PATCH: COMPOSER SINGLE-LINE FIX, ROUNDED-SQUARE CARDS ON ALL SECTIONS,
+   ZERO-WRAP COMPACT BUTTONS/TABS & BALANCED DESKTOP / MOBILE LAYOUTS
+========================================================================== */
+
+/* 1. Khắc phục chữ ô đăng bài thu gọn bị to và cắt mất dòng thứ 2 */
+.twin-composer-card:not(.expanded) {
+  padding: 9px 12px;
+  border-radius: 16px;
+}
+.twin-composer-card:not(.expanded) .twin-composer-top {
+  gap: 8px;
+  align-items: center;
+}
+.twin-composer-card:not(.expanded) .twin-avatar {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+}
+.twin-composer-card:not(.expanded) .twin-textarea {
+  flex: 1;
+  min-width: 0;
+  height: 38px;
+  min-height: 38px;
+  max-height: 38px;
+  padding: 0 14px;
+  font-size: 13px !important;
+  line-height: 36px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border-radius: 999px;
+}
+.twin-composer-card:not(.expanded) .twin-textarea::placeholder {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 13px;
+}
+.twin-composer-quick-icons {
+  gap: 2px;
+}
+.twin-composer-quick-btn {
+  width: 34px;
+  height: 34px;
+}
+
+/* 2. Bổ sung nền vuông bo góc đồng bộ cho các thanh/mục còn để trống */
+.twin-stories-row {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 11px 12px;
+  margin-bottom: 12px;
+  box-shadow: var(--shadow-xs);
+}
+.twin-filter-bar {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 5px;
+  margin-bottom: 12px;
+  box-shadow: var(--shadow-xs);
+}
+.twin-friends-toolbar {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 15px;
+  padding: 10px 12px;
+  margin-bottom: 14px;
+  box-shadow: var(--shadow-xs);
+}
+.twin-market-toolbar {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 15px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+  box-shadow: var(--shadow-xs);
+}
+.twin-market-cats {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 8px 10px;
+  margin-bottom: 14px;
+  box-shadow: var(--shadow-xs);
+}
+.twin-reels-toolbar {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 15px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  box-shadow: var(--shadow-xs);
+}
+.twin-profile-tabs-wrap,
+.twin-group-tabs-wrap {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 15px;
+  padding: 5px;
+  margin-bottom: 14px;
+  box-shadow: var(--shadow-xs);
+}
+.twin-profile-tabs-wrap .twin-profile-tabs {
+  background: transparent;
+  border: none;
+  padding: 0;
+  box-shadow: none;
+}
+#saved-tabs.twin-seg-tabs {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 5px;
+  margin-bottom: 14px;
+  box-shadow: var(--shadow-xs);
+}
+
+/* Cân đối lại 3 tab học ngoại ngữ sau khi bỏ Gia sư AI */
+.twin-learn-tabs {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  box-shadow: var(--shadow-xs);
+}
+
+/* 3. Chống gãy dòng / chèn chữ xuống dòng trên tất cả nút, tab, nhãn & thanh lọc */
+.twin-btn,
+.twin-btn-sm,
+.twin-seg-tab,
+.twin-learn-tab,
+.twin-lang-btn,
+.twin-market-cat-btn,
+.twin-filter-bar .feed-filter,
+.twin-action-btn,
+.twin-story-like-btn,
+.twin-story-act-pill,
+.twin-feeling-pill,
+.twin-privacy-pill,
+.twin-tab-badge,
+.twin-pill-tag,
+.twin-cover-glass-btn,
+.twin-nav-link,
+.twin-side-item,
+.twin-mobile-tab,
+.twin-srs-btn > span,
+.twin-srs-btn > small {
+  white-space: nowrap;
+}
+.twin-btn,
+.twin-seg-tab,
+.twin-learn-tab,
+.twin-lang-btn {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 4. Tối ưu cân đối bố cục Desktop */
+@media (min-width: 1024px) {
+  .twin-market-main,
+  .twin-learn-main {
+    max-width: 1120px !important;
+  }
+  .twin-page-head,
+  .twin-friends-top,
+  .twin-market-hero,
+  .twin-learn-hero {
+    padding: 16px 20px;
+    border-radius: 16px;
+  }
+  .twin-market-toolbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: 10px;
+  }
+  .twin-market-search-wrap {
+    min-width: 0;
+  }
+}
+
+/* 5. Tối ưu thu gọn chữ & bố cục gọn gàng trên Mobile / Tablet nhỏ */
+@media (max-width: 820px) {
+  .twin-composer-card:not(.expanded) {
+    padding: 8px 10px;
+    border-radius: 14px;
+  }
+  .twin-composer-card:not(.expanded) .twin-avatar {
+    width: 34px;
+    height: 34px;
+  }
+  .twin-composer-card:not(.expanded) .twin-textarea {
+    height: 36px;
+    min-height: 36px;
+    max-height: 36px;
+    line-height: 34px;
+    padding: 0 12px;
+    font-size: 12.5px !important;
+  }
+  .twin-composer-card:not(.expanded) .twin-textarea::placeholder {
+    font-size: 12.5px;
+  }
+  .twin-stories-row {
+    padding: 9px 10px;
+    border-radius: 14px;
+    margin-bottom: 10px;
+  }
+  .twin-filter-bar {
+    padding: 4px;
+    border-radius: 13px;
+    margin-bottom: 10px;
+  }
+  .twin-filter-bar .feed-filter {
+    padding: 7px 8px;
+    font-size: 12px;
+  }
+  .twin-btn {
+    font-size: 13px;
+    padding: 8px 12px;
+    gap: 6px;
+  }
+  .twin-btn-sm {
+    font-size: 12px;
+    padding: 6px 10px;
+    gap: 5px;
+  }
+  .twin-seg-tab {
+    font-size: 12px;
+    padding: 7px 8px;
+    gap: 4px;
+  }
+  .twin-tab-badge {
+    font-size: 10.5px;
+    padding: 1px 6px;
+  }
+  .twin-friends-top,
+  .twin-page-head,
+  .twin-market-hero,
+  .twin-learn-hero {
+    padding: 14px 14px;
+    border-radius: 14px;
+    gap: 10px;
+  }
+  .twin-market-hero h1,
+  .twin-learn-hero h1,
+  .twin-page-head h1 {
+    font-size: 19px;
+  }
+  .twin-friends-toolbar {
+    padding: 8px 10px;
+    border-radius: 14px;
+    gap: 8px;
+  }
+  .twin-friends-toolbar .twin-seg-tab {
+    font-size: 11.5px;
+    padding: 7px 5px;
+  }
+  .twin-market-toolbar {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    padding: 10px;
+    border-radius: 14px;
+  }
+  .twin-market-search-wrap {
+    grid-column: 1 / -1;
+    min-width: 0;
+  }
+  .twin-market-toolbar .twin-select {
+    width: 100% !important;
+    min-width: 0 !important;
+    font-size: 13px;
+    padding: 8px 10px;
+  }
+  .twin-market-cats {
+    padding: 7px 8px;
+    border-radius: 13px;
+    gap: 6px;
+  }
+  .twin-market-cat-btn {
+    padding: 6px 11px;
+    font-size: 12px;
+  }
+  .twin-lang-switch {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .twin-lang-btn {
+    justify-content: center;
+    padding: 8px 8px;
+    font-size: 12.5px;
+  }
+  .twin-learn-tabs {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 4px;
+    padding: 4px;
+    border-radius: 13px;
+  }
+  .twin-learn-tab {
+    font-size: 12px;
+    padding: 8px 5px;
+    gap: 4px;
+  }
+  .twin-fc-controls {
+    gap: 6px;
+  }
+  .twin-fc-controls .twin-btn-sm {
+    font-size: 11.5px;
+    padding: 6px 9px;
+  }
+  .twin-srs-btn {
+    padding: 9px 6px;
+    font-size: 12px;
+  }
+  .twin-srs-btn small {
+    font-size: 10px;
+  }
+  .twin-reels-toolbar {
+    padding: 7px 9px;
+    border-radius: 13px;
+    gap: 6px;
+  }
+  .twin-reels-toolbar .twin-seg-tab {
+    font-size: 11.5px;
+    padding: 7px 6px;
+  }
+  .twin-profile-tabs-wrap,
+  .twin-group-tabs-wrap,
+  #saved-tabs.twin-seg-tabs {
+    padding: 4px;
+    border-radius: 13px;
+  }
+  .twin-profile-tabs .twin-seg-tab,
+  .twin-group-tabs .twin-seg-tab {
+    font-size: 11.5px;
+    padding: 7px 5px;
+    gap: 3px;
+  }
+  .twin-help-page-tabs .twin-seg-tab {
+    font-size: 11.5px;
+    padding: 7px 6px;
+  }
+  .twin-action-btn {
+    font-size: 12.5px;
+    padding: 6px 6px;
+    gap: 4px;
+  }
+}
+
+@media (max-width: 400px) {
+  .twin-composer-card:not(.expanded) .twin-textarea {
+    font-size: 12px !important;
+    padding: 0 10px;
+  }
+  .twin-composer-card:not(.expanded) .twin-textarea::placeholder {
+    font-size: 12px;
+  }
+  .twin-learn-tab {
+    font-size: 11px;
+    padding: 8px 3px;
+  }
+  .twin-lang-btn {
+    font-size: 11.5px;
+    padding: 7px 6px;
+  }
+  .twin-btn-sm {
+    font-size: 11.5px;
+    padding: 6px 8px;
+  }
+  .twin-srs-btn {
+    font-size: 11.5px;
+    padding: 8px 4px;
+  }
+  .twin-srs-btn small {
+    font-size: 9.5px;
+  }
+  .twin-profile-actions .twin-btn {
+    font-size: 12px;
+    padding: 7px 8px;
+  }
+}
+
 

@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
-  <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
+  <meta name="theme-color" content="#151a24" media="(prefers-color-scheme: dark)" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="mobile-web-app-capable" content="yes" />
@@ -14,6 +14,8 @@
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='ig' x1='0%25' y1='100%25' x2='100%25' y2='0%25'%3E%3Cstop offset='0%25' stop-color='%23feda75'/%3E%3Cstop offset='25%25' stop-color='%23fa7e1e'/%3E%3Cstop offset='52%25' stop-color='%23d62976'/%3E%3Cstop offset='78%25' stop-color='%23962fbf'/%3E%3Cstop offset='100%25' stop-color='%234f5bd5'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='32' cy='32' r='30' fill='url(%23ig)'/%3E%3Cellipse cx='25' cy='15' rx='15' ry='7' fill='%23ffffff' opacity='.22'/%3E%3Cpath d='M18.5 21.5h27v6.6h-9.7v19.4h-7.6V28.1h-9.7z' fill='%23ffffff'/%3E%3C/svg%3E" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://www.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="./assets/css/twin.css" />
   <link rel="modulepreload" href="./assets/js/firebase-service.js" />
@@ -58,6 +60,9 @@
           </button>
           <button type="button" id="msg-bg-btn" class="twin-icon-btn twin-msg-top-act" title="Đổi nền khung chat" aria-label="Đổi nền khung chat">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".8" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".8" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".8" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".8" fill="currentColor"/><path d="M12 2a10 10 0 0 0 0 20c1.4 0 2-.8 2-1.8 0-.5-.2-.9-.5-1.3-.3-.3-.5-.7-.5-1.2 0-1 .8-1.7 1.8-1.7H17a5 5 0 0 0 5-5c0-5-4.5-9-10-9Z"/></svg>
+          </button>
+          <button type="button" id="msg-delete-conv-btn" class="twin-icon-btn twin-msg-top-act danger" title="Xóa cuộc trò chuyện" aria-label="Xóa cuộc trò chuyện">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.5h16"/><path d="M18.5 6.5 17.6 19a2 2 0 0 1-2 1.8H8.4a2 2 0 0 1-2-1.8L5.5 6.5"/><path d="M9 6.5v-2a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
           </button>
           <a id="msg-peer-profile" href="./profile.html" class="twin-btn twin-btn-secondary twin-btn-sm">Trang cá nhân</a>
         </div>
@@ -177,7 +182,9 @@
       doc,
       collection,
       addDoc,
+      updateDoc,
       deleteDoc,
+      arrayRemove,
       twinConfirm,
       query,
       orderBy,
@@ -249,6 +256,132 @@
     let pendingFile = null;
     let pendingLink = null;
     let sending = false;
+    let clearedChatsMap = {}; // { [chatId]: { clearedAt: number, hidden: boolean } }
+
+    const TRASH_SVG = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.5h16"/><path d="M18.5 6.5 17.6 19a2 2 0 0 1-2 1.8H8.4a2 2 0 0 1-2-1.8L5.5 6.5"/><path d="M9 6.5v-2a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`;
+    const EMPTY_CHAT_PLACEHOLDER_HTML = `
+      <div class="twin-messenger-empty">
+        <div style="width:62px;height:62px;border-radius:50%;background:var(--primary-soft);border:1px solid var(--border);color:var(--primary);display:grid;place-items:center;margin:0 auto 12px;">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.5 8.5 0 0 1-12.6 7.4L3 20.5l1.6-4.8A8.5 8.5 0 1 1 21 11.5Z"/></svg>
+        </div>
+        <h3 style="color:var(--text);">Chọn một cuộc trò chuyện</h3>
+        <p style="margin-top:4px;font-size:14px;">Nhắn tin 1-1, tạo nhóm chat, đổi nền khung chat và gửi ảnh, video, tệp, liên kết.</p>
+      </div>
+    `;
+
+    function getClearedStorageKey() {
+      return me?.uid ? `twin_cleared_chats_v1_${me.uid}` : "twin_cleared_chats_v1";
+    }
+    function loadClearedChats(remoteMap = null) {
+      let localMap = {};
+      try {
+        localMap = JSON.parse(localStorage.getItem(getClearedStorageKey()) || "{}") || {};
+      } catch {
+        localMap = {};
+      }
+      const merged = { ...localMap };
+      if (remoteMap && typeof remoteMap === "object") {
+        Object.entries(remoteMap).forEach(([cid, entry]) => {
+          if (!entry || typeof entry !== "object") return;
+          const prev = merged[cid];
+          if (!prev || (Number(entry.clearedAt) || 0) >= (Number(prev.clearedAt) || 0)) {
+            merged[cid] = { clearedAt: Number(entry.clearedAt) || 0, hidden: Boolean(entry.hidden) };
+          }
+        });
+      }
+      clearedChatsMap = merged;
+      try {
+        localStorage.setItem(getClearedStorageKey(), JSON.stringify(clearedChatsMap));
+      } catch {}
+    }
+    function getChatClearedAt(chatId) {
+      return Number(clearedChatsMap[chatId]?.clearedAt) || 0;
+    }
+    function isChatHiddenByUser(chatId, lastMsg) {
+      const entry = clearedChatsMap[chatId];
+      if (!entry || !entry.hidden) return false;
+      const clearedAt = Number(entry.clearedAt) || 0;
+      if (lastMsg && (Number(lastMsg.timeMs) || 0) > clearedAt) return false;
+      return true;
+    }
+    async function persistClearedChat(chatId, entry) {
+      if (!me?.uid || !chatId) return;
+      clearedChatsMap[chatId] = entry;
+      try {
+        localStorage.setItem(getClearedStorageKey(), JSON.stringify(clearedChatsMap));
+      } catch {}
+      try {
+        await updateDoc(doc(db, "users", me.uid), {
+          [`clearedChats.${chatId}`]: entry
+        });
+      } catch (err) {
+        console.warn("Cleared chat sync:", err);
+      }
+    }
+
+    function resetActiveChatView() {
+      if (unsubChat) {
+        unsubChat();
+        unsubChat = null;
+      }
+      activeConv = null;
+      currentChatMessages = [];
+      clearPending();
+      if (linkBar) linkBar.style.display = "none";
+      topbar.style.display = "none";
+      sendForm.style.display = "none";
+      applyChatBackground(null);
+      feedEl.innerHTML = EMPTY_CHAT_PLACEHOLDER_HTML;
+      shell.classList.remove("chat-open");
+      document.body.classList.remove("mobile-chat-active");
+      setActiveChatPeer(null);
+    }
+
+    async function deleteConversation(targetConv) {
+      if (!me || !targetConv || !targetConv.chatId) return;
+      const isGroup = targetConv.type === "group";
+      const label = isGroup ? targetConv.group?.name || "nhóm chat" : targetConv.peer?.name || "người dùng";
+      const canDeleteGroup = isGroup && (targetConv.group?.ownerUid === me.uid || isUserAdmin(me));
+
+      const ok = await twinConfirm({
+        title: isGroup ? (canDeleteGroup ? "Xóa nhóm chat" : "Rời & xóa cuộc trò chuyện") : "Xóa cuộc trò chuyện",
+        message: isGroup
+          ? canDeleteGroup
+            ? `Bạn có chắc muốn xóa nhóm chat "${label}"? Toàn bộ cuộc trò chuyện này sẽ biến mất khỏi danh sách.`
+            : `Bạn có chắc muốn rời khỏi nhóm chat "${label}" và xóa cuộc trò chuyện khỏi danh sách?`
+          : `Bạn có chắc muốn xóa cuộc trò chuyện với ${label}? Toàn bộ lịch sử tin nhắn cũ sẽ được xóa khỏi danh sách của bạn.`,
+        confirmText: isGroup && !canDeleteGroup ? "Rời & xóa" : "Xóa"
+      });
+      if (!ok) return;
+
+      const chatId = targetConv.chatId;
+      const clearedAt = Date.now();
+      try {
+        if (isGroup && targetConv.group?.id) {
+          if (canDeleteGroup) {
+            await deleteDoc(doc(db, "groups", targetConv.group.id));
+          } else {
+            await updateDoc(doc(db, "groups", targetConv.group.id), {
+              members: arrayRemove(me.uid)
+            });
+          }
+        }
+        await persistClearedChat(chatId, { clearedAt, hidden: true });
+        saveChatBg(chatId, null);
+        if (activeConv && activeConv.chatId === chatId) {
+          resetActiveChatView();
+        }
+        renderConversations(document.getElementById("msg-search-user").value);
+        showToast("Đã xóa cuộc trò chuyện.");
+      } catch (err) {
+        showToast(friendlyError(err));
+      }
+    }
+
+    document.getElementById("msg-delete-conv-btn").onclick = () => {
+      if (!activeConv) return;
+      deleteConversation(activeConv);
+    };
 
     // ---- Chat Background Persistence ----
     function loadChatBgMap() {
@@ -613,11 +746,15 @@
       const items = [];
       chatGroups.forEach((g) => {
         if (!q || (g.name || "").toLowerCase().includes(q)) {
+          const lastRaw = lastMessages.get(g.chatId);
+          const clearedAt = getChatClearedAt(g.chatId);
+          const visibleLast = lastRaw && (Number(lastRaw.timeMs) || 0) > clearedAt ? lastRaw : null;
           items.push({
             type: "group",
             group: g,
             chatId: g.chatId,
-            sortTime: lastMessages.get(g.chatId)?.timeMs || toMillis(g.createdAt) || 0,
+            visibleLast,
+            sortTime: visibleLast?.timeMs || toMillis(g.createdAt) || 0,
             online: false,
             lastActiveMs: 0
           });
@@ -626,12 +763,17 @@
       allUsers.forEach((u) => {
         if (!q || (u.name || "").toLowerCase().includes(q)) {
           const cid = getChatId(me.uid, u.uid);
+          const lastRaw = lastMessages.get(cid);
+          if (!q && isChatHiddenByUser(cid, lastRaw)) return;
+          const clearedAt = getChatClearedAt(cid);
+          const visibleLast = lastRaw && (Number(lastRaw.timeMs) || 0) > clearedAt ? lastRaw : null;
           const p = getUserPresence(u);
           items.push({
             type: "dm",
             peer: u,
             chatId: cid,
-            sortTime: lastMessages.get(cid)?.timeMs || 0,
+            visibleLast,
+            sortTime: visibleLast?.timeMs || 0,
             online: p.online,
             lastActiveMs: p.lastActiveMs || 0
           });
@@ -650,10 +792,13 @@
       }
 
       items.forEach((it) => {
-        const last = lastMessages.get(it.chatId);
+        const last = it.visibleLast;
         const timeLabel = last ? formatTime(last.createdAt) : "";
         const isActive = Boolean(activeConv && activeConv.chatId === it.chatId);
+        const row = document.createElement("div");
+        row.className = "twin-conv-row";
         const btn = document.createElement("button");
+        btn.type = "button";
 
         if (it.type === "group") {
           const g = it.group;
@@ -704,7 +849,21 @@
           });
           btn.onclick = () => selectPeer(u);
         }
-        convList.appendChild(btn);
+
+        const delBtn = document.createElement("button");
+        delBtn.type = "button";
+        delBtn.className = "twin-conv-del-btn";
+        delBtn.title = "Xóa cuộc trò chuyện";
+        delBtn.setAttribute("aria-label", "Xóa cuộc trò chuyện");
+        delBtn.innerHTML = TRASH_SVG;
+        delBtn.onclick = (e) => {
+          e.stopPropagation();
+          deleteConversation(it);
+        };
+
+        row.appendChild(btn);
+        row.appendChild(delBtn);
+        convList.appendChild(row);
       });
     }
 
@@ -717,13 +876,20 @@
       unsubChat = onSnapshot(q, (snap) => {
         feedEl.innerHTML = "";
         currentChatMessages = [];
-        if (snap.empty) {
+        const clearedAt = getChatClearedAt(chatId);
+        const visibleDocs = [];
+        snap.forEach((d) => {
+          const m = d.data();
+          const msgMs = m.createdAt ? toMillis(m.createdAt) : Date.now();
+          if (clearedAt > 0 && msgMs <= clearedAt) return;
+          visibleDocs.push({ id: d.id, data: m });
+        });
+        if (!visibleDocs.length) {
           const title = isGroup ? activeConv.group.name : activeConv.peer.name;
           feedEl.innerHTML = `<div class="twin-messenger-empty">Gửi lời chào tới <strong>${escapeHtml(title)}</strong>!</div>`;
           return;
         }
-        snap.forEach((d) => {
-          const m = d.data();
+        visibleDocs.forEach(({ id: msgId, data: m }) => {
           currentChatMessages.push(m);
           const isMine = m.senderUid === me.uid;
           const canDel = isMine || isUserAdmin(me);
@@ -738,7 +904,7 @@
               if (!ok) return;
               if (btnEl) btnEl.disabled = true;
               try {
-                await deleteDoc(doc(db, "messages", chatId, "items", d.id));
+                await deleteDoc(doc(db, "messages", chatId, "items", msgId));
                 showToast("Đã xóa tin nhắn.");
               } catch (err) {
                 if (btnEl) btnEl.disabled = false;
@@ -817,6 +983,7 @@
           return;
         }
 
+        loadClearedChats(me.clearedChats);
         document.getElementById("msg-search-user").addEventListener("input", (e) => renderConversations(e.target.value));
         const preselectUid = new URLSearchParams(window.location.search).get("uid");
         const preselectGroupId = new URLSearchParams(window.location.search).get("group");
@@ -827,7 +994,11 @@
           snap.forEach((d) => {
             const u = d.data();
             usersById.set(u.uid, u);
-            if (u.uid !== me.uid) allUsers.push(u);
+            if (u.uid === me.uid) {
+              loadClearedChats(u.clearedChats);
+            } else {
+              allUsers.push(u);
+            }
           });
           if (activeConv?.type === "dm") {
             const refreshed = allUsers.find((u) => u.uid === activeConv.peer.uid);
@@ -970,6 +1141,9 @@
             }
 
             await addDoc(collection(db, "messages", chatId, "items"), payload);
+            if (clearedChatsMap[chatId]?.hidden) {
+              persistClearedChat(chatId, { clearedAt: getChatClearedAt(chatId), hidden: false }).catch(() => {});
+            }
             textInput.value = "";
             clearPending();
 

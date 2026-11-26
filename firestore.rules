@@ -64,6 +64,8 @@ service cloud.firestore {
       allow update: if isAdmin() || (isMember() && (
         resource.data.authorUid == request.auth.uid
         || (onlyChanges(['likes']) && onlyTouchesSelfIn('likes'))
+        || onlyChanges(['reactions'])
+        || onlyChanges(['likes', 'reactions'])
         || (onlyChanges(['savedBy']) && onlyTouchesSelfIn('savedBy'))
         || (onlyChanges(['sharesCount'])
             && request.resource.data.sharesCount is int

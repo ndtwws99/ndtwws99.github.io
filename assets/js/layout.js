@@ -150,25 +150,31 @@ function initHtmlLinkPrefetch() {
   document.addEventListener("pointerenter", onLinkIntent, true);
   document.addEventListener("touchstart", onLinkIntent, { capture: true, passive: true });
 
-  // Idle prefetch core Twin pages so switching tabs feels instant
+  // Idle prefetch top Twin pages after page finishes loading so initial paint stays fast
+  const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+  if (conn && (conn.saveData || conn.effectiveType === "slow-2g" || conn.effectiveType === "2g")) {
+    return;
+  }
   const corePages = [
     "./index.html",
-    "./profile.html",
-    "./reels.html",
     "./market.html",
     "./learn.html",
-    "./friends.html",
-    "./groups.html",
     "./messages.html",
-    "./saved.html",
-    "./help.html"
+    "./profile.html"
   ];
-  const scheduleIdle = window.requestIdleCallback || ((fn) => setTimeout(fn, 900));
-  scheduleIdle(() => {
-    corePages.forEach((p, idx) => {
-      setTimeout(() => prefetchHtmlUrl(p), idx * 140);
+  const runIdlePrefetch = () => {
+    const scheduleIdle = window.requestIdleCallback || ((fn) => setTimeout(fn, 1800));
+    scheduleIdle(() => {
+      corePages.forEach((p, idx) => {
+        setTimeout(() => prefetchHtmlUrl(p), idx * 240);
+      });
     });
-  });
+  };
+  if (document.readyState === "complete") {
+    runIdlePrefetch();
+  } else {
+    window.addEventListener("load", runIdlePrefetch, { once: true });
+  }
 }
 
 export const ICONS = {
@@ -2417,7 +2423,8 @@ export function openTwinChat(peer) {
           
         </div>
       </a>
-      <div style="display:flex;align-items:center;gap:6px;">
+      <div style="display:flex;align-items:center;gap:4px;">
+        <button type="button" class="twin-icon-btn chat-delete-conv" style="width:28px;height:28px;" title="Xóa cuộc trò chuyện" aria-label="Xóa cuộc trò chuyện"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.5h16"/><path d="M18.5 6.5 17.6 19a2 2 0 0 1-2 1.8H8.4a2 2 0 0 1-2-1.8L5.5 6.5"/><path d="M9 6.5v-2a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>
         <a href="./messages.html?uid=${encodeURIComponent(peer.uid)}" class="twin-icon-btn" style="width:28px;height:28px;font-size:13px;" title="Mở toàn màn hình">⤢</a>
         <button class="twin-icon-btn chat-close" style="width:28px;height:28px;font-size:14px;" title="Đóng">✕</button>
       </div>
@@ -2540,11 +2547,50 @@ export function openTwinChat(peer) {
     textInput.focus();
   };
 
+  const getMiniChatClearedAt = () => {
+    const key = `twin_cleared_chats_v1_${currentUserData.uid}`;
+    let localCleared = 0;
+    try {
+      const m = JSON.parse(localStorage.getItem(key) || "{}") || {};
+      localCleared = Number(m[chatId]?.clearedAt) || 0;
+    } catch {}
+    const remoteCleared = Number(currentUserData?.clearedChats?.[chatId]?.clearedAt) || 0;
+    return Math.max(localCleared, remoteCleared);
+  };
+
+  box.querySelector(".chat-delete-conv").onclick = async () => {
+    const ok = await twinConfirm({
+      title: "Xóa cuộc trò chuyện",
+      message: `Bạn có chắc muốn xóa cuộc trò chuyện với ${peer.name}? Toàn bộ lịch sử tin nhắn cũ sẽ bị xóa khỏi danh sách của bạn.`,
+      confirmText: "Xóa"
+    });
+    if (!ok) return;
+    const entry = { clearedAt: Date.now(), hidden: true };
+    const key = `twin_cleared_chats_v1_${currentUserData.uid}`;
+    try {
+      const map = JSON.parse(localStorage.getItem(key) || "{}") || {};
+      map[chatId] = entry;
+      localStorage.setItem(key, JSON.stringify(map));
+    } catch {}
+    if (!currentUserData.clearedChats || typeof currentUserData.clearedChats !== "object") {
+      currentUserData.clearedChats = {};
+    }
+    currentUserData.clearedChats[chatId] = entry;
+    updateDoc(doc(db, "users", currentUserData.uid), { [`clearedChats.${chatId}`]: entry }).catch(() => {});
+    unsub();
+    box.remove();
+    openChats.delete(peer.uid);
+    showToast("Đã xóa cuộc trò chuyện.");
+  };
+
   const q = query(collection(db, "messages", chatId, "items"), orderBy("createdAt", "asc"));
   const unsub = onSnapshot(q, (snap) => {
     msgWrap.innerHTML = "";
+    const clearedAt = getMiniChatClearedAt();
     snap.forEach((d) => {
       const m = d.data();
+      const msgMs = m.createdAt ? toMillis(m.createdAt) : Date.now();
+      if (clearedAt > 0 && msgMs <= clearedAt) return;
       const isMine = m.senderUid === currentUserData.uid;
       const canDel = isMine || isUserAdmin(currentUserData);
       msgWrap.appendChild(
