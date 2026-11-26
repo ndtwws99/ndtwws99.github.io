@@ -682,39 +682,133 @@ export function normalizeSafeHttpUrl(raw = "") {
   }
 }
 
+
+// ==========================================================================
+// User Directory Cache, #Hashtag & @Mention Rich Text Helpers
+// ==========================================================================
+let cachedDirectoryUsers = [];
+
+export function syncUserDirectory(users = []) {
+  if (!Array.isArray(users)) return;
+  cachedDirectoryUsers = users.filter((u) => u && (u.uid || u.id));
+}
+
+export function getDirectoryUsers() {
+  return cachedDirectoryUsers;
+}
+
+export function findUserByMention(rawName = "") {
+  const clean = String(rawName || "").trim().replace(/^@/, "").toLowerCase();
+  if (!clean) return null;
+  const noSpaces = clean.replace(/\s+/g, "");
+  return (
+    cachedDirectoryUsers.find((u) => {
+      const name = String(u.name || "").trim().toLowerCase();
+      return name === clean || name.replace(/\s+/g, "") === noSpaces;
+    }) ||
+    cachedDirectoryUsers.find((u) => {
+      const name = String(u.name || "").trim().toLowerCase();
+      return name.startsWith(clean) || name.replace(/\s+/g, "").startsWith(noSpaces);
+    }) ||
+    null
+  );
+}
+
+export function renderRichTextHtml(rawText = "") {
+  const str = String(rawText || "");
+  if (!str) return "";
+  const tokenRe = /(https?:\/\/[^\s<>"'`]+|www\.[^\s<>"'`]+|#[\p{L}\p{N}_]+|@[\p{L}\p{N}_.-]+)/gu;
+  let out = "";
+  let lastIdx = 0;
+  let match;
+  while ((match = tokenRe.exec(str)) !== null) {
+    const start = match.index;
+    if (start > lastIdx) out += escapeHtml(str.slice(lastIdx, start));
+    let token = match[0];
+    let trailing = "";
+    while (/[.,!?;:)\]}]$/.test(token)) {
+      trailing = token.slice(-1) + trailing;
+      token = token.slice(0, -1);
+    }
+    if (token.startsWith("#") && token.length > 1) {
+      const kw = token.slice(1);
+      out += `<a class="twin-hashtag" href="./index.html?q=${encodeURIComponent(kw)}" data-hashtag="${escapeHtml(kw)}">${escapeHtml(token)}</a>`;
+    } else if (token.startsWith("@") && token.length > 1) {
+      const namePart = token.slice(1);
+      const matchedUser = findUserByMention(namePart);
+      const href = matchedUser
+        ? `./profile.html?uid=${encodeURIComponent(matchedUser.uid || matchedUser.id)}`
+        : `./index.html?q=${encodeURIComponent(namePart)}`;
+      out += `<a class="twin-mention" href="${href}" data-mention="${escapeHtml(namePart)}">${escapeHtml(token)}</a>`;
+    } else {
+      const safeUrl = normalizeSafeHttpUrl(token);
+      if (safeUrl) {
+        out += `<a class="twin-msg-link" href="${escapeHtml(safeUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(token)}</a>`;
+      } else {
+        out += escapeHtml(token);
+      }
+    }
+    if (trailing) out += escapeHtml(trailing);
+    lastIdx = tokenRe.lastIndex;
+  }
+  if (lastIdx < str.length) out += escapeHtml(str.slice(lastIdx));
+  return out;
+}
+
 export function linkifyTextToFragment(text = "") {
   const frag = document.createDocumentFragment();
   const str = String(text || "");
-  const urlRe = /((?:https?:\/\/|www\.)[^\s<>"'`]+)/gi;
+  const tokenRe = /(https?:\/\/[^\s<>"'`]+|www\.[^\s<>"'`]+|#[\p{L}\p{N}_]+|@[\p{L}\p{N}_.-]+)/gu;
   let lastIdx = 0;
   let firstUrl = "";
   let match;
-  while ((match = urlRe.exec(str)) !== null) {
+  while ((match = tokenRe.exec(str)) !== null) {
     const start = match.index;
     if (start > lastIdx) {
       frag.appendChild(document.createTextNode(str.slice(lastIdx, start)));
     }
-    let rawUrl = match[0];
+    let token = match[0];
     let trailing = "";
-    while (/[.,!?;:)\]}]$/.test(rawUrl)) {
-      trailing = rawUrl.slice(-1) + trailing;
-      rawUrl = rawUrl.slice(0, -1);
+    while (/[.,!?;:)\]}]$/.test(token)) {
+      trailing = token.slice(-1) + trailing;
+      token = token.slice(0, -1);
     }
-    const safeUrl = normalizeSafeHttpUrl(rawUrl);
-    if (safeUrl) {
-      if (!firstUrl) firstUrl = safeUrl;
+    if (token.startsWith("#") && token.length > 1) {
+      const kw = token.slice(1);
       const a = document.createElement("a");
-      a.className = "twin-msg-link";
-      a.href = safeUrl;
-      a.target = "_blank";
-      a.rel = "noopener noreferrer";
-      a.textContent = rawUrl;
+      a.className = "twin-hashtag";
+      a.href = `./index.html?q=${encodeURIComponent(kw)}`;
+      a.dataset.hashtag = kw;
+      a.textContent = token;
+      frag.appendChild(a);
+    } else if (token.startsWith("@") && token.length > 1) {
+      const namePart = token.slice(1);
+      const matchedUser = findUserByMention(namePart);
+      const a = document.createElement("a");
+      a.className = "twin-mention";
+      a.href = matchedUser
+        ? `./profile.html?uid=${encodeURIComponent(matchedUser.uid || matchedUser.id)}`
+        : `./index.html?q=${encodeURIComponent(namePart)}`;
+      a.dataset.mention = namePart;
+      a.textContent = token;
       frag.appendChild(a);
     } else {
-      frag.appendChild(document.createTextNode(rawUrl));
+      const safeUrl = normalizeSafeHttpUrl(token);
+      if (safeUrl) {
+        if (!firstUrl) firstUrl = safeUrl;
+        const a = document.createElement("a");
+        a.className = "twin-msg-link";
+        a.href = safeUrl;
+        a.target = "_blank";
+        a.rel = "noopener noreferrer";
+        a.textContent = token;
+        frag.appendChild(a);
+      } else {
+        frag.appendChild(document.createTextNode(token));
+      }
     }
     if (trailing) frag.appendChild(document.createTextNode(trailing));
-    lastIdx = urlRe.lastIndex;
+    lastIdx = tokenRe.lastIndex;
   }
   if (lastIdx < str.length) {
     frag.appendChild(document.createTextNode(str.slice(lastIdx)));
@@ -734,7 +828,7 @@ export function formatChatMessagePreview(m, myUid = "") {
   return "Chưa có tin nhắn";
 }
 
-export function createChatMessageElement(m, isMine = false) {
+export function createChatMessageElement(m, isMine = false, { canDelete = false, onDelete = null } = {}) {
   const div = document.createElement("div");
   div.className = `twin-msg ${isMine ? "me" : "them"}`;
 
@@ -833,10 +927,27 @@ export function createChatMessageElement(m, isMine = false) {
     div.appendChild(fileCard);
   }
 
-  const timeEl = document.createElement("div");
+  const footEl = document.createElement("div");
+  footEl.className = "twin-msg-foot";
+  const timeEl = document.createElement("span");
   timeEl.className = "twin-msg-time";
   timeEl.textContent = formatTime(m.createdAt);
-  div.appendChild(timeEl);
+  footEl.appendChild(timeEl);
+
+  if (canDelete && typeof onDelete === "function") {
+    const delBtn = document.createElement("button");
+    delBtn.type = "button";
+    delBtn.className = "twin-msg-del-btn";
+    delBtn.title = "Xóa tin nhắn";
+    delBtn.setAttribute("aria-label", "Xóa tin nhắn");
+    delBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.5h16"/><path d="M18.5 6.5 17.6 19a2 2 0 0 1-2 1.8H8.4a2 2 0 0 1-2-1.8L5.5 6.5"/><path d="M9 6.5v-2a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`;
+    delBtn.onclick = (e) => {
+      e.stopPropagation();
+      onDelete(delBtn);
+    };
+    footEl.appendChild(delBtn);
+  }
+  div.appendChild(footEl);
   return div;
 }
 

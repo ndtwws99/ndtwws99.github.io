@@ -23,6 +23,7 @@ import {
   containsHtmlMarkup,
   DEFAULT_AVATAR,
   escapeHtml,
+  renderRichTextHtml,
   formatTime,
   toMillis,
   showToast,
@@ -117,6 +118,218 @@ function bindPickerCloser() {
     });
   });
 }
+
+// ==========================================================================
+// Album ảnh & Video Gallery + Full-screen Media Lightbox
+// ==========================================================================
+export function getPostImages(post) {
+  if (!post) return [];
+  if (Array.isArray(post.imageUrls) && post.imageUrls.length) {
+    return post.imageUrls.filter((u) => typeof u === "string" && u.trim());
+  }
+  if (typeof post.imageUrl === "string" && post.imageUrl.trim()) {
+    return [post.imageUrl.trim()];
+  }
+  return [];
+}
+
+let lbItems = [];
+let lbIndex = 0;
+
+function ensureMediaLightbox() {
+  let backdrop = document.getElementById("twin-media-lightbox");
+  if (backdrop) return backdrop;
+
+  backdrop = document.createElement("div");
+  backdrop.id = "twin-media-lightbox";
+  backdrop.className = "twin-modal-backdrop twin-media-lightbox";
+  backdrop.setAttribute("role", "dialog");
+  backdrop.setAttribute("aria-modal", "true");
+  backdrop.innerHTML = `
+    <div class="twin-media-lb-shell">
+      <div class="twin-media-lb-bar">
+        <div style="min-width:0;display:flex;align-items:center;gap:10px;">
+          <span id="twin-mlb-title" class="twin-media-lb-title">Album</span>
+          <span id="twin-mlb-counter" class="twin-media-lb-counter"></span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <a id="twin-mlb-open" href="#" target="_blank" rel="noopener noreferrer" class="twin-btn twin-btn-secondary twin-btn-sm" style="background:rgba(255,255,255,0.14);color:#fff;border-color:transparent;">Mở gốc</a>
+          <button type="button" id="twin-mlb-close" class="twin-icon-btn twin-lightbox-close-btn" aria-label="Đóng">✕</button>
+        </div>
+      </div>
+      <div class="twin-media-lb-stage">
+        <button type="button" id="twin-mlb-prev" class="twin-media-lb-nav prev" aria-label="Trước">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+        </button>
+        <img id="twin-mlb-img" alt="Xem ảnh" style="display:none;" />
+        <video id="twin-mlb-video" controls playsinline style="display:none;"></video>
+        <button type="button" id="twin-mlb-next" class="twin-media-lb-nav next" aria-label="Tiếp theo">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+        </button>
+      </div>
+      <div id="twin-mlb-caption" class="twin-media-lb-caption" style="display:none;"></div>
+    </div>
+  `;
+  document.body.appendChild(backdrop);
+
+  const imgEl = backdrop.querySelector("#twin-mlb-img");
+  const vidEl = backdrop.querySelector("#twin-mlb-video");
+  const titleEl = backdrop.querySelector("#twin-mlb-title");
+  const counterEl = backdrop.querySelector("#twin-mlb-counter");
+  const openEl = backdrop.querySelector("#twin-mlb-open");
+  const capEl = backdrop.querySelector("#twin-mlb-caption");
+  const prevBtn = backdrop.querySelector("#twin-mlb-prev");
+  const nextBtn = backdrop.querySelector("#twin-mlb-next");
+
+  const close = () => {
+    try { vidEl.pause(); vidEl.removeAttribute("src"); vidEl.load(); } catch {}
+    backdrop.classList.remove("open");
+  };
+
+  const paint = () => {
+    if (!lbItems.length) return;
+    lbIndex = ((lbIndex % lbItems.length) + lbItems.length) % lbItems.length;
+    const item = lbItems[lbIndex];
+    const url = typeof item === "string" ? item : item.url;
+    const isVid = typeof item === "object" && item.type === "video";
+    const caption = typeof item === "object" ? (item.caption || "") : "";
+
+    counterEl.textContent = lbItems.length > 1 ? `${lbIndex + 1} / ${lbItems.length}` : "";
+    openEl.href = url || "#";
+    prevBtn.style.display = lbItems.length > 1 ? "grid" : "none";
+    nextBtn.style.display = lbItems.length > 1 ? "grid" : "none";
+
+    if (isVid) {
+      imgEl.style.display = "none";
+      vidEl.style.display = "block";
+      vidEl.src = url;
+      if (item.poster) vidEl.poster = item.poster;
+      else vidEl.removeAttribute("poster");
+    } else {
+      try { vidEl.pause(); vidEl.removeAttribute("src"); vidEl.load(); } catch {}
+      vidEl.style.display = "none";
+      imgEl.style.display = "block";
+      imgEl.src = url;
+    }
+
+    if (caption) {
+      capEl.textContent = caption;
+      capEl.style.display = "block";
+    } else {
+      capEl.style.display = "none";
+    }
+  };
+
+  backdrop.querySelector("#twin-mlb-close").onclick = close;
+  backdrop.addEventListener("click", (e) => {
+    if (e.target === backdrop) close();
+  });
+  prevBtn.onclick = (e) => { e.stopPropagation(); lbIndex -= 1; paint(); };
+  nextBtn.onclick = (e) => { e.stopPropagation(); lbIndex += 1; paint(); };
+
+  document.addEventListener("keydown", (e) => {
+    if (!backdrop.classList.contains("open")) return;
+    if (e.key === "ArrowLeft" && lbItems.length > 1) { lbIndex -= 1; paint(); }
+    else if (e.key === "ArrowRight" && lbItems.length > 1) { lbIndex += 1; paint(); }
+    else if (e.key === "Escape") close();
+  });
+
+  backdrop._paint = paint;
+  backdrop._titleEl = titleEl;
+  return backdrop;
+}
+
+export function openMediaLightbox(items = [], startIndex = 0, title = "Album ảnh") {
+  const list = Array.isArray(items) ? items.filter(Boolean) : [];
+  if (!list.length) return;
+  const backdrop = ensureMediaLightbox();
+  lbItems = list;
+  lbIndex = Math.max(0, Math.min(startIndex, list.length - 1));
+  backdrop._titleEl.textContent = title || "Album ảnh";
+  backdrop._paint();
+  backdrop.classList.add("open");
+}
+
+export function extractMediaFromPosts(posts = []) {
+  const photos = [];
+  const videos = [];
+  posts.forEach((p) => {
+    const imgs = getPostImages(p);
+    const plainCap = p.content ? String(p.content).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 140) : "";
+    imgs.forEach((url) => {
+      photos.push({
+        type: "image",
+        url,
+        postId: p.id,
+        authorName: p.authorName || "",
+        caption: plainCap,
+        createdAt: p.createdAt
+      });
+    });
+    if (p.videoUrl) {
+      videos.push({
+        type: "video",
+        url: p.videoUrl,
+        poster: p.videoPoster || getVideoPosterUrl(p.videoUrl),
+        duration: p.videoDuration || 0,
+        postId: p.id,
+        authorName: p.authorName || "",
+        caption: plainCap,
+        createdAt: p.createdAt
+      });
+    }
+  });
+  return { photos, videos };
+}
+
+export function renderMediaGallery(container, posts = [], { type = "photo", emptyText = "", title = "" } = {}) {
+  if (!container) return;
+  const { photos, videos } = extractMediaFromPosts(posts);
+
+  if (type === "video") {
+    if (!videos.length) {
+      container.innerHTML = `<div class="twin-card twin-gallery-empty">${escapeHtml(emptyText || "Chưa có video nào trong album.")}</div>`;
+      return;
+    }
+    container.innerHTML = `<div class="twin-video-gallery-grid"></div>`;
+    const grid = container.querySelector(".twin-video-gallery-grid");
+    videos.forEach((v, idx) => {
+      const card = document.createElement("div");
+      card.className = "twin-video-gallery-card";
+      const dur = v.duration ? formatDuration(v.duration) : "Video";
+      card.innerHTML = `
+        <div class="twin-video-gallery-media">
+          <video src="${escapeHtml(v.url)}" ${v.poster ? `poster="${escapeHtml(v.poster)}"` : ""} controls playsinline preload="metadata"></video>
+          <span class="twin-video-gallery-badge">${escapeHtml(dur)}</span>
+        </div>
+        <div class="twin-video-gallery-foot">
+          <div class="twin-video-gallery-cap">${escapeHtml(v.caption || "Video đã đăng")}</div>
+          <button type="button" class="twin-btn twin-btn-secondary twin-btn-sm btn-open-v-lb">Phóng to</button>
+        </div>
+      `;
+      card.querySelector(".btn-open-v-lb").onclick = () => openMediaLightbox(videos, idx, title || "Album video");
+      grid.appendChild(card);
+    });
+    return;
+  }
+
+  if (!photos.length) {
+    container.innerHTML = `<div class="twin-card twin-gallery-empty">${escapeHtml(emptyText || "Chưa có ảnh nào trong album.")}</div>`;
+    return;
+  }
+  container.innerHTML = `<div class="twin-album-grid"></div>`;
+  const grid = container.querySelector(".twin-album-grid");
+  photos.forEach((item, idx) => {
+    const tile = document.createElement("button");
+    tile.type = "button";
+    tile.className = "twin-album-tile";
+    tile.title = item.caption || "Xem ảnh";
+    tile.innerHTML = `<img src="${escapeHtml(item.url)}" alt="${escapeHtml(item.caption || "Ảnh album")}" loading="lazy" />`;
+    tile.onclick = () => openMediaLightbox(photos, idx, title || "Album ảnh");
+    grid.appendChild(tile);
+  });
+}
+
 
 // ==========================================================================
 // Modal chỉnh sửa bài viết (Tự động nhận diện Văn bản hoặc Mã HTML)
@@ -391,7 +604,7 @@ export function renderPostCard(post, currentUser) {
   const bodyHtml = post.content
     ? renderAsHtml
       ? `<div class="twin-post-body twin-post-html">${sanitizeHtml(post.content)}</div>`
-      : `<div class="twin-post-body">${escapeHtml(post.content)}</div>`
+      : `<div class="twin-post-body">${renderRichTextHtml(post.content)}</div>`
     : "";
 
   card.innerHTML = `
@@ -425,7 +638,29 @@ export function renderPostCard(post, currentUser) {
     </div>
 
     ${bodyHtml}
-    ${post.imageUrl ? `<img class="twin-post-image" src="${escapeHtml(post.imageUrl)}" alt="Ảnh bài viết" loading="lazy" />` : ""}
+    ${(() => {
+      const imgs = getPostImages(post);
+      if (!imgs.length) return "";
+      if (imgs.length === 1) {
+        return `<img class="twin-post-image twin-post-album-trigger" data-idx="0" src="${escapeHtml(imgs[0])}" alt="Ảnh bài viết" loading="lazy" />`;
+      }
+      const shown = imgs.slice(0, 4);
+      const extra = imgs.length - 4;
+      const cls = `count-${Math.min(imgs.length, 4)}`;
+      return `
+        <div class="twin-album-post-grid ${cls}">
+          ${shown
+            .map(
+              (url, i) => `
+            <button type="button" class="twin-album-post-item twin-post-album-trigger" data-idx="${i}" aria-label="Xem ảnh ${i + 1}/${imgs.length}">
+              <img src="${escapeHtml(url)}" alt="Ảnh ${i + 1}" loading="lazy" />
+              ${i === 3 && extra > 0 ? `<span class="twin-album-more-badge">+${extra}</span>` : ""}
+            </button>`
+            )
+            .join("")}
+        </div>
+      `;
+    })()}
     ${
       post.videoUrl
         ? (() => {
@@ -496,7 +731,7 @@ export function renderPostCard(post, currentUser) {
             </a>
             <div class="twin-comment-bubble">
               <a href="./profile.html?uid=${encodeURIComponent(c.authorUid || "")}" style="font-weight:700;font-size:13px;display:inline-flex;align-items:center;gap:4px;">${escapeHtml(c.authorName)}${renderAdminIconHtml(c.authorUid)}</a>
-              <div>${escapeHtml(c.text)}</div>
+              <div>${renderRichTextHtml(c.text)}</div>
             </div>
           </div>`
           )
@@ -512,6 +747,17 @@ export function renderPostCard(post, currentUser) {
       }
     </div>
   `;
+
+  const postImgs = getPostImages(post);
+  if (postImgs.length) {
+    const plainCap = post.content ? String(post.content).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 140) : "";
+    const lbList = postImgs.map((url) => ({ type: "image", url, caption: plainCap }));
+    card.querySelectorAll(".twin-post-album-trigger").forEach((el) => {
+      el.addEventListener("click", () => {
+        openMediaLightbox(lbList, Number(el.dataset.idx) || 0, post.authorName ? `Ảnh của ${post.authorName}` : "Album ảnh");
+      });
+    });
+  }
 
   const postLink = `./index.html#post-${post.id}`;
 
@@ -726,7 +972,7 @@ function postSignature(p, currentUser) {
   const saved = !!(currentUser && (currentUser.savedPosts || []).includes(p.id));
   const canManage = Boolean(currentUser && (currentUser.uid === p.authorUid || isUserAdmin(currentUser)));
   return JSON.stringify([
-    p.content, Boolean(p.isHtml), p.privacy || "public", p.imageUrl, p.videoUrl || "", p.videoType || "", p.videoDuration || 0,
+    p.content, Boolean(p.isHtml), p.privacy || "public", p.imageUrl, Array.isArray(p.imageUrls) ? p.imageUrls.join("|") : "", p.videoUrl || "", p.videoType || "", p.videoDuration || 0,
     p.feeling, p.groupName, p.pageName, p.authorName, p.authorAvatar,
     Boolean(p.pinned), p.pinnedAt || 0, p.editedAt || 0,
     Number(p.sharesCount) || 0, Array.isArray(p.savedBy) ? p.savedBy.length : 0,
@@ -847,9 +1093,12 @@ export function mountPostComposer(container, currentUser, { isProfilePage = fals
           <div id="pfc-html-preview-body" class="twin-post-body twin-post-html" style="margin-bottom:0;"></div>
         </div>
 
-        <div id="pfc-preview-wrap" style="margin-top:10px;display:none;position:relative;">
-          <img id="pfc-preview-img" class="twin-post-image" alt="Xem trước" />
-          <button id="pfc-preview-remove" type="button" class="twin-icon-btn" style="position:absolute;top:8px;right:8px;width:30px;height:30px;">✕</button>
+        <div id="pfc-preview-wrap" style="margin-top:10px;display:none;">
+          <div class="twin-composer-album-head">
+            <span id="pfc-album-count" class="twin-post-meta" style="font-weight:700;"></span>
+            <button id="pfc-preview-remove" type="button" class="twin-btn twin-btn-ghost twin-btn-sm" style="padding:3px 9px;color:var(--danger);">Xóa tất cả ảnh</button>
+          </div>
+          <div id="pfc-album-grid" class="twin-composer-album-grid"></div>
         </div>
 
         <div id="pfc-video-preview-wrap" class="twin-composer-video-preview" style="margin-top:10px;display:none;position:relative;">
@@ -872,8 +1121,8 @@ export function mountPostComposer(container, currentUser, { isProfilePage = fals
         <div class="twin-composer-media-btns">
           <label class="twin-btn twin-btn-secondary twin-btn-sm twin-media-btn-photo" style="cursor:pointer;">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-4.5-4.5a2 2 0 0 0-2.8 0L5 19"/></svg>
-            <span>Ảnh</span>
-            <input id="pfc-file" type="file" accept="image/*" hidden />
+            <span>Ảnh / Album</span>
+            <input id="pfc-file" type="file" accept="image/*" multiple hidden />
           </label>
           <label class="twin-btn twin-btn-secondary twin-btn-sm twin-media-btn-video" id="pfc-video-label" style="cursor:pointer;">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5.5" width="14" height="13" rx="2.5"/><path d="m16.5 10 5-3v10l-5-3"/></svg>
@@ -895,7 +1144,8 @@ export function mountPostComposer(container, currentUser, { isProfilePage = fals
   const htmlBody = container.querySelector("#pfc-html-preview-body");
   const fileInput = container.querySelector("#pfc-file");
   const previewWrap = container.querySelector("#pfc-preview-wrap");
-  const previewImg = container.querySelector("#pfc-preview-img");
+  const albumGrid = container.querySelector("#pfc-album-grid");
+  const albumCountEl = container.querySelector("#pfc-album-count");
   const videoLabel = container.querySelector("#pfc-video-label");
   const videoInput = container.querySelector("#pfc-video");
   const videoWrap = container.querySelector("#pfc-video-preview-wrap");
@@ -907,7 +1157,7 @@ export function mountPostComposer(container, currentUser, { isProfilePage = fals
   const publishBtn = container.querySelector("#pfc-publish");
   const avatarTrigger = container.querySelector("#pfc-avatar-trigger");
 
-  let selectedFile = null;
+  let selectedFiles = [];
   let selectedVideoFile = null;
   let selectedVideoDuration = 0;
   let selectedVideoObjUrl = "";
@@ -963,9 +1213,35 @@ export function mountPostComposer(container, currentUser, { isProfilePage = fals
     collapse();
   };
 
+  const renderAlbumPreview = () => {
+    albumGrid.innerHTML = "";
+    if (!selectedFiles.length) {
+      previewWrap.style.display = "none";
+      return;
+    }
+    previewWrap.style.display = "block";
+    albumCountEl.textContent = selectedFiles.length > 1 ? `Album ${selectedFiles.length} ảnh` : "1 ảnh đã chọn";
+    selectedFiles.forEach((item, idx) => {
+      const tile = document.createElement("div");
+      tile.className = "twin-composer-album-tile";
+      tile.innerHTML = `
+        <img src="${item.url}" alt="Ảnh ${idx + 1}" />
+        <button type="button" class="twin-composer-album-del" title="Bỏ ảnh này" aria-label="Bỏ ảnh này">✕</button>
+      `;
+      tile.querySelector(".twin-composer-album-del").onclick = () => {
+        URL.revokeObjectURL(item.url);
+        selectedFiles.splice(idx, 1);
+        renderAlbumPreview();
+      };
+      albumGrid.appendChild(tile);
+    });
+  };
+
   const clearMedia = () => {
-    selectedFile = null;
+    selectedFiles.forEach((it) => URL.revokeObjectURL(it.url));
+    selectedFiles = [];
     fileInput.value = "";
+    albumGrid.innerHTML = "";
     previewWrap.style.display = "none";
     if (selectedVideoObjUrl) {
       URL.revokeObjectURL(selectedVideoObjUrl);
@@ -982,12 +1258,28 @@ export function mountPostComposer(container, currentUser, { isProfilePage = fals
   };
 
   fileInput.onchange = () => {
-    const f = fileInput.files[0] || null;
-    clearMedia();
-    if (!f) return;
-    selectedFile = f;
-    previewImg.src = URL.createObjectURL(f);
-    previewWrap.style.display = "block";
+    const picked = [...(fileInput.files || [])].filter((f) => f && f.type && f.type.startsWith("image/"));
+    fileInput.value = "";
+    if (!picked.length) return;
+    if (selectedVideoFile) {
+      if (selectedVideoObjUrl) { URL.revokeObjectURL(selectedVideoObjUrl); selectedVideoObjUrl = ""; }
+      selectedVideoFile = null;
+      selectedVideoDuration = 0;
+      videoInput.value = "";
+      previewVideo.pause();
+      previewVideo.removeAttribute("src");
+      previewVideo.load();
+      videoWrap.style.display = "none";
+      videoMeta.textContent = "";
+    }
+    const remaining = Math.max(0, 10 - selectedFiles.length);
+    if (picked.length > remaining) {
+      showToast("Mỗi bài viết hỗ trợ tối đa 10 ảnh trong album.");
+    }
+    picked.slice(0, remaining).forEach((f) => {
+      selectedFiles.push({ file: f, url: URL.createObjectURL(f) });
+    });
+    renderAlbumPreview();
     expand(false);
   };
   container.querySelector("#pfc-preview-remove").onclick = clearMedia;
@@ -1027,7 +1319,7 @@ export function mountPostComposer(container, currentUser, { isProfilePage = fals
     }
     const content = contentEl.value.trim();
     const feeling = feelingEl.value;
-    if (!content && !selectedFile && !selectedVideoFile) {
+    if (!content && !selectedFiles.length && !selectedVideoFile) {
       return showToast("Hãy nhập nội dung hoặc chọn ảnh / video.");
     }
     if (selectedVideoFile && !cfg.allowVideoPosts && !isUserAdmin(currentUser)) {
@@ -1035,15 +1327,32 @@ export function mountPostComposer(container, currentUser, { isProfilePage = fals
     }
 
     publishBtn.disabled = true;
-    publishBtn.textContent = selectedVideoFile ? "Đang tải video..." : "Đang đăng...";
+    publishBtn.textContent = selectedVideoFile ? "Đang tải video..." : (selectedFiles.length > 1 ? "Đang tải album..." : "Đang đăng...");
     try {
       let imageUrl = "";
+      let imageUrls = [];
       let videoUrl = "";
       let videoType = "";
       let videoDuration = 0;
       let videoPoster = "";
-      if (selectedFile) {
-        imageUrl = await uploadToCloudinary(selectedFile);
+      if (selectedFiles.length) {
+        if (selectedFiles.length > 1) {
+          progressEl.style.display = "flex";
+        }
+        for (let i = 0; i < selectedFiles.length; i++) {
+          if (selectedFiles.length > 1) {
+            const pct = Math.round((i / selectedFiles.length) * 100);
+            progressFill.style.width = `${pct}%`;
+            progressText.textContent = `Đang tải ảnh ${i + 1}/${selectedFiles.length}...`;
+            publishBtn.textContent = `Đang tải ${i + 1}/${selectedFiles.length}...`;
+          }
+          const url = await uploadToCloudinary(selectedFiles[i].file);
+          if (url) imageUrls.push(url);
+        }
+        imageUrl = imageUrls[0] || "";
+        if (selectedFiles.length > 1) {
+          progressFill.style.width = "100%";
+        }
       } else if (selectedVideoFile) {
         progressEl.style.display = "flex";
         progressFill.style.width = "0%";
@@ -1075,6 +1384,7 @@ export function mountPostComposer(container, currentUser, { isProfilePage = fals
         privacy,
         allowedFriendUids: privacy === "friends" && Array.isArray(currentUser.friends) ? currentUser.friends : [],
         imageUrl,
+        imageUrls,
         videoUrl,
         videoType,
         videoDuration,

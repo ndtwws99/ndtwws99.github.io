@@ -17,6 +17,7 @@ import {
   addDoc,
   setDoc,
   updateDoc,
+  deleteDoc,
   updateProfile,
   writeBatch,
   serverTimestamp,
@@ -29,6 +30,9 @@ import {
   clearGuestSessionFlag,
   requireMemberAction,
   syncAdminRegistry,
+  syncUserDirectory,
+  getDirectoryUsers,
+  twinConfirm,
   registerAdminUser,
   renderAdminIconHtml,
   getUserPresence,
@@ -441,6 +445,7 @@ function subscribeGlobalSearchDirectory() {
       searchDirectory.users = [];
       snap.forEach((d) => searchDirectory.users.push({ id: d.id, ...d.data() }));
       syncAdminRegistry(searchDirectory.users);
+      syncUserDirectory(searchDirectory.users);
       const inp = document.getElementById("twin-global-search");
       if (inp && document.activeElement === inp && inp.value.trim()) renderGlobalSearchResults(inp.value);
       const adminSearch = document.getElementById("ts-admin-user-search");
@@ -2308,7 +2313,29 @@ export function openTwinChat(peer) {
     msgWrap.innerHTML = "";
     snap.forEach((d) => {
       const m = d.data();
-      msgWrap.appendChild(createChatMessageElement(m, m.senderUid === currentUserData.uid));
+      const isMine = m.senderUid === currentUserData.uid;
+      const canDel = isMine || isUserAdmin(currentUserData);
+      msgWrap.appendChild(
+        createChatMessageElement(m, isMine, {
+          canDelete: canDel,
+          onDelete: async (btnEl) => {
+            const ok = await twinConfirm({
+              title: "Xóa tin nhắn",
+              message: "Bạn có chắc muốn xóa tin nhắn này?",
+              confirmText: "Xóa"
+            });
+            if (!ok) return;
+            if (btnEl) btnEl.disabled = true;
+            try {
+              await deleteDoc(doc(db, "messages", chatId, "items", d.id));
+              showToast("Đã xóa tin nhắn.");
+            } catch (err) {
+              if (btnEl) btnEl.disabled = false;
+              showToast(friendlyError(err));
+            }
+          }
+        })
+      );
     });
     msgWrap.scrollTop = msgWrap.scrollHeight;
   }, (err) => {
@@ -2445,9 +2472,111 @@ function startPresenceHeartbeat(uid) {
   }
 }
 
+
+let mentionAcBound = false;
+function initMentionAutocomplete() {
+  if (mentionAcBound) return;
+  mentionAcBound = true;
+
+  let menu = null;
+  let activeEl = null;
+  let activeRange = null;
+
+  const closeMenu = () => {
+    if (menu) menu.classList.remove("open");
+    activeEl = null;
+    activeRange = null;
+  };
+
+  const ensureMenu = () => {
+    if (menu) return menu;
+    menu = document.createElement("div");
+    menu.id = "twin-mention-menu";
+    menu.className = "twin-mention-menu";
+    document.body.appendChild(menu);
+    return menu;
+  };
+
+  const handleInput = (e) => {
+    const el = e.target;
+    if (!el || (el.tagName !== "TEXTAREA" && !(el.tagName === "INPUT" && el.type === "text"))) return;
+    if (el.id === "twin-global-search") return;
+
+    const val = el.value || "";
+    const pos = el.selectionStart ?? val.length;
+    const before = val.slice(0, pos);
+    const m = before.match(/(?:^|\s)@([\p{L}\p{N}_.-]{0,24})$/u);
+    if (!m) {
+      closeMenu();
+      return;
+    }
+
+    const q = m[1].toLowerCase();
+    const users = getDirectoryUsers().filter((u) => {
+      if (!u || !u.name) return false;
+      if (!q) return true;
+      const n = String(u.name).toLowerCase();
+      return n.includes(q) || n.replace(/\s+/g, "").includes(q);
+    }).slice(0, 6);
+
+    if (!users.length) {
+      closeMenu();
+      return;
+    }
+
+    const box = ensureMenu();
+    activeEl = el;
+    activeRange = { start: pos - m[1].length - 1, end: pos };
+
+    box.innerHTML = users
+      .map(
+        (u) => `
+      <button type="button" class="twin-mention-opt" data-name="${escapeHtml(String(u.name).replace(/\s+/g, ""))}">
+        <img class="twin-avatar twin-avatar-sm" src="${escapeHtml(u.avatar || DEFAULT_AVATAR)}" alt="" />
+        <span class="twin-mention-opt-name">${escapeHtml(u.name)}</span>
+      </button>`
+      )
+      .join("");
+
+    const rect = el.getBoundingClientRect();
+    box.style.left = `${Math.max(8, Math.min(rect.left, window.innerWidth - 250))}px`;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    if (spaceBelow < 180 && rect.top > 180) {
+      box.style.top = `${Math.max(8, rect.top - Math.min(220, users.length * 44 + 12))}px`;
+    } else {
+      box.style.top = `${Math.min(window.innerHeight - 160, rect.bottom + 6)}px`;
+    }
+    box.classList.add("open");
+
+    box.querySelectorAll(".twin-mention-opt").forEach((btn) => {
+      btn.onmousedown = (ev) => {
+        ev.preventDefault();
+        if (!activeEl || !activeRange) return;
+        const tag = `@${btn.dataset.name} `;
+        const cur = activeEl.value || "";
+        activeEl.value = cur.slice(0, activeRange.start) + tag + cur.slice(activeRange.end);
+        const nextPos = activeRange.start + tag.length;
+        activeEl.focus();
+        try { activeEl.setSelectionRange(nextPos, nextPos); } catch {}
+        activeEl.dispatchEvent(new Event("input", { bubbles: true }));
+        closeMenu();
+      };
+    });
+  };
+
+  document.addEventListener("input", handleInput, true);
+  document.addEventListener("click", (e) => {
+    if (menu && !menu.contains(e.target) && e.target !== activeEl) closeMenu();
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeMenu();
+  });
+}
+
 export function initTwinPage({ requireAuth = true, chrome = true, ensureProfile = true, onReady = null } = {}) {
   applySavedTheme();
   initHtmlLinkPrefetch();
+  initMentionAutocomplete();
   if (chrome) {
     renderAppChrome();
     const cachedMe = readCachedMe();
