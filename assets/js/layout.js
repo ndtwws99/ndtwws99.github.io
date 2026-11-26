@@ -153,7 +153,6 @@ function initHtmlLinkPrefetch() {
     "./reels.html",
     "./friends.html",
     "./groups.html",
-    "./pages.html",
     "./messages.html",
     "./saved.html"
   ];
@@ -421,22 +420,7 @@ function renderGlobalSearchResults(rawQuery) {
       .join("");
   }
 
-  if (matchedPages.length) {
-    html += `<div class="twin-search-cat">Trang</div>`;
-    html += matchedPages
-      .map(
-        (p) => `
-      <a href="./pages.html?id=${encodeURIComponent(p.id)}" class="twin-dropdown-item">
-        <img class="twin-avatar twin-avatar-sm" src="${escapeHtml(p.coverUrl || DEFAULT_AVATAR)}" alt="" />
-        <div style="min-width:0;flex:1;">
-          <div style="font-weight:700;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(p.name)}</div>
-          <div class="twin-post-meta">${escapeHtml(p.category || "Trang")} · ${(p.followers || []).length} theo dõi</div>
-        </div>
-        <span class="twin-pill-tag">Trang</span>
-      </a>`
-      )
-      .join("");
-  }
+
 
   html += `
     <hr style="border:none;border-top:1px solid var(--border);margin:6px 0;" />
@@ -500,7 +484,7 @@ export function renderAppChrome() {
             <button type="button" id="twin-search-trigger" class="twin-search-trigger" aria-label="Mở tìm kiếm" title="Tìm kiếm">
               ${ICONS.search}
             </button>
-            <input id="twin-global-search" type="search" autocomplete="off" placeholder="Tìm người, nhóm, trang, bài viết..." />
+            <input id="twin-global-search" type="search" autocomplete="off" placeholder="Tìm người, nhóm, bài viết..." />
             <button type="button" id="twin-search-close" class="twin-search-close" aria-label="Đóng tìm kiếm" title="Đóng">✕</button>
           </div>
           <div id="twin-search-dropdown" class="twin-search-dropdown"></div>
@@ -511,8 +495,7 @@ export function renderAppChrome() {
         <a href="./index.html" class="twin-nav-link ${page === "home" ? "active" : ""}" title="Bảng tin">${ICONS.home}</a>
         <a href="./reels.html" class="twin-nav-link ${page === "reels" ? "active" : ""}" title="Video & Video ngắn">${ICONS.reels}</a>
         <a href="./friends.html" class="twin-nav-link ${page === "friends" ? "active" : ""}" title="Bạn bè">${ICONS.friends}</a>
-        <a href="./groups.html" class="twin-nav-link ${page === "groups" ? "active" : ""}" title="Nhóm">${ICONS.groups}</a>
-        <a href="./pages.html" class="twin-nav-link ${page === "pages" ? "active" : ""}" title="Trang">${ICONS.pages}</a>
+        <a href="./groups.html" class="twin-nav-link ${page === "groups" ? "active" : ""}" title="Nhóm & Trang">${ICONS.groups}</a>
       </nav>
 
       <div class="twin-header-right" id="twin-header-right">
@@ -583,7 +566,7 @@ export function renderAppChrome() {
       <a href="./reels.html" class="twin-mobile-tab ${page === "reels" ? "active" : ""}">${ICONS.reels}<span>Video</span></a>
       <a href="./friends.html" class="twin-mobile-tab ${page === "friends" ? "active" : ""}">${ICONS.friends}<span>Bạn bè</span></a>
       <a href="./groups.html" class="twin-mobile-tab ${page === "groups" ? "active" : ""}">${ICONS.groups}<span>Nhóm</span></a>
-      <a href="./pages.html" class="twin-mobile-tab ${page === "pages" ? "active" : ""}">${ICONS.pages}<span>Trang</span></a>
+      <a href="./profile.html" class="twin-mobile-tab ${page === "profile" ? "active" : ""}">${ICONS.settings}<span>Cá nhân</span></a>
     `;
     document.body.appendChild(mobileBar);
   }
@@ -2194,7 +2177,7 @@ export function openTwinChat(peer) {
         </span>
         <div style="min-width:0;">
           <div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:inline-flex;align-items:center;gap:4px;max-width:100%;"><span>${escapeHtml(peer.name)}</span>${renderAdminIconHtml(peer)}</div>
-          ${peerPresence.agoText ? `<div class="twin-post-meta" style="font-size:11px;">${escapeHtml(peerPresence.agoText)}</div>` : ""}
+          
         </div>
       </a>
       <div style="display:flex;align-items:center;gap:6px;">

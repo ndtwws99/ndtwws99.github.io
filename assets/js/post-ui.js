@@ -795,7 +795,7 @@ export function renderPostList(container, posts, currentUser, emptyHtml = "") {
 // ==========================================================================
 // Reusable Full-Featured Post Composer (dùng trên Trang cá nhân giống Bảng tin)
 // ==========================================================================
-export function mountPostComposer(container, currentUser, { isProfilePage = false, onAvatarClick = null } = {}) {
+export function mountPostComposer(container, currentUser, { isProfilePage = false, onAvatarClick = null, groupId = "", groupName = "" } = {}) {
   if (!container || !currentUser || isGuestUser(currentUser)) return null;
 
   container.innerHTML = `
@@ -1065,7 +1065,7 @@ export function mountPostComposer(container, currentUser, { isProfilePage = fals
 
       const isHtml = canUseHtml() && containsHtmlMarkup(content);
       const privacy = privacyEl?.value || "public";
-      await addDoc(collection(db, "posts"), {
+      const postPayload = {
         authorUid: currentUser.uid,
         authorName: currentUser.name,
         authorAvatar: currentUser.avatar || DEFAULT_AVATAR,
@@ -1085,7 +1085,12 @@ export function mountPostComposer(container, currentUser, { isProfilePage = fals
         savedBy: [],
         sharesCount: 0,
         createdAt: serverTimestamp()
-      });
+      };
+      if (groupId) {
+        postPayload.groupId = groupId;
+        postPayload.groupName = groupName;
+      }
+      await addDoc(collection(db, "posts"), postPayload);
 
       contentEl.value = "";
       feelingEl.value = "";

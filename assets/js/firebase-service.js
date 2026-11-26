@@ -287,11 +287,11 @@ export function safeLink(link, fallback = "./index.html") {
  * mà vẫn chặn script / sự kiện XSS nguy hiểm.
  */
 const ALLOWED_HTML_TAGS = new Set([
-  "DIV", "SPAN", "P", "BR", "HR", "CENTER", "SECTION", "ARTICLE", "HEADER", "FOOTER",
+  "DIV", "SPAN", "P", "BR", "HR", "CENTER", "SECTION", "ARTICLE", "HEADER", "FOOTER", "MAIN", "ASIDE",
   "H1", "H2", "H3", "H4", "H5", "H6",
-  "B", "STRONG", "I", "EM", "U", "S", "DEL", "INS", "MARK", "SMALL", "SUB", "SUP",
+  "B", "STRONG", "I", "EM", "U", "S", "DEL", "INS", "MARK", "SMALL", "SUB", "SUP", "FONT", "KBD", "Q", "CITE", "TIME", "ABBR",
   "BLOCKQUOTE", "PRE", "CODE", "UL", "OL", "LI", "DL", "DT", "DD",
-  "A", "IMG", "FIGURE", "FIGCAPTION", "BUTTON",
+  "A", "IMG", "FIGURE", "FIGCAPTION", "BUTTON", "PROGRESS",
   "TABLE", "THEAD", "TBODY", "TFOOT", "TR", "TH", "TD",
   "DETAILS", "SUMMARY", "VIDEO", "AUDIO", "SOURCE", "IFRAME"
 ]);
@@ -303,10 +303,18 @@ const ALLOWED_IFRAME_HOSTS = [
   "player.vimeo.com",
   "www.facebook.com",
   "web.facebook.com",
-  "facebook.com"
+  "facebook.com",
+  "m.facebook.com",
+  "www.tiktok.com",
+  "tiktok.com",
+  "drive.google.com",
+  "docs.google.com",
+  "open.spotify.com",
+  "w.soundcloud.com"
 ];
 
-const HTML_DETECT_REGEX = /<\/?(?:div|span|p|br|hr|center|section|article|header|footer|h[1-6]|b|strong|i|em|u|s|del|ins|mark|small|sub|sup|blockquote|pre|code|ul|ol|li|dl|dt|dd|a|img|figure|figcaption|button|table|thead|tbody|tfoot|tr|th|td|details|summary|video|audio|source|iframe)(?:\s+[^<>]*)?\/?>/i;
+const HTML_DETECT_REGEX = /<\/?(?:div|span|p|br|hr|center|section|article|header|footer|main|aside|h[1-6]|b|strong|i|em|u|s|del|ins|mark|small|sub|sup|font|kbd|q|cite|time|abbr|blockquote|pre|code|ul|ol|li|dl|dt|dd|a|img|figure|figcaption|button|progress|table|thead|tbody|tfoot|tr|th|td|details|summary|video|audio|source|iframe)(?:\s+[^<>]*)?\/?>/i;
+
 export function containsHtmlMarkup(text = "") {
   const s = String(text || "");
   if (!s.includes("<") || !s.includes(">")) return false;
@@ -329,16 +337,14 @@ export function sanitizeHtml(rawHtml = "") {
 
       const tag = child.tagName.toUpperCase();
       if (!ALLOWED_HTML_TAGS.has(tag)) {
-if (["SCRIPT", "STYLE", "OBJECT", "EMBED", "NOSCRIPT", "TEMPLATE", "SVG", "MATH"].includes(tag)) {
+        if (["SCRIPT", "STYLE", "OBJECT", "EMBED", "NOSCRIPT", "TEMPLATE", "SVG", "MATH"].includes(tag)) {
           child.remove();
         } else {
+          // Giữ lại nội dung bên trong nếu là thẻ không được hỗ trợ
           cleanNode(child);
           const frag = docHtml.createDocumentFragment();
           while (child.firstChild) frag.appendChild(child.firstChild);
           child.replaceWith(frag);
-        }
-          child.replaceWith(frag);
-          cleanNode(node);
         }
         continue;
       }
@@ -355,12 +361,14 @@ if (["SCRIPT", "STYLE", "OBJECT", "EMBED", "NOSCRIPT", "TEMPLATE", "SVG", "MATH"
           child.remove();
           continue;
         }
-        child.setAttribute("sandbox", "allow-scripts allow-same-origin allow-presentation");
+        child.setAttribute("sandbox", "allow-scripts allow-same-origin allow-presentation allow-popups");
         child.setAttribute("allowfullscreen", "true");
-        child.style.width = "100%";
-        child.style.aspectRatio = "16 / 9";
+        child.style.maxWidth = "100%";
+        if (!child.getAttribute("width") && !child.style.width) child.style.width = "100%";
+        if (!child.getAttribute("height") && !child.style.height) child.style.aspectRatio = "16 / 9";
         child.style.border = "0";
         child.style.borderRadius = "12px";
+        child.style.display = "block";
       }
 
       // Lọc thuộc tính nguy hiểm
