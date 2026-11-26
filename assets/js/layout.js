@@ -158,7 +158,8 @@ function initHtmlLinkPrefetch() {
     "./friends.html",
     "./groups.html",
     "./messages.html",
-    "./saved.html"
+    "./saved.html",
+    "./help.html"
   ];
   const scheduleIdle = window.requestIdleCallback || ((fn) => setTimeout(fn, 900));
   scheduleIdle(() => {
@@ -365,7 +366,7 @@ function subscribeSiteSettings() {
 function getCurrentPageKey() {
   const path = window.location.pathname.toLowerCase().replace(/\/+$/, "").replace(/\.html$/, "");
   const name = path.split("/").pop();
-  const known = ["friends", "groups", "pages", "messages", "profile", "saved", "reels", "login", "404"];
+  const known = ["friends", "groups", "pages", "messages", "profile", "saved", "reels", "help", "login", "404"];
   return known.includes(name) ? name : "home";
 }
 
@@ -867,7 +868,7 @@ function renderLoggedInHeaderRight(user) {
         </div>
         <hr style="border:none;border-top:1px solid var(--border);margin:8px 0;" />
         <a href="./login.html" class="twin-dropdown-item" style="color:var(--primary);font-weight:700;">${ICONS.key}<span>Đăng nhập / Tạo tài khoản</span></a>
-        <button class="twin-dropdown-item" id="twin-menu-help">${ICONS.help}<span>Trợ giúp &amp; Hướng dẫn</span></button>
+        <a href="./help.html" class="twin-dropdown-item" id="twin-menu-help">${ICONS.help}<span>Trợ giúp &amp; Hướng dẫn</span></a>
         <button class="twin-dropdown-item" id="twin-menu-theme">${isDark ? ICONS.sun : ICONS.moon}<span id="twin-theme-label">${isDark ? "Chế độ Sáng" : "Chế độ Tối"}</span></button>
         <button class="twin-dropdown-item" id="twin-logout-btn" style="color:var(--danger)">${ICONS.logout}<span>Thoát chế độ Khách</span></button>
       </div>
@@ -901,17 +902,7 @@ function renderLoggedInHeaderRight(user) {
         }
       });
     }
-    document.getElementById("twin-menu-help").onclick = (e) => {
-      e.stopPropagation();
-      accDrop.classList.remove("open");
-      openHelpModal();
-    };
-    document.getElementById("twin-menu-help").onclick = (e) => {
-    e.stopPropagation();
-    accDrop.classList.remove("open");
-    openHelpModal();
-  };
-  document.getElementById("twin-menu-theme").onclick = toggleTheme;
+    document.getElementById("twin-menu-theme").onclick = toggleTheme;
     document.getElementById("twin-logout-btn").onclick = async () => {
       writeCachedMe(null);
       await exitGuestSession();
@@ -958,7 +949,7 @@ function renderLoggedInHeaderRight(user) {
       <button class="twin-dropdown-item" id="twin-menu-settings">${ICONS.settings}<span>Cài đặt tài khoản</span></button>
       ${admin ? `<button class="twin-dropdown-item" id="twin-menu-admin" style="color:var(--primary);">${ICONS.shield}<span>Quản trị Admin</span></button>` : ""}
       <a href="./saved.html" class="twin-dropdown-item">${ICONS.bookmark}<span>Bài viết đã lưu</span></a>
-      <button class="twin-dropdown-item" id="twin-menu-help">${ICONS.help}<span>Trợ giúp &amp; Hướng dẫn</span></button>
+      <a href="./help.html" class="twin-dropdown-item" id="twin-menu-help">${ICONS.help}<span>Trợ giúp &amp; Hướng dẫn</span></a>
       <button class="twin-dropdown-item" id="twin-menu-theme">${isDark ? ICONS.sun : ICONS.moon}<span id="twin-theme-label">${isDark ? "Chế độ Sáng" : "Chế độ Tối"}</span></button>
       <button class="twin-dropdown-item" id="twin-reset-pass-btn">${ICONS.key}<span>Đặt / Đổi mật khẩu</span></button>
       <button class="twin-dropdown-item" id="twin-logout-btn" style="color:var(--danger)">${ICONS.logout}<span>Đăng xuất</span></button>
