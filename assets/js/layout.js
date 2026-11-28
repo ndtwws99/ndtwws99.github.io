@@ -157,8 +157,8 @@ function initHtmlLinkPrefetch() {
   }
   const corePages = [
     "./index.html",
-    "./market.html",
-    "./learn.html",
+    "./reels.html",
+    "./friends.html",
     "./messages.html",
     "./profile.html"
   ];
@@ -202,9 +202,7 @@ export const ICONS = {
   eye: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12s3.5-6.5 9.5-6.5 9.5 6.5 9.5 6.5-3.5 6.5-9.5 6.5-9.5-6.5-9.5-6.5Z"/><circle cx="12" cy="12" r="2.8"/></svg>`,
   lock: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="14.5" r="5.5"/><path d="M8.5 10.2V7.8a3.5 3.5 0 0 1 7 0v2.4"/><circle cx="12" cy="14.5" r="1.2" fill="currentColor"/></svg>`,
   gemini: `<svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2.2c.6 4.4 3.4 7.8 7.8 8.8l2 .5-2 .5c-4.4 1-7.2 4.4-7.8 8.8l-.2 1-.2-1c-.6-4.4-3.4-7.8-7.8-8.8l-2-.5 2-.5c4.4-1 7.2-4.4 7.8-8.8l.2-1 .2 1Z"/></svg>`,
-  help: `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><path d="M9.5 9.2a2.6 2.6 0 0 1 5 .9c0 1.7-2.5 2.2-2.5 3.6"/><circle cx="12" cy="17.2" r=".9" fill="currentColor" stroke="none"/></svg>`,
-  market: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 4.8 4h14.4L21 9.5"/><path d="M3 9.5a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0"/><path d="M5 12.5V20h14v-7.5"/><path d="M10 20v-5h4v5"/></svg>`,
-  learn: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9.5 12 4.5l10 5-10 5-10-5Z"/><path d="M6 11.8v5.2c0 1.5 2.7 2.8 6 2.8s6-1.3 6-2.8v-5.2"/><path d="M22 10v6"/></svg>`
+  help: `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><path d="M9.5 9.2a2.6 2.6 0 0 1 5 .9c0 1.7-2.5 2.2-2.5 3.6"/><circle cx="12" cy="17.2" r=".9" fill="currentColor" stroke="none"/></svg>`
 };
 
 let currentUserData = null;
@@ -376,7 +374,7 @@ function subscribeSiteSettings() {
 function getCurrentPageKey() {
   const path = window.location.pathname.toLowerCase().replace(/\/+$/, "").replace(/\.html$/, "");
   const name = path.split("/").pop();
-  const known = ["friends", "groups", "pages", "messages", "profile", "saved", "reels", "market", "learn", "help", "login", "404"];
+  const known = ["friends", "groups", "pages", "messages", "profile", "saved", "reels", "help", "login", "404"];
   return known.includes(name) ? name : "home";
 }
 
@@ -492,16 +490,15 @@ export function renderAppChrome() {
   if (headerEl) {
     headerEl.innerHTML = `
       <div class="twin-header-left">
-        <a href="./index.html" class="twin-logo" title="Trang chủ Twin">
+        <a href="./index.html" class="twin-logo" title="Trang chủ Twin" aria-label="Trang chủ Twin">
           <span class="twin-logo-circle" id="twin-brand-circle">T</span>
-          <span id="twin-brand-name">Twin</span>
         </a>
         <div class="twin-search-wrap" id="twin-search-wrap">
           <div class="twin-search-box" id="twin-search-box">
             <button type="button" id="twin-search-trigger" class="twin-search-trigger" aria-label="Mở tìm kiếm" title="Tìm kiếm">
               ${ICONS.search}
             </button>
-            <input id="twin-global-search" type="search" autocomplete="off" placeholder="Tìm người, nhóm, bài viết..." />
+            <input id="twin-global-search" type="search" autocomplete="off" placeholder="Tìm kiếm trên Twin" />
             <button type="button" id="twin-search-close" class="twin-search-close" aria-label="Đóng tìm kiếm" title="Đóng">✕</button>
           </div>
           <div id="twin-search-dropdown" class="twin-search-dropdown"></div>
@@ -511,8 +508,6 @@ export function renderAppChrome() {
       <nav class="twin-nav-center" aria-label="Điều hướng chính">
         <a href="./index.html" class="twin-nav-link ${page === "home" ? "active" : ""}" title="Bảng tin">${ICONS.home}</a>
         <a href="./reels.html" class="twin-nav-link ${page === "reels" ? "active" : ""}" title="Video">${ICONS.reels}</a>
-        <a href="./market.html" class="twin-nav-link ${page === "market" ? "active" : ""}" title="Chợ mua bán">${ICONS.market}</a>
-        <a href="./learn.html" class="twin-nav-link ${page === "learn" ? "active" : ""}" title="Học Trung · Anh">${ICONS.learn}</a>
         <a href="./friends.html" class="twin-nav-link ${page === "friends" ? "active" : ""}" title="Bạn bè">${ICONS.friends}</a>
         <a href="./groups.html" class="twin-nav-link ${page === "groups" ? "active" : ""}" title="Nhóm">${ICONS.groups}</a>
       </nav>
@@ -583,8 +578,8 @@ export function renderAppChrome() {
     mobileBar.innerHTML = `
       <a href="./index.html" class="twin-mobile-tab ${page === "home" ? "active" : ""}">${ICONS.home}<span>Bảng tin</span></a>
       <a href="./reels.html" class="twin-mobile-tab ${page === "reels" ? "active" : ""}">${ICONS.reels}<span>Video</span></a>
-      <a href="./market.html" class="twin-mobile-tab ${page === "market" ? "active" : ""}">${ICONS.market}<span>Chợ</span></a>
-      <a href="./learn.html" class="twin-mobile-tab ${page === "learn" ? "active" : ""}">${ICONS.learn}<span>Học tập</span></a>
+      <a href="./friends.html" class="twin-mobile-tab ${page === "friends" ? "active" : ""}">${ICONS.friends}<span>Bạn bè</span></a>
+      <a href="./groups.html" class="twin-mobile-tab ${page === "groups" ? "active" : ""}">${ICONS.groups}<span>Nhóm</span></a>
       <a href="./profile.html" class="twin-mobile-tab ${page === "profile" ? "active" : ""}">${ICONS.settings}<span>Cá nhân</span></a>
     `;
     document.body.appendChild(mobileBar);
@@ -880,8 +875,6 @@ function renderLoggedInHeaderRight(user) {
         </div>
         <hr style="border:none;border-top:1px solid var(--border);margin:8px 0;" />
         <a href="./login.html" class="twin-dropdown-item" style="color:var(--primary);font-weight:700;">${ICONS.key}<span>Đăng nhập / Tạo tài khoản</span></a>
-        <a href="./market.html" class="twin-dropdown-item">${ICONS.market}<span>Chợ mua bán</span></a>
-        <a href="./learn.html" class="twin-dropdown-item">${ICONS.learn}<span>Học Trung · Anh</span></a>
         <a href="./friends.html" class="twin-dropdown-item">${ICONS.friends}<span>Bạn bè</span></a>
         <a href="./groups.html" class="twin-dropdown-item">${ICONS.groups}<span>Nhóm</span></a>
         <a href="./help.html" class="twin-dropdown-item" id="twin-menu-help">${ICONS.help}<span>Trợ giúp &amp; Hướng dẫn</span></a>
@@ -964,8 +957,6 @@ function renderLoggedInHeaderRight(user) {
       <button class="twin-dropdown-item" id="twin-menu-gemini" style="color:var(--primary);">${ICONS.gemini}<span>Trợ lý AI Gemini</span></button>
       <button class="twin-dropdown-item" id="twin-menu-settings">${ICONS.settings}<span>Cài đặt tài khoản</span></button>
       ${admin ? `<button class="twin-dropdown-item" id="twin-menu-admin" style="color:var(--primary);">${ICONS.shield}<span>Quản trị Admin</span></button>` : ""}
-      <a href="./market.html" class="twin-dropdown-item">${ICONS.market}<span>Chợ mua bán</span></a>
-      <a href="./learn.html" class="twin-dropdown-item">${ICONS.learn}<span>Học Trung · Anh</span></a>
       <a href="./friends.html" class="twin-dropdown-item">${ICONS.friends}<span>Bạn bè</span></a>
       <a href="./groups.html" class="twin-dropdown-item">${ICONS.groups}<span>Nhóm</span></a>
       <a href="./saved.html" class="twin-dropdown-item">${ICONS.bookmark}<span>Bài viết đã lưu</span></a>

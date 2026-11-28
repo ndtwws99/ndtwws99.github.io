@@ -897,28 +897,11 @@ export function renderPostCard(post, currentUser) {
   const displayName = post.pageName ? post.pageName : post.authorName;
   const displayAvatar = post.pageAvatar || post.authorAvatar || DEFAULT_AVATAR;
 
-  const isMarket = post.postType === "market";
-  const marketPriceFmt = isMarket
-    ? (Number(post.marketPrice) > 0 ? `${Number(post.marketPrice).toLocaleString("vi-VN")} ₫` : "Thỏa thuận / Miễn phí")
-    : "";
-  const marketBannerHtml = isMarket
-    ? `<div class="twin-market-feed-banner">
-        <div style="min-width:0;">
-          <div style="font-weight:800;font-size:15px;color:var(--text);">${escapeHtml(post.marketTitle || "Sản phẩm")}</div>
-          <div class="twin-market-feed-price">${escapeHtml(marketPriceFmt)} ${post.marketStatus === "sold" ? `<span class="twin-pill-tag" style="color:var(--danger);margin-left:6px;">Đã bán</span>` : ""}</div>
-          <div class="twin-post-meta">${escapeHtml(post.marketCategory || "Khác")} · ${escapeHtml(post.marketCondition || "Mới 100%")}${post.marketLocation ? ` · ${escapeHtml(post.marketLocation)}` : ""}</div>
-        </div>
-        <a href="./market.html?id=${encodeURIComponent(post.id)}" class="twin-btn twin-btn-primary twin-btn-sm">Xem trên Chợ</a>
-      </div>`
-    : "";
-
   const textState = buildPostTextContent(post);
   const isCollapsible = Boolean(textState.collapsedHtml);
   let isTextExpanded = Boolean(!isCollapsible || expandedLongPosts.has(post.id));
   const initialBodyInner = isCollapsible && !isTextExpanded ? textState.collapsedHtml : textState.fullHtml;
-  const bodyHtml =
-    marketBannerHtml +
-    (textState.fullHtml
+  const bodyHtml = textState.fullHtml
       ? isCollapsible
         ? `<div class="twin-post-body-wrap${isTextExpanded ? " is-expanded" : " is-collapsed"}">
             <div class="twin-post-body${textState.isHtml ? " twin-post-html" : ""}">${initialBodyInner}</div>
@@ -928,7 +911,7 @@ export function renderPostCard(post, currentUser) {
             </button>
           </div>`
         : `<div class="twin-post-body${textState.isHtml ? " twin-post-html" : ""}">${textState.fullHtml}</div>`
-      : "");
+      : "";
 
   card.innerHTML = `
     ${isPinned ? `<div class="twin-pin-banner">${SVG.pin}<span>Bài viết đã ghim</span></div>` : ""}
@@ -939,7 +922,6 @@ export function renderPostCard(post, currentUser) {
         <div style="min-width:0;">
           <div class="twin-post-author-name">
             ${escapeHtml(displayName)}${!post.pageName ? renderAdminIconHtml(post.authorUid) : ""}
-            ${isMarket ? `<span class="twin-pill-tag" style="margin-left:4px;">Chợ Twin</span>` : ""}
             ${post.pageName ? `<span class="twin-pill-tag" style="margin-left:4px;">Trang</span>` : ""}
             ${post.isHtml ? `<span class="twin-pill-tag" style="margin-left:4px;font-family:monospace;">HTML</span>` : ""}
             ${post.feeling ? renderFeelingBadgeHtml(post.feeling) : ""}

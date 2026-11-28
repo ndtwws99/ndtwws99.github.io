@@ -26,23 +26,6 @@
   <header id="twin-header" class="twin-header"></header>
 
   <main class="twin-main twin-reels-main">
-    <div class="twin-reels-toolbar">
-      <div class="twin-seg-tabs" role="tablist" aria-label="Loại video">
-        <button type="button" id="reels-tab-short" class="twin-seg-tab active" role="tab" aria-selected="true">Video ngắn</button>
-        <button type="button" id="reels-tab-video" class="twin-seg-tab" role="tab" aria-selected="false">Video bài đăng</button>
-      </div>
-      <div style="display:flex;align-items:center;gap:8px;">
-        <button type="button" id="reels-autoscroll-btn" class="twin-btn twin-btn-secondary twin-btn-sm" title="Tự động chuyển sang video tiếp theo khi phát xong">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/><path d="M5 20h14"/></svg>
-          <span>Tự chuyển</span>
-        </button>
-        <button type="button" id="reels-open-upload" class="twin-btn twin-btn-primary twin-btn-sm">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          <span>Đăng video</span>
-        </button>
-      </div>
-    </div>
-
     <!-- Tab 1: Video ngắn từ mục Tin (Stories video) -->
     <section id="reels-short-panel" class="twin-reels-stage-wrap">
       <div id="reels-scroller" class="twin-reels-scroller"></div>
@@ -221,10 +204,14 @@
 
     function setTab(next) {
       activeTab = next === "video" ? "video" : "short";
-      tabShortBtn.classList.toggle("active", activeTab === "short");
-      tabShortBtn.setAttribute("aria-selected", activeTab === "short" ? "true" : "false");
-      tabVideoBtn.classList.toggle("active", activeTab === "video");
-      tabVideoBtn.setAttribute("aria-selected", activeTab === "video" ? "true" : "false");
+      if (tabShortBtn) {
+        tabShortBtn.classList.toggle("active", activeTab === "short");
+        tabShortBtn.setAttribute("aria-selected", activeTab === "short" ? "true" : "false");
+      }
+      if (tabVideoBtn) {
+        tabVideoBtn.classList.toggle("active", activeTab === "video");
+        tabVideoBtn.setAttribute("aria-selected", activeTab === "video" ? "true" : "false");
+      }
       shortPanel.style.display = activeTab === "short" ? "flex" : "none";
       videoPanel.style.display = activeTab === "video" ? "block" : "none";
       if (activeTab === "video") {
@@ -234,8 +221,8 @@
       }
     }
 
-    tabShortBtn.onclick = () => setTab("short");
-    tabVideoBtn.onclick = () => setTab("video");
+    if (tabShortBtn) tabShortBtn.onclick = () => setTab("short");
+    if (tabVideoBtn) tabVideoBtn.onclick = () => setTab("video");
 
     const autoScrollBtn = document.getElementById("reels-autoscroll-btn");
     const syncAutoScrollUi = () => {
@@ -422,7 +409,8 @@
       uvPreviewVideo.pause();
     }
 
-    document.getElementById("reels-open-upload").onclick = () => openUploadModal(activeTab);
+    const openUploadBtn = document.getElementById("reels-open-upload");
+    if (openUploadBtn) openUploadBtn.onclick = () => openUploadModal(activeTab);
     document.getElementById("uv-close-btn").onclick = closeUploadModal;
     document.getElementById("uv-cancel-btn").onclick = closeUploadModal;
     document.getElementById("uv-remove-file").onclick = clearUploadSelection;

@@ -23,8 +23,6 @@ const HTML_PAGES = new Set([
   "profile",
   "saved",
   "reels",
-  "market",
-  "learn",
   "help",
   "404"
 ]);
