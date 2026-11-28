@@ -278,8 +278,10 @@ export function getWebPrefs() {
 
 export function applyWebPrefs(prefs = getWebPrefs()) {
   const root = document.documentElement;
+  const isReelsPage = Boolean(document.body?.classList.contains("page-reels"));
   const isDark = prefs.theme === "dark";
-  root.setAttribute("data-theme", isDark ? "dark" : "light");
+  const effectiveDark = isReelsPage || isDark;
+  root.setAttribute("data-theme", effectiveDark ? "dark" : "light");
   root.removeAttribute("data-accent");
   root.removeAttribute("data-glass");
   root.removeAttribute("data-bg-grid");
@@ -287,7 +289,7 @@ export function applyWebPrefs(prefs = getWebPrefs()) {
   root.setAttribute("data-font-size", prefs.fontSize || "md");
   root.setAttribute("data-density", prefs.density || "comfortable");
 
-  const themeColor = isDark ? "#151a24" : "#ffffff";
+  const themeColor = effectiveDark ? "#000000" : "#ffffff";
   document.querySelectorAll('meta[name="theme-color"]').forEach((meta) => {
     meta.setAttribute("content", themeColor);
   });
@@ -318,7 +320,7 @@ export function applySavedTheme() {
 }
 
 export function toggleTheme() {
-  const cur = document.documentElement.getAttribute("data-theme") || "light";
+  const cur = getWebPrefs().theme || "light";
   const next = cur === "dark" ? "light" : "dark";
   saveWebPrefs({ theme: next });
 }

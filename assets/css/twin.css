@@ -51,32 +51,32 @@
 [data-theme="dark"] {
   --primary: #38a5ff;
   --primary-hover: #60b8ff;
-  --primary-soft: rgba(56, 165, 255, 0.2);
+  --primary-soft: rgba(56, 165, 255, 0.18);
   --on-primary: #ffffff;
 
-  --bg: #090c12;
-  --surface: #151a24;
-  --surface-2: #232b3d;
-  --surface-elevated: #1c2333;
-  --surface-hover: #2e3950;
-  --surface-subtle: #10151f;
-  --surface-solid: #151a24;
+  --bg: #000000;
+  --surface: #0a0a0a;
+  --surface-2: #161616;
+  --surface-elevated: #121212;
+  --surface-hover: #1f1f1f;
+  --surface-subtle: #050505;
+  --surface-solid: #0a0a0a;
 
-  --border: #2e384d;
-  --border-subtle: #232b3b;
-  --border-strong: #465470;
+  --border: #222222;
+  --border-subtle: #181818;
+  --border-strong: #333333;
 
-  --text: #f8fafc;
-  --text-2: #dce4f2;
-  --text-3: #9fb0c9;
+  --text: #ffffff;
+  --text-2: #e5e5e5;
+  --text-3: #8e8e8e;
   --danger: #ff5c6a;
   --success: #34d399;
   --warning: #fbbf24;
 
-  --shadow-xs: 0 1px 3px rgba(0, 0, 0, 0.5);
-  --shadow-sm: 0 4px 14px rgba(0, 0, 0, 0.58);
-  --shadow-md: 0 10px 28px rgba(0, 0, 0, 0.7);
-  --shadow-lg: 0 18px 46px rgba(0, 0, 0, 0.82);
+  --shadow-xs: 0 1px 3px rgba(0, 0, 0, 0.7);
+  --shadow-sm: 0 4px 14px rgba(0, 0, 0, 0.78);
+  --shadow-md: 0 10px 28px rgba(0, 0, 0, 0.86);
+  --shadow-lg: 0 18px 46px rgba(0, 0, 0, 0.94);
 }
 
 /* Web Preference Modes */
@@ -3309,8 +3309,31 @@ label.twin-setting-row { cursor: pointer; }
 }
 
 /* =====================================================
-   DEDICATED REELS & VIDEO PAGE (reels.html)
+   DEDICATED REELS & VIDEO PAGE (reels.html) — AMOLED DARK
 ===================================================== */
+body.page-reels {
+  background-color: #000000;
+  color: #ffffff;
+}
+body.page-reels .twin-header {
+  background: rgba(0, 0, 0, 0.94);
+  border-bottom-color: #1c1c1c;
+}
+body.page-reels .twin-mobile-bar {
+  background: rgba(0, 0, 0, 0.96);
+  border-top-color: #1c1c1c;
+}
+body.page-reels .twin-reel-frame {
+  border-color: #1f1f1f;
+}
+body.page-reels .twin-reels-nav-arrows .twin-icon-btn {
+  background: #0d0d0d;
+  border-color: #242424;
+  color: #ffffff;
+}
+body.page-reels .twin-reels-nav-arrows .twin-icon-btn:hover {
+  background: #1a1a1a;
+}
 .twin-reels-main {
   max-width: 1120px;
   padding-top: 14px;
@@ -3795,24 +3818,24 @@ label.twin-setting-row { cursor: pointer; }
 
 
 
-/* 2. Tăng độ tương phản chữ & tách nền rõ ràng ở Chế độ Tối (Dark Mode) */
+/* 2. Chế độ Tối AMOLED thuần đen (#000000) với độ tương phản cao */
 :root[data-theme="dark"] {
   --primary: #38a5ff;
   --primary-hover: #60b8ff;
-  --primary-soft: rgba(56, 165, 255, 0.2);
-  --bg: #090c12;
-  --surface: #151a24;
-  --surface-2: #232b3d;
-  --surface-elevated: #1c2333;
-  --surface-hover: #2e3950;
-  --surface-subtle: #10151f;
-  --surface-solid: #151a24;
-  --border: #2e384d;
-  --border-subtle: #232b3b;
-  --border-strong: #465470;
-  --text: #f8fafc;
-  --text-2: #dce4f2;
-  --text-3: #9fb0c9;
+  --primary-soft: rgba(56, 165, 255, 0.18);
+  --bg: #000000;
+  --surface: #0a0a0a;
+  --surface-2: #161616;
+  --surface-elevated: #121212;
+  --surface-hover: #1f1f1f;
+  --surface-subtle: #050505;
+  --surface-solid: #0a0a0a;
+  --border: #222222;
+  --border-subtle: #181818;
+  --border-strong: #333333;
+  --text: #ffffff;
+  --text-2: #e5e5e5;
+  --text-3: #8e8e8e;
 }
 [data-theme="dark"] body,
 [data-theme="dark"] .twin-post-body,
@@ -3827,13 +3850,13 @@ label.twin-setting-row { cursor: pointer; }
 [data-theme="dark"] .twin-input,
 [data-theme="dark"] .twin-textarea,
 [data-theme="dark"] .twin-select {
-  background: #10151f;
-  border-color: var(--border);
+  background: #0d0d0d;
+  border-color: #262626;
 }
 [data-theme="dark"] .twin-input:focus,
 [data-theme="dark"] .twin-textarea:focus,
 [data-theme="dark"] .twin-select:focus {
-  background: #182030;
+  background: #141414;
   border-color: var(--primary);
 }
 [data-theme="dark"] .twin-post-meta,
@@ -3849,7 +3872,7 @@ label.twin-setting-row { cursor: pointer; }
 [data-theme="dark"] .twin-post-html li,
 [data-theme="dark"] .twin-post-html span,
 [data-theme="dark"] .twin-post-html div {
-  color: #edf2fb;
+  color: #f2f2f2;
 }
 [data-theme="dark"] .twin-post-html a {
   color: #60b8ff;
@@ -4572,9 +4595,9 @@ label.twin-setting-row { cursor: pointer; }
   border: 1px solid #e2e8f0;
 }
 [data-theme="dark"] .twin-msg.them {
-  background: #232836;
-  color: #f8fafc;
-  border: 1px solid #353c4f;
+  background: #161616;
+  color: #ffffff;
+  border: 1px solid #262626;
 }
 .twin-messenger-feed.has-custom-bg .twin-msg.them {
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22);
@@ -4604,7 +4627,7 @@ label.twin-setting-row { cursor: pointer; }
   color: #64748b;
 }
 [data-theme="dark"] .twin-msg.them .twin-msg-time {
-  color: #cbd5e1;
+  color: #a3a3a3;
 }
 .twin-msg-link {
   text-decoration: underline;
@@ -4890,7 +4913,7 @@ body.page-messages {
   background-color: var(--surface-subtle);
 }
 [data-theme="dark"] .twin-messenger-feed {
-  background-color: #0c0e14;
+  background-color: #000000;
 }
 
 /* Mobile Messenger: tối ưu khung bo góc gọn gàng */
@@ -4942,10 +4965,10 @@ body.page-messages {
   color: #ffffff;
 }
 [data-theme="dark"] .twin-conv-preview {
-  color: #cbd5e1;
+  color: #d4d4d4;
 }
 [data-theme="dark"] .twin-conv-time {
-  color: #9fb0c9;
+  color: #8e8e8e;
 }
 [data-theme="dark"] .twin-messenger-sidebar,
 [data-theme="dark"] .twin-messenger-sidebar-head,
@@ -4955,7 +4978,7 @@ body.page-messages {
   background: var(--surface);
 }
 [data-theme="dark"] .twin-messenger-feed {
-  background-color: #0d111a;
+  background-color: #000000;
 }
 [data-theme="dark"] .twin-card,
 [data-theme="dark"] .twin-side-group,
@@ -6005,7 +6028,7 @@ body.page-messages {
   -webkit-backdrop-filter: saturate(180%) blur(18px);
 }
 [data-theme="dark"] .twin-header {
-  background: rgba(21, 26, 36, 0.92);
+  background: rgba(0, 0, 0, 0.92);
   border-bottom-color: var(--border);
 }
 .twin-logo-circle {
@@ -6230,7 +6253,7 @@ body.page-messages {
     -webkit-backdrop-filter: saturate(180%) blur(16px);
   }
   [data-theme="dark"] .twin-mobile-bar {
-    background: rgba(21, 26, 36, 0.94);
+    background: rgba(0, 0, 0, 0.96);
     border-top-color: var(--border);
   }
 }
