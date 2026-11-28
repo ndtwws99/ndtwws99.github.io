@@ -754,56 +754,76 @@ export function openEditPostModal(post, currentUser = null) {
 }
 
 // ==========================================================================
-// Thu gọn 1/3 nội dung chữ cho bài viết dài (chỉ thu gọn text, giữ nguyên ảnh)
+// Thu gọn bài viết quá dài — chỉ hiển thị tối đa 6 dòng đầu (giữ nguyên ảnh)
 // ==========================================================================
 const expandedLongPosts = new Set();
-const LONG_POST_MIN_CHARS = 300;
-const LONG_POST_MIN_LINES = 6;
+const POST_COLLAPSED_MAX_LINES = 6;
+const POST_PLAIN_CLAMP_CANDIDATE_CHARS = 160;
+const POST_HTML_COLLAPSED_MAX_CHARS = 380;
+const HTML_BLOCK_TAGS = new Set(["P", "LI", "DIV", "H1", "H2", "H3", "H4", "H5", "H6", "BLOCKQUOTE", "PRE", "TR"]);
 
-function truncatePlainTextToOneThird(raw) {
+function updatePlainClampState(bodyWrap) {
+  if (!bodyWrap || !bodyWrap.isConnected) return;
+  const bodyEl = bodyWrap.querySelector(".twin-post-body");
+  const expandBtn = bodyWrap.querySelector(".twin-post-expand-btn");
+  if (!bodyEl || !expandBtn || bodyEl.clientWidth === 0) return;
+
+  const expanded = bodyWrap.classList.contains("is-expanded");
+  if (!expanded) {
+    const overflows = bodyEl.scrollHeight > bodyEl.clientHeight + 2;
+    expandBtn.hidden = !overflows;
+  } else {
+    const cs = getComputedStyle(bodyEl);
+    const lineHeight = parseFloat(cs.lineHeight) || (parseFloat(cs.fontSize) || 14.5) * 1.55;
+    const exceeds = bodyEl.scrollHeight > lineHeight * (POST_COLLAPSED_MAX_LINES + 0.45);
+    expandBtn.hidden = !exceeds;
+  }
+}
+
+const postBodyResizeObserver =
+  typeof ResizeObserver !== "undefined"
+    ? new ResizeObserver((entries) => {
+        for (const entry of entries) {
+          const el = entry.target;
+          if (!el.isConnected) {
+            postBodyResizeObserver.unobserve(el);
+            continue;
+          }
+          const wrap = el.closest(".twin-post-body-wrap");
+          if (wrap) updatePlainClampState(wrap);
+        }
+      })
+    : null;
+
+function isPlainTextClampCandidate(raw) {
   const trimmed = String(raw || "").trim();
-  if (!trimmed) return null;
+  if (!trimmed) return false;
   const lines = trimmed.split(/\r?\n/);
-  const isLong = trimmed.length >= LONG_POST_MIN_CHARS || lines.length >= LONG_POST_MIN_LINES;
-  if (!isLong) return null;
-
-  let candidate = trimmed;
-  const targetLines = Math.max(2, Math.ceil(lines.length / 3));
-  if (lines.length >= LONG_POST_MIN_LINES && lines.length > targetLines) {
-    candidate = lines.slice(0, targetLines).join("\n");
-  }
-
-  const targetChars = Math.max(100, Math.round(trimmed.length / 3));
-  if (candidate.length > targetChars) {
-    let cutIdx = targetChars;
-    const slice = candidate.slice(0, cutIdx);
-    const wsMatch = slice.search(/\s+\S*$/);
-    if (wsMatch > Math.floor(targetChars * 0.55)) {
-      cutIdx = wsMatch;
-    }
-    candidate = candidate.slice(0, cutIdx);
-  }
-
-  candidate = candidate.trimEnd();
-  if (!candidate || candidate.length >= trimmed.length - 12) return null;
-  return `${candidate}…`;
+  return lines.length > POST_COLLAPSED_MAX_LINES || trimmed.length > POST_PLAIN_CLAMP_CANDIDATE_CHARS;
 }
 
 function buildCollapsedHtmlPreservingImages(safeHtml) {
   const root = document.createElement("div");
   root.innerHTML = safeHtml;
   const plainText = (root.textContent || "").trim();
-  const blockCount = root.querySelectorAll("p, li, div, h1, h2, h3, h4, blockquote, pre, tr").length;
+  const blockCount = root.querySelectorAll("p, li, div, h1, h2, h3, h4, h5, h6, blockquote, pre, tr, br").length;
   const lineCount = plainText ? plainText.split(/\r?\n/).length : 0;
   const isLong =
-    plainText.length >= LONG_POST_MIN_CHARS ||
-    lineCount >= LONG_POST_MIN_LINES ||
-    (blockCount >= LONG_POST_MIN_LINES && plainText.length >= 160);
+    plainText.length > POST_HTML_COLLAPSED_MAX_CHARS ||
+    lineCount > POST_COLLAPSED_MAX_LINES ||
+    blockCount > POST_COLLAPSED_MAX_LINES;
   if (!isLong) return null;
 
-  const targetChars = Math.max(100, Math.round(plainText.length / 3));
-  let remaining = targetChars;
+  let remainingChars = POST_HTML_COLLAPSED_MAX_CHARS;
+  let linesUsed = 0;
   let truncated = false;
+  let lastTextNode = null;
+
+  function appendEllipsisToLast() {
+    if (lastTextNode && lastTextNode.nodeValue && !lastTextNode.nodeValue.trimEnd().endsWith("…")) {
+      lastTextNode.nodeValue = `${lastTextNode.nodeValue.trimEnd()}…`;
+    }
+  }
 
   function walk(node) {
     if (node.nodeType === Node.TEXT_NODE) {
@@ -813,31 +833,88 @@ function buildCollapsedHtmlPreservingImages(safeHtml) {
         node.nodeValue = "";
         return;
       }
-      if (txt.length <= remaining) {
-        remaining -= txt.length;
+      const hasVisible = txt.trim().length > 0;
+      const nlMatches = txt.match(/\r?\n/g);
+      const nlCount = nlMatches ? nlMatches.length : 0;
+
+      if (linesUsed + nlCount > POST_COLLAPSED_MAX_LINES) {
+        const allowNewlines = Math.max(0, POST_COLLAPSED_MAX_LINES - linesUsed);
+        const parts = txt.split(/\r?\n/);
+        let cut = parts.slice(0, allowNewlines + 1).join("\n");
+        if (cut.length > remainingChars) {
+          cut = cut.slice(0, remainingChars);
+          const wsMatch = cut.search(/\s+\S*$/);
+          if (wsMatch > Math.floor(remainingChars * 0.55)) cut = cut.slice(0, wsMatch);
+        }
+        node.nodeValue = `${cut.trimEnd()}…`;
+        remainingChars = 0;
+        linesUsed = POST_COLLAPSED_MAX_LINES;
+        truncated = true;
         return;
       }
-      let cut = txt.slice(0, remaining);
+
+      if (txt.length <= remainingChars) {
+        remainingChars -= txt.length;
+        linesUsed += nlCount;
+        if (hasVisible) lastTextNode = node;
+        return;
+      }
+
+      let cut = txt.slice(0, remainingChars);
       const wsMatch = cut.search(/\s+\S*$/);
-      if (wsMatch > Math.floor(remaining * 0.55)) {
+      if (wsMatch > Math.floor(remainingChars * 0.55)) {
         cut = cut.slice(0, wsMatch);
       }
       node.nodeValue = `${cut.trimEnd()}…`;
-      remaining = 0;
+      remainingChars = 0;
       truncated = true;
       return;
     }
+
     if (node.nodeType === Node.ELEMENT_NODE) {
       const tag = node.tagName.toUpperCase();
       if (tag === "IMG" || tag === "PICTURE") {
         // Không bao giờ thu gọn hay ẩn ảnh
         return;
       }
+      if (tag === "BR") {
+        if (truncated) {
+          node.remove();
+          return;
+        }
+        linesUsed += 1;
+        if (linesUsed >= POST_COLLAPSED_MAX_LINES) {
+          truncated = true;
+          appendEllipsisToLast();
+          node.remove();
+        }
+        return;
+      }
+
+      const isLeafBlock =
+        HTML_BLOCK_TAGS.has(tag) &&
+        !node.querySelector("p, li, div, h1, h2, h3, h4, h5, h6, blockquote, pre, tr");
+      const hasDirectText = (node.textContent || "").trim().length > 0;
+      if (isLeafBlock && hasDirectText) {
+        if (truncated || linesUsed >= POST_COLLAPSED_MAX_LINES) {
+          if (!truncated) {
+            truncated = true;
+            appendEllipsisToLast();
+          }
+          const children = Array.from(node.childNodes);
+          for (const child of children) walk(child);
+          const hasMedia = Boolean(node.querySelector("img, picture, video, svg"));
+          if (!hasMedia) node.remove();
+          return;
+        }
+        linesUsed += 1;
+      }
+
       const children = Array.from(node.childNodes);
       for (const child of children) {
         walk(child);
       }
-      if (truncated && tag !== "BR" && tag !== "HR") {
+      if (truncated && tag !== "HR") {
         const hasMedia = Boolean(node.querySelector("img, picture, video, svg"));
         const hasText = (node.textContent || "").trim().length > 0;
         if (!hasMedia && !hasText) {
@@ -852,24 +929,36 @@ function buildCollapsedHtmlPreservingImages(safeHtml) {
   Array.from(root.querySelectorAll("hr")).forEach((hr) => {
     if (!hr.nextElementSibling || !hr.previousElementSibling) hr.remove();
   });
-  return root.innerHTML;
+  const hasInlineMedia = Boolean(root.querySelector("img, picture, video"));
+  return { html: root.innerHTML, hasInlineMedia };
 }
 
 function buildPostTextContent(post) {
   const raw = post?.content ? String(post.content) : "";
   if (!raw.trim()) {
-    return { isHtml: false, fullHtml: "", collapsedHtml: null };
+    return { isHtml: false, mode: "none", fullHtml: "", collapsedHtml: null, hasInlineMedia: false };
   }
   const renderAsHtml = Boolean(post.isHtml || containsHtmlMarkup(raw));
   if (renderAsHtml) {
     const fullHtml = sanitizeHtml(raw);
-    const collapsedHtml = buildCollapsedHtmlPreservingImages(fullHtml);
-    return { isHtml: true, fullHtml, collapsedHtml };
+    const collapsed = buildCollapsedHtmlPreservingImages(fullHtml);
+    return {
+      isHtml: true,
+      mode: collapsed ? "html" : "none",
+      fullHtml,
+      collapsedHtml: collapsed ? collapsed.html : null,
+      hasInlineMedia: collapsed ? collapsed.hasInlineMedia : false
+    };
   }
   const fullHtml = renderRichTextHtml(raw);
-  const shortText = truncatePlainTextToOneThird(raw);
-  const collapsedHtml = shortText ? renderRichTextHtml(shortText) : null;
-  return { isHtml: false, fullHtml, collapsedHtml };
+  const canClamp = isPlainTextClampCandidate(raw);
+  return {
+    isHtml: false,
+    mode: canClamp ? "clamp" : "none",
+    fullHtml,
+    collapsedHtml: null,
+    hasInlineMedia: false
+  };
 }
 
 export function renderPostCard(post, currentUser) {
@@ -898,14 +987,24 @@ export function renderPostCard(post, currentUser) {
   const displayAvatar = post.pageAvatar || post.authorAvatar || DEFAULT_AVATAR;
 
   const textState = buildPostTextContent(post);
-  const isCollapsible = Boolean(textState.collapsedHtml);
+  const isCollapsible = textState.mode !== "none";
   let isTextExpanded = Boolean(!isCollapsible || expandedLongPosts.has(post.id));
-  const initialBodyInner = isCollapsible && !isTextExpanded ? textState.collapsedHtml : textState.fullHtml;
+  const initialBodyInner =
+    textState.mode === "html" && !isTextExpanded ? textState.collapsedHtml : textState.fullHtml;
+  const bodyExtraClass =
+    textState.mode === "clamp"
+      ? " is-line-clamped"
+      : textState.mode === "html" && !textState.hasInlineMedia
+        ? " twin-post-html is-html-clamped"
+        : textState.isHtml
+          ? " twin-post-html"
+          : "";
+  const hideBtnInitially = textState.mode === "clamp" && !isTextExpanded;
   const bodyHtml = textState.fullHtml
       ? isCollapsible
         ? `<div class="twin-post-body-wrap${isTextExpanded ? " is-expanded" : " is-collapsed"}">
-            <div class="twin-post-body${textState.isHtml ? " twin-post-html" : ""}">${initialBodyInner}</div>
-            <button type="button" class="twin-post-expand-btn" aria-expanded="${isTextExpanded ? "true" : "false"}">
+            <div class="twin-post-body${bodyExtraClass}">${initialBodyInner}</div>
+            <button type="button" class="twin-post-expand-btn" aria-expanded="${isTextExpanded ? "true" : "false"}"${hideBtnInitially ? " hidden" : ""}>
               <span class="twin-post-expand-label">${isTextExpanded ? "Thu gọn" : "Xem thêm"}</span>
               <svg class="twin-post-expand-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
             </button>
@@ -970,21 +1069,24 @@ export function renderPostCard(post, currentUser) {
     ${
       post.videoUrl
         ? (() => {
-            const isShort = post.videoType === "short";
             const poster = post.videoPoster || getVideoPosterUrl(post.videoUrl);
             const durText = post.videoDuration ? formatDuration(post.videoDuration) : "";
+            const vw = Number(post.videoWidth) || 0;
+            const vh = Number(post.videoHeight) || 0;
+            const initPortrait = vw > 0 && vh > 0 ? vh > vw * 1.05 : false;
+            const initClass = vw > 0 && vh > 0 ? (initPortrait ? " is-portrait" : " is-landscape") : "";
+            const initStyle =
+              vw > 0 && vh > 0
+                ? ` style="--video-ar:${vw} / ${vh};--video-ratio:${(vw / vh).toFixed(4)};"`
+                : "";
             return `
-              <div class="twin-post-video-wrap ${isShort ? "is-short" : ""}">
+              <div class="twin-post-video-wrap${initClass}"${initStyle}>
                 <div class="twin-post-video-top">
-                  <span class="twin-post-video-badge ${isShort ? "short" : ""}">
+                  <span class="twin-post-video-badge">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="6 4 20 12 6 20 6 4"/></svg>
-                    <span>${isShort ? "Video ngắn" : "Video"}${durText ? ` · ${escapeHtml(durText)}` : ""}</span>
+                    <span>Video${durText ? ` · ${escapeHtml(durText)}` : ""}</span>
                   </span>
-                  ${
-                    isShort
-                      ? `<a href="./reels.html?id=${encodeURIComponent(post.id)}" class="twin-post-video-reel-link">Xem Reels</a>`
-                      : ""
-                  }
+                  <a href="./reels.html?id=${encodeURIComponent(post.id)}" class="twin-post-video-reel-link">Xem trong Video</a>
                 </div>
                 <video
                   class="twin-post-video"
@@ -992,7 +1094,6 @@ export function renderPostCard(post, currentUser) {
                   ${poster ? `poster="${escapeHtml(poster)}"` : ""}
                   controls
                   playsinline
-                  ${isShort ? "loop" : ""}
                   preload="metadata"
                 ></video>
               </div>
@@ -1060,19 +1161,29 @@ export function renderPostCard(post, currentUser) {
     const expandBtn = bodyWrap?.querySelector(".twin-post-expand-btn");
     const expandLabel = expandBtn?.querySelector(".twin-post-expand-label");
     if (bodyWrap && bodyEl && expandBtn && expandLabel) {
+      if (textState.mode === "clamp") {
+        postBodyResizeObserver?.observe(bodyEl);
+        requestAnimationFrame(() => updatePlainClampState(bodyWrap));
+        if (document.fonts && document.fonts.ready) {
+          document.fonts.ready.then(() => updatePlainClampState(bodyWrap));
+        }
+      }
       expandBtn.addEventListener("click", () => {
         isTextExpanded = !isTextExpanded;
         if (isTextExpanded) {
           expandedLongPosts.add(post.id);
-          bodyEl.innerHTML = textState.fullHtml;
+          if (textState.mode === "html") bodyEl.innerHTML = textState.fullHtml;
         } else {
           expandedLongPosts.delete(post.id);
-          bodyEl.innerHTML = textState.collapsedHtml;
+          if (textState.mode === "html") bodyEl.innerHTML = textState.collapsedHtml;
         }
         bodyWrap.classList.toggle("is-expanded", isTextExpanded);
         bodyWrap.classList.toggle("is-collapsed", !isTextExpanded);
         expandBtn.setAttribute("aria-expanded", isTextExpanded ? "true" : "false");
         expandLabel.textContent = isTextExpanded ? "Thu gọn" : "Xem thêm";
+        if (textState.mode === "clamp") {
+          requestAnimationFrame(() => updatePlainClampState(bodyWrap));
+        }
         if (!isTextExpanded) {
           const rect = card.getBoundingClientRect();
           if (rect.top < 72) {
@@ -1081,6 +1192,24 @@ export function renderPostCard(post, currentUser) {
         }
       });
     }
+  }
+
+  const postVideoWrap = card.querySelector(".twin-post-video-wrap");
+  const postVideoEl = postVideoWrap?.querySelector("video.twin-post-video");
+  if (postVideoWrap && postVideoEl) {
+    const syncPostVideoOrientation = () => {
+      const vw = postVideoEl.videoWidth || Number(post.videoWidth) || 0;
+      const vh = postVideoEl.videoHeight || Number(post.videoHeight) || 0;
+      if (!vw || !vh) return;
+      const ratio = vw / vh;
+      const isPortrait = vh > vw * 1.05;
+      postVideoWrap.style.setProperty("--video-ar", `${vw} / ${vh}`);
+      postVideoWrap.style.setProperty("--video-ratio", String(ratio));
+      postVideoWrap.classList.toggle("is-portrait", isPortrait);
+      postVideoWrap.classList.toggle("is-landscape", !isPortrait);
+    };
+    if (postVideoEl.readyState >= 1) syncPostVideoOrientation();
+    postVideoEl.addEventListener("loadedmetadata", syncPostVideoOrientation);
   }
 
   const postImgs = getPostImages(post);

@@ -1364,6 +1364,10 @@ svg { display: block; flex-shrink: 0; }
   display: flex;
   flex-direction: column;
 }
+.twin-story-viewer-modal.is-landscape-video {
+  width: min(94vw, calc((86dvh - 96px) * var(--video-ratio, 1.7778)), 880px) !important;
+  max-width: 880px !important;
+}
 .twin-story-viewer-stage {
   position: relative;
   width: 100%;
@@ -1374,6 +1378,10 @@ svg { display: block; flex-shrink: 0; }
   display: flex;
   align-items: center;
   justify-content: center;
+}
+.twin-story-viewer-modal.is-landscape-video .twin-story-viewer-stage {
+  aspect-ratio: var(--video-ar, 16 / 9);
+  max-height: calc(86dvh - 96px);
 }
 .twin-story-modal-media {
   width: 100%;
@@ -1819,12 +1827,23 @@ svg { display: block; flex-shrink: 0; }
   margin-bottom: 12px;
 }
 .twin-post-body-wrap .twin-post-body {
-  margin-bottom: 6px;
+  margin-bottom: 0;
+}
+.twin-post-body-wrap.is-collapsed .twin-post-body.is-line-clamped {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 6;
+  overflow: hidden;
+}
+.twin-post-body-wrap.is-collapsed .twin-post-body.twin-post-html.is-html-clamped {
+  max-height: calc(1.55em * 7.2);
+  overflow: hidden;
 }
 .twin-post-expand-btn {
   display: inline-flex;
   align-items: center;
   gap: 4px;
+  margin-top: 6px;
   padding: 4px 10px;
   border-radius: 999px;
   border: none;
@@ -1835,6 +1854,9 @@ svg { display: block; flex-shrink: 0; }
   line-height: 1.2;
   cursor: pointer;
   transition: background-color 0.16s ease, transform 0.16s ease;
+}
+.twin-post-expand-btn[hidden] {
+  display: none;
 }
 .twin-post-expand-btn:hover {
   filter: brightness(0.96);
@@ -3187,6 +3209,9 @@ label.twin-setting-row { cursor: pointer; }
   flex-wrap: wrap;
   padding-right: 34px;
 }
+.twin-composer-video-preview .twin-post-video {
+  max-height: 280px;
+}
 .twin-composer-video-preview.is-short .twin-post-video {
   width: min(100%, 210px);
   aspect-ratio: 9 / 16;
@@ -3195,31 +3220,45 @@ label.twin-setting-row { cursor: pointer; }
   background: #000000;
 }
 .twin-post-video-wrap {
+  --post-portrait-max-h: min(76dvh, 680px);
   position: relative;
+  width: 100%;
   margin: 8px 0 12px;
   border-radius: 12px;
   overflow: hidden;
   background: #000000;
   border: 1px solid var(--border-subtle);
 }
+.twin-post-video-wrap.is-landscape {
+  width: 100%;
+  margin: 8px 0 12px;
+}
+.twin-post-video-wrap.is-portrait,
 .twin-post-video-wrap.is-short {
-  max-width: 340px;
+  width: min(100%, calc(var(--post-portrait-max-h) * var(--video-ratio, 0.5625)));
+  aspect-ratio: var(--video-ar, 9 / 16);
   margin: 8px auto 12px;
-  aspect-ratio: 9 / 16;
-  max-height: 580px;
 }
 .twin-post-video {
   display: block;
   width: 100%;
-  max-height: 520px;
+  height: auto;
+  max-height: 76dvh;
   background: #000000;
-  border-radius: 10px;
+  border-radius: 0;
   object-fit: contain;
 }
+.twin-post-video-wrap.is-landscape .twin-post-video {
+  width: 100%;
+  height: auto;
+  max-height: 76dvh;
+  object-fit: contain;
+}
+.twin-post-video-wrap.is-portrait .twin-post-video,
 .twin-post-video-wrap.is-short .twin-post-video {
   width: 100%;
   height: 100%;
-  max-height: 580px;
+  max-height: none;
   object-fit: contain;
   object-position: center;
   background: #000000;
@@ -3270,7 +3309,7 @@ label.twin-setting-row { cursor: pointer; }
    DEDICATED REELS & VIDEO PAGE (reels.html)
 ===================================================== */
 .twin-reels-main {
-  max-width: 780px;
+  max-width: 1120px;
   padding-top: 14px;
 }
 .twin-reels-toolbar {
@@ -3288,8 +3327,12 @@ label.twin-setting-row { cursor: pointer; }
   gap: 16px;
 }
 .twin-reels-scroller {
-  --reel-h: clamp(460px, calc(100dvh - var(--header-h) - 36px), 820px);
-  width: min(100%, calc(var(--reel-h) * 9 / 16));
+  --reel-h: clamp(460px, calc(100dvh - var(--header-h) - 28px), 840px);
+  --reel-inner-h: calc(var(--reel-h) - 10px);
+  flex: 0 1 1020px;
+  width: 100%;
+  max-width: 1020px;
+  min-width: 0;
   height: var(--reel-h);
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
@@ -3316,9 +3359,11 @@ label.twin-setting-row { cursor: pointer; }
 
 .twin-reel-frame {
   position: relative;
-  width: 100%;
-  height: 100%;
-  aspect-ratio: 9 / 16;
+  width: min(100%, calc(var(--reel-inner-h) * var(--video-ratio, 0.5625)));
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  aspect-ratio: var(--video-ar, 9 / 16);
   border-radius: 16px;
   overflow: hidden;
   background: #000000;
@@ -3326,6 +3371,18 @@ label.twin-setting-row { cursor: pointer; }
   display: flex;
   align-items: center;
   justify-content: center;
+}
+.twin-reel-frame.is-landscape {
+  width: min(100%, calc(var(--reel-inner-h) * var(--video-ratio, 1.7778)));
+  aspect-ratio: var(--video-ar, 16 / 9);
+}
+.twin-reel-frame.is-landscape .twin-reel-rail {
+  gap: 10px;
+  bottom: 16px;
+}
+.twin-reel-frame.is-landscape .twin-reel-act-icon {
+  width: 38px;
+  height: 38px;
 }
 .twin-reel-video {
   width: 100%;
@@ -3488,9 +3545,15 @@ label.twin-setting-row { cursor: pointer; }
 
 @media (max-width: 820px) {
   .twin-reels-nav-arrows { display: none !important; }
+  .twin-reels-main {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
   .twin-reels-scroller {
-    --reel-h: calc(100dvh - var(--header-h) - var(--mobile-bar-h) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 24px);
-    width: min(100%, calc(var(--reel-h) * 9 / 16));
+    --reel-h: calc(100dvh - var(--header-h) - var(--mobile-bar-h) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 18px);
+    --reel-inner-h: calc(var(--reel-h) - 10px);
+    width: 100%;
+    max-width: 100%;
     height: var(--reel-h);
     min-height: 360px;
     max-height: none;
@@ -3498,9 +3561,22 @@ label.twin-setting-row { cursor: pointer; }
     border-radius: 14px;
   }
   .twin-reel-frame { border-radius: 14px; }
+  .twin-reel-frame.is-landscape {
+    width: 100%;
+    height: 100%;
+    aspect-ratio: auto;
+  }
+  .twin-reel-frame.is-landscape .twin-reel-video {
+    width: 100%;
+    height: auto;
+    max-height: 100%;
+    object-fit: contain;
+  }
+  .twin-post-video-wrap {
+    --post-portrait-max-h: 78dvh;
+  }
   .twin-post-video-wrap.is-short {
     max-width: 100%;
-    max-height: 70dvh;
   }
   .twin-composer-media-btns .twin-btn {
     padding: 6px 10px;
@@ -4104,8 +4180,23 @@ label.twin-setting-row { cursor: pointer; }
   .twin-story-viewer-modal {
     width: min(92vw, calc(((86dvh / 1.25) - 110px) * 9 / 16), 370px) !important;
   }
+  .twin-story-viewer-modal.is-landscape-video {
+    width: min(92vw, calc(((86dvh / 1.25) - 96px) * var(--video-ratio, 1.7778)), 860px) !important;
+    max-width: 860px !important;
+  }
+  .twin-story-viewer-modal.is-landscape-video .twin-story-viewer-stage {
+    max-height: calc((86dvh / 1.25) - 96px);
+  }
+  .twin-post-video-wrap {
+    --post-portrait-max-h: min(calc(76dvh / 1.25), 560px);
+  }
+  .twin-post-video,
+  .twin-post-video-wrap.is-landscape .twin-post-video {
+    max-height: calc(76dvh / 1.25);
+  }
   .twin-reels-scroller {
-    --reel-h: clamp(360px, calc((100dvh / 1.25) - var(--header-h) - 82px), 620px);
+    --reel-h: clamp(380px, calc((100dvh / 1.25) - var(--header-h) - 32px), 700px);
+    --reel-inner-h: calc(var(--reel-h) - 10px);
   }
 }
 

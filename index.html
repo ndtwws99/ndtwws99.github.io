@@ -224,7 +224,7 @@
       <div class="twin-seg-tabs" style="margin-bottom:14px;width:100%;display:grid;grid-template-columns:1fr 1fr 1fr;">
         <button type="button" id="cs-tab-text" class="twin-seg-tab active">Văn bản</button>
         <button type="button" id="cs-tab-image" class="twin-seg-tab">Ảnh</button>
-        <button type="button" id="cs-tab-video" class="twin-seg-tab">Video ngắn</button>
+        <button type="button" id="cs-tab-video" class="twin-seg-tab">Video</button>
       </div>
 
       <!-- Panel Tin văn bản -->
@@ -286,7 +286,7 @@
           <span id="cs-vid-progress-text" class="twin-post-meta">Đang tải video 0%...</span>
         </div>
         <div style="display:flex;justify-content:flex-end;margin-top:12px;">
-          <button type="button" id="cs-publish-vid" class="twin-btn twin-btn-primary">Đăng video ngắn</button>
+          <button type="button" id="cs-publish-vid" class="twin-btn twin-btn-primary">Đăng video</button>
         </div>
       </div>
     </div>
@@ -1099,6 +1099,29 @@
     bindStoryHoldToPause(storyVideoEl);
     bindStoryHoldToPause(storyTextStageEl);
 
+    const storyModalBox = storyModal.querySelector(".twin-story-viewer-modal");
+    function resetStoryViewerOrientation() {
+      if (!storyModalBox) return;
+      storyModalBox.classList.remove("is-landscape-video");
+      storyModalBox.style.removeProperty("--video-ar");
+      storyModalBox.style.removeProperty("--video-ratio");
+    }
+    function syncStoryVideoOrientation() {
+      if (!storyModalBox || !isVideoStory(viewingStory)) return;
+      const vw = storyVideoEl.videoWidth || Number(viewingStory?.videoWidth) || 0;
+      const vh = storyVideoEl.videoHeight || Number(viewingStory?.videoHeight) || 0;
+      if (!vw || !vh) return;
+      const isLandscape = vw > vh * 1.05;
+      if (isLandscape) {
+        storyModalBox.style.setProperty("--video-ar", `${vw} / ${vh}`);
+        storyModalBox.style.setProperty("--video-ratio", String(vw / vh));
+        storyModalBox.classList.add("is-landscape-video");
+      } else {
+        resetStoryViewerOrientation();
+      }
+    }
+    storyVideoEl.addEventListener("loadedmetadata", syncStoryVideoOrientation);
+
     storyVideoEl.onended = () => {
       if (storyModal.classList.contains("open") && isVideoStory(viewingStory)) {
         updateActiveProgressFill(1);
@@ -1628,12 +1651,14 @@
       storyHeartBurstEl.classList.remove("burst");
 
       if (isVideoStory(s)) {
+        resetStoryViewerOrientation();
         storyImgEl.style.display = "none";
         storyTextStageEl.style.display = "none";
         storyVideoEl.style.display = "block";
         storyMuteBtn.style.display = "grid";
         storyVideoEl.src = s.videoUrl;
         storyVideoEl.currentTime = 0;
+        syncStoryVideoOrientation();
         updateStoryMuteButton();
         if (s.caption) {
           capEl.textContent = s.caption;
@@ -1642,6 +1667,7 @@
           capEl.style.display = "none";
         }
       } else if (s.type === "text" || (!s.imageUrl && s.text)) {
+        resetStoryViewerOrientation();
         storyImgEl.style.display = "none";
         storyVideoEl.style.display = "none";
         storyMuteBtn.style.display = "none";
@@ -1651,6 +1677,7 @@
         storyTextStageEl.textContent = s.text || "";
         capEl.style.display = "none";
       } else {
+        resetStoryViewerOrientation();
         storyTextStageEl.style.display = "none";
         storyVideoEl.style.display = "none";
         storyMuteBtn.style.display = "none";
