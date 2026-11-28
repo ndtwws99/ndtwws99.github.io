@@ -4142,20 +4142,17 @@ body.page-reels .twin-reels-nav-arrows .twin-icon-btn:hover {
    READABLE CHAT + WALLPAPERS + GROUP CHAT, MOBILE OPTIMIZATION
 ========================================================================== */
 
-/* 1. Phóng to tất cả 125% ở dạng Desktop */
+/* 1. Giao diện Desktop chuẩn 100% */
 @media (min-width: 1024px) {
-  html {
-    zoom: 1.25;
-  }
   body {
-    min-height: calc(100dvh / 1.25);
+    min-height: 100dvh;
   }
   body.page-messages {
-    height: calc(100dvh / 1.25);
+    height: 100dvh;
   }
   body.page-auth,
   body.page-404 {
-    min-height: calc(100dvh / 1.25);
+    min-height: 100dvh;
   }
   .twin-main {
     max-width: 1140px;
@@ -4166,39 +4163,39 @@ body.page-reels .twin-reels-nav-arrows .twin-icon-btn:hover {
     gap: 20px;
   }
   .twin-sidebar {
-    max-height: calc((100dvh / 1.25) - var(--header-h) - 24px);
+    max-height: calc(100dvh - var(--header-h) - 24px);
   }
   .twin-modal {
-    max-height: calc(88dvh / 1.25);
+    max-height: 88dvh;
   }
   .twin-settings-modal {
-    max-height: calc(86dvh / 1.25);
+    max-height: 86dvh;
   }
   .twin-gemini-modal {
-    height: min(560px, calc(84dvh / 1.25));
+    height: min(600px, 84dvh);
   }
   .twin-story-viewer-stage {
-    max-height: calc((86dvh / 1.25) - 110px);
+    max-height: calc(88dvh - 110px);
   }
   .twin-story-viewer-modal {
-    width: min(92vw, calc(((86dvh / 1.25) - 110px) * 9 / 16), 370px) !important;
+    width: min(92vw, calc((88dvh - 110px) * 9 / 16), 410px) !important;
   }
   .twin-story-viewer-modal.is-landscape-video {
-    width: min(92vw, calc(((86dvh / 1.25) - 96px) * var(--video-ratio, 1.7778)), 860px) !important;
-    max-width: 860px !important;
+    width: min(92vw, calc((88dvh - 96px) * var(--video-ratio, 1.7778)), 920px) !important;
+    max-width: 920px !important;
   }
   .twin-story-viewer-modal.is-landscape-video .twin-story-viewer-stage {
-    max-height: calc((86dvh / 1.25) - 96px);
+    max-height: calc(88dvh - 96px);
   }
   .twin-post-video-wrap {
-    --post-portrait-max-h: min(calc(76dvh / 1.25), 560px);
+    --post-portrait-max-h: min(76dvh, 640px);
   }
   .twin-post-video,
   .twin-post-video-wrap.is-landscape .twin-post-video {
-    max-height: calc(76dvh / 1.25);
+    max-height: 76dvh;
   }
   .twin-reels-scroller {
-    --reel-h: clamp(380px, calc((100dvh / 1.25) - var(--header-h) - 32px), 700px);
+    --reel-h: clamp(460px, calc(100dvh - var(--header-h) - 28px), 840px);
     --reel-inner-h: calc(var(--reel-h) - 10px);
   }
 }
@@ -5319,12 +5316,6 @@ body.page-messages {
   border-radius: 14px;
   background: #0a0a0a;
   box-shadow: 0 24px 64px rgba(0, 0, 0, 0.7);
-}
-@media (min-width: 1024px) {
-  .twin-media-lb-stage img,
-  .twin-media-lb-stage video {
-    max-height: calc(74dvh / 1.25);
-  }
 }
 .twin-media-lb-nav {
   position: absolute;
